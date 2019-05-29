@@ -1,0 +1,13 @@
+pluginname=LearningNet
+pluginclassname=LearningNet
+origin=milsen@uos.de
+version=1.0
+category=Inhalte und Aufgabenstellungen
+icon=../../../assets/images/icons/black/export.svg
+studipMinVersion=4.0
+studipMaxVersion=4.2.99
+summary=Netz aus Courseware-Abschnitten erstellen und individualisierte Lernpfade abarbeiten
+description=Mit LearningNet können Lernmodule, die in Courseware erstellt wurden, in einem Netz angeordnet werden. Den Studierenden wird anhand auswählbarer Kriterien empfohlen, welche Lernmodule sie als nächstes bearbeiten sollen. Das Abarbeiten individualisierter Lernpfade ermöglicht es den Studierenden, effektiver zu lernen.
+descriptionShort=Netz aus Courseware-Abschnitten erstellen und individualisierte Lernpfade abarbeiten
+descriptionLong=Mit LearningNet können Lernmodule, die in Courseware erstellt wurden, in einem Netz angeordnet werden. Den Studierenden wird anhand auswählbarer Kriterien empfohlen, welche Lernmodule sie als nächstes bearbeiten sollen. Das Abarbeiten individualisierter Lernpfade ermöglicht es den Studierenden, effektiver zu lernen.
+screenshot=assets/images/learningnet_preview.png
