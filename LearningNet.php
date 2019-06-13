@@ -1,10 +1,22 @@
 <?php
 
+/* require_once __DIR__.'/vendor/autoload.php'; */
+
+
+/**
+ * dgettext with domain for this plugin.
+ * @param string $message to be passed to dgettext.
+ */
+function _ln($message)
+{
+    return dgettext('learningnet', $message);
+}
+
+
 /**
  * TODO
  *
  * @author  <milsen@uos.de>
- * TODO StandardPlugin or other Plugin
  */
 class LearningNet extends StudIPPlugin implements StandardPlugin
 {
@@ -16,32 +28,22 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
     public function __construct()
     {
         parent::__construct();
-
         /* $this->setupAutoload(); */
-        /* $this->setupContainer(); */
 
-        /* // more setup if this plugin is active in this course */
-        /* if ($this->isActivated($this->container['cid'])) { */
-        /*     // markup for link element to courseware */
-        /*     StudipFormat::addStudipMarkup('courseware', '\[(mooc-forumblock):([0-9]{1,32})\]', null, 'Courseware::markupForumLink'); */
-
-        /*     $this->setupNavigation(); */
-        /* } */
-
-        /* // set text-domain for translations in this plugin */
-        /* bindtextdomain('courseware', dirname(__FILE__).'/locale'); */
+        // Set text-domain for translations in this plugin.
+        bindtextdomain('learningnet', dirname(__FILE__) . '/locale');
     }
 
-    public function getPluginname()
-    {
-        return 'LearningNet';
-    }
-
-    // bei Aufruf des Plugins über plugin.php/mooc/...
+    /**
+     * Executed when calling the plugin from plugin.php/learningnet/
+     */
     public function initialize()
     {
-        /* PageLayout::setHelpKeyword('MoocIP.Courseware'); // Hilfeseite im Hilfewiki */
-        /* $this->getHelpbarContent(); */
+        // Set title..
+        $headerLine = class_exists('Context') ?
+            Context::getHeaderLine() :
+            $_SESSION['SessSemName']['header_line'];
+        PageLayout::setTitle($headerLine . ' - ' . $this->getPluginName());
     }
 
     /**
@@ -49,81 +51,27 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
      */
     public function getTabNavigation($courseId)
     {
+        // Otherwise two params are given to URL.
         $cid = $courseId;
+
+        // Create navigation.
+        $navigation = new Navigation(
+            $this->getPluginName(),
+            PluginEngine::getURL($this, compact('cid'), 'learningnet', true)
+        );
+
+        // In current StudIP version, images are only shown in top navigation.
+        // Add images in case changes to this occur in the future.
+        $navigation->setImage(Icon::create('group3', 'info_alt'));
+        $navigation->setActiveImage(Icon::create('group3', 'info'));
+
+        // Add subnavigation.
+        $url = PluginEngine::getURL($this, compact('cid'), 'edit_net', true);
+        $nav_item = new Navigation(_cw('Struktur bearbeiten'), $url);
+        $navigation->addSubnavigation('edit_net', $nav_item);
+
         $tabs = array();
-
-        /* $courseware = $this->container['current_courseware']; */
-
-        /* $navigation = new Navigation( */
-        /*     $courseware->title, */
-        /*     PluginEngine::getURL($this, compact('cid'), 'courseware', true) */
-        /* ); */
-        /* $navigation->setImage(Icon::create('group3', 'info_alt')); */
-        /* $navigation->setActiveImage(Icon::create('group3', 'info')); */
-        /* $tabs['mooc_courseware'] = $navigation; */
-
-        /* $navigation->addSubnavigation('index', clone $navigation); */
-
-
-        /* //NavigationForLecturers */
-        /* if ($this->container['current_user']->hasPerm($courseId, 'tutor')) { */
-        /*     $managerUrl = PluginEngine::getURL($this, compact('cid'), 'block_manager', true); */
-        /*     $navigation->addSubnavigation( */
-        /*         'block_manager', */
-        /*         new Navigation(_cw('Struktur bearbeiten'), $managerUrl) */
-        /*     ); */
-        /*     $settingsUrl = PluginEngine::getURL($this, compact('cid'), 'courseware/settings', true); */
-        /*     $navigation->addSubnavigation( */
-        /*         'settings', */
-        /*         new Navigation(_cw('Einstellungen'), $settingsUrl) */
-        /*     ); */
-        /*     $navigation->addSubnavigation( */
-        /*         'news', */
-        /*         new Navigation( */
-        /*             _cw('Letzte Änderungen'), */
-        /*             PluginEngine::getURL($this, compact('cid'), 'courseware/news', true) */
-        /*         ) */
-        /*     ); */
-        /*     $cpoUrl = PluginEngine::getURL($this, compact('cid'), 'cpo', true); */
-        /*     $navigation->addSubnavigation( */
-        /*         'progressoverview', */
-        /*         new Navigation(_cw('Fortschrittsübersicht'), $cpoUrl) */
-        /*     ); */
-
-        /*     $postoverviewUrl = PluginEngine::getURL($this, compact('cid'), 'cpo/postoverview', true); */
-        /*     $navigation->addSubnavigation( */
-        /*         'postoverview', */
-        /*         new Navigation(_cw('Diskussionsübersicht'), $postoverviewUrl) */
-        /*     ); */
-        /*     $exportUrl = PluginEngine::getURL($this, compact('cid'), 'export', true); */
-        /*     $navigation->addSubnavigation( */
-        /*         'export', */
-        /*         new Navigation(_cw('Export'), $exportUrl) */
-        /*     ); */
-        /*     $importUrl = PluginEngine::getURL($this, compact('cid'), 'import', true); */
-        /*     $navigation->addSubnavigation( */
-        /*         'import', */
-        /*         new Navigation(_cw('Import'), $importUrl) */
-        /*     ); */
-
-        /* //NavigationForStudents */
-        /* } else { */
-        /*     if (!$this->container['current_user']->isNobody()) { */
-        /*         $navigation->addSubnavigation( */
-        /*             'news', */
-        /*             new Navigation( */
-        /*                 _cw('Letzte Änderungen'), */
-        /*                 PluginEngine::getURL($this, compact('cid'), 'courseware/news', true) */
-        /*             ) */
-        /*         ); */
-        /*         $progressUrl = PluginEngine::getURL($this, compact('cid'), 'progress', true); */
-        /*         $navigation->addSubnavigation( */
-        /*             'progress', */
-        /*             new Navigation(_cw('Fortschrittsübersicht'), $progressUrl) */
-        /*         ); */
-        /*     } */
-        /* } */
-
+        $tabs['learningnet'] = $navigation;
         return $tabs;
     }
 
@@ -132,101 +80,7 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
      */
     public function getIconNavigation($courseId, $last_visit, $user_id)
     {
-        /* if (!$user_id) { */
-        /*     $user_id = $GLOBALS['user']->id; */
-        /* } */
-        /* $icon = new AutoNavigation( */
-        /*     $this->getDisplayTitle(), */
-        /*     PluginEngine::getURL($this, array('cid' => $courseId, 'iconnav' => 'true'), 'courseware/news', true) */
-        /* ); */
-
-        /* $db = DBManager::get(); */
-
-        /* $stmt = $db->prepare(' */
-        /*     SELECT */
-        /*         COUNT(*) */
-        /*     FROM */
-        /*         mooc_blocks */
-        /*     WHERE */
-        /*         seminar_id = :cid */
-        /*     AND */
-        /*         chdate >= :last_visit */
-        /* '); */
-        /* $stmt->bindParam(':cid', $courseId); */
-        /* $stmt->bindParam(':last_visit', $last_visit); */
-        /* $stmt->execute(); */
-        /* $new_ones = (int) $stmt->fetch(PDO::FETCH_ASSOC)['COUNT(*)']; */
-
-        /* $plugin_manager = \PluginManager::getInstance(); */
-        /* $vips = true; */
-        /* if ($plugin_manager->getPluginInfo('VipsPlugin') == null){ */
-        /*     $vips = false; */
-        /* } */
-        /* if($plugin_manager->getPlugin('VipsPlugin')){ */
-        /*     $version = $plugin_manager->getPluginManifest($plugin_manager->getPlugin('VipsPlugin')->getPluginPath())['version']; */
-        /*     if (version_compare('1.3',$version) > 0) { */
-        /*         $vips = false; */
-        /*     } */
-        /* } else { */
-        /*     $vips = false; */
-        /* } */
-
-        /* if ($vips) { */
-        /*     // getting all tests */
-        /*     $stmt = $db->prepare(" */
-        /*         SELECT */
-        /*             json_data */
-        /*         FROM */
-        /*             mooc_blocks */
-        /*         JOIN */
-        /*             mooc_fields */
-        /*         ON */
-        /*             mooc_blocks.id = mooc_fields.block_id */
-        /*         WHERE */
-        /*             mooc_blocks.type = 'TestBlock' */
-        /*         AND */
-        /*             mooc_blocks.seminar_id = :cid */
-        /*         AND */
-        /*             mooc_fields.name = 'test_id' */
-        /*     "); */
-        /*     $stmt->bindParam(':cid', $courseId); */
-        /*     $stmt->execute(); */
-
-        /*     $tests = $stmt->fetch(PDO::FETCH_ASSOC); */
-        /*     if ($tests) { */
-        /*         $test_ids = array(); */
-        /*         foreach ($tests as $key => $value) { */
-        /*             array_push($test_ids, (int) str_replace('"', '', $value)); */
-        /*         } */
-        /*         //looking for new tests */
-        /*         $stmt = $db->prepare(' */
-        /*             SELECT */
-        /*                 COUNT(*) */
-        /*             FROM */
-        /*                 vips_exercise_ref */
-        /*             JOIN */
-        /*                 vips_exercise */
-        /*             ON */
-        /*                 vips_exercise_ref.exercise_id = vips_exercise.ID */
-        /*             WHERE */
-        /*                 vips_exercise_ref.test_id IN ('.implode(', ', $test_ids).') */
-        /*             AND */
-        /*                 unix_timestamp(created) >=  :last_visit */
-        /*         '); */
-        /*         $stmt->bindParam(':last_visit', $last_visit); */
-        /*         $stmt->execute(); */
-        /*         $new_ones += (int) $stmt->fetch(PDO::FETCH_ASSOC)['COUNT(*)']; */
-        /*     } */
-        /* } */
-        /* if ($new_ones) { */
-        /*     $title = $new_ones > 1 ? sprintf(_('%s neue Courseware-Inhalte'), $new_ones) : _('1 neuer Courseware-Inhalt'); */
-        /*     $icon->setImage(Icon::create('group3', 'attention', ['title' => $title])); */
-        /*     $icon->setBadgeNumber($new_ones); */
-        /* } else { */
-        /*     $icon->setImage(Icon::create('group3', 'inactive', ['title' => 'Courseware'])); */
-        /* } */
-
-        /* return $icon; */
+        // Icon shown in "Veranstaltungen". Not needed.
         return null;
     }
 
@@ -235,7 +89,17 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
      */
     public function getInfoTemplate($courseId)
     {
+        // Template to be rendered on the course summary page. Not needed.
         return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getMetadata()
+    {
+        // Metadata to be rendered on the course summary page. Not needed.
+        return array();
     }
 
 }
