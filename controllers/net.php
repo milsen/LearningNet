@@ -1,9 +1,9 @@
 <?php
 
-class LearningNetController extends PluginController {
+class NetController extends PluginController {
 
     /**
-     * Action for learningnet/index.php
+     * Action for net/index.php
      */
     public function index_action()
     {
@@ -61,8 +61,8 @@ class LearningNetController extends PluginController {
         parent::before_filter($action, $args);
 
         // Activate navigation item.
-        if (Navigation::hasItem('/course/learningnet')) {
-            Navigation::activateItem('/course/learningnet');
+        if (Navigation::hasItem('/course/learningnet/net')) {
+            Navigation::activateItem('/course/learningnet/net');
         }
 
         // Set help keyword (page in the help wiki).

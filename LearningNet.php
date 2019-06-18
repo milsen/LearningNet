@@ -57,7 +57,7 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
         // Create navigation.
         $navigation = new Navigation(
             $this->getPluginName(),
-            PluginEngine::getURL($this, compact('cid'), 'learningnet', true)
+            PluginEngine::getURL($this, compact('cid'), 'net', true)
         );
 
         // In current StudIP version, images are only shown in top navigation.
@@ -66,13 +66,30 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
         $navigation->setActiveImage(Icon::create('group3', 'info'));
 
         // Add subnavigation.
-        $url = PluginEngine::getURL($this, compact('cid'), 'edit_net', true);
-        $nav_item = new Navigation(_cw('Struktur bearbeiten'), $url);
-        $navigation->addSubnavigation('edit_net', $nav_item);
+        // TODO edit/properties should be turned off for students
+        // TODO disable complete plugin without courseware
+        $this->addSubnavigation($navigation, _cw('LearningNet'), 'net');
+        $this->addSubnavigation($navigation, _cw('Stuktur bearbeiten'), 'edit');
+        $this->addSubnavigation($navigation, _cw('Einstellungen'), 'properties');
+        /* $this->addSubnavigation($navigation, _cw('Export'), 'export'); */
+        /* $this->addSubnavigation($navigation, _cw('Import'), 'import'); */
 
         $tabs = array();
         $tabs['learningnet'] = $navigation;
         return $tabs;
+    }
+
+    /**
+     * Adds a subnavigation to be shown in the left sidebar.
+     * @param Navigation navigation Navigation to which a subnavigation is edded.
+     * @param string title Label shown in the sidebar.
+     * @param string route Subroute of this plugin linked to.
+     */
+    private function addSubnavigation(&$navigation, $title, $route)
+    {
+        $url = PluginEngine::getURL($this, compact('cid'), $route, true);
+        $nav_item = new Navigation($title, $url);
+        $navigation->addSubnavigation($route, $nav_item);
     }
 
     /**
