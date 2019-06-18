@@ -7,3 +7,13 @@ LearningNet für Kurs <?= $cid; ?>: <br>
         echo _ln("Courseware (Version >= 4.4.2) muss installiert sein, um LearningNet nutzen zu können.");
     }
 ?>
+
+<?php
+    // Add Sidebar.
+    /* $actions = new ActionsWidget(); */
+    /* $actions->addLink(_ln('Netz bearbeiten'), */
+    /*     PluginEngine::getURL($plugin,array(), 'edit_net'), */
+    /*     null, */
+    /*     array('data-dialog' => '1')); */
+    /* Sidebar::Get()->addWidget($actions); */
+?>

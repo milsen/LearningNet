@@ -39,7 +39,7 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
      */
     public function initialize()
     {
-        // Set title..
+        // Set title.
         $headerLine = class_exists('Context') ?
             Context::getHeaderLine() :
             $_SESSION['SessSemName']['header_line'];

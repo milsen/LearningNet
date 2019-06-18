@@ -1,0 +1,15 @@
+{
+    "name": "milsen@uos.de/LearningNet",
+    "description":"Learning path extraction",
+    "require": {
+        "slim/slim": "^3.12"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7"
+    },
+    "autoload": {
+        "psr-4": {
+            "LearningNet\\" : "src/"
+        }
+    }
+}
