@@ -21,16 +21,16 @@ abstract class Unit
 
     abstract public function isCompleted();
 
-    public function setPredecessor($predecessor)
-    {
-        $this->predecessor = $predecessor;
-    }
-
     public function isActive()
     {
         return $this->predecessor === null ?
             $this->parentChain->isActive() :
             $this->predecessor->isCompleted();
+    }
+
+    public function setPredecessor($predecessor)
+    {
+        $this->predecessor = $predecessor;
     }
 
 }

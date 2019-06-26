@@ -4,7 +4,7 @@ namespace LearningNet\Network;
 
 class Condition extends ConnectiveUnit
 {
-    const CONNECTIVE = "X";
+    const CONNECTIVE = "?";
 
     /**
      * Map: Chain => function returning bool
@@ -38,11 +38,14 @@ class Condition extends ConnectiveUnit
      */
     public function isCompleted()
     {
-        $chainsCompleted = array_map(function ($chain) {
-            return $chain->isCompleted();
-        }, $this->chains);
+        // If one chain is completed, return true, else false.
+        foreach ($this->chains as $chain) {
+            if ($chain->isCompleted()) {
+                return true;
+            }
+        }
 
-        // If one entry is true, return true, else false.
-        return in_array(true, $chainsCompleted, true);
+        // Return false (unless there are no chains anyway).
+        return $chain->isEmpty();
     }
 }

@@ -13,11 +13,13 @@ class Conjunction extends ConnectiveUnit
 
     public function isCompleted()
     {
-        $chainsCompleted = array_map(function ($chain) {
-            return $chain->isCompleted();
-        }, $this->chains);
+        foreach ($this->chains as $chain) {
+            if (!$chain->isCompleted()) {
+                return false;
+            }
+        }
 
         // If all entries are true, return true, else false.
-        return in_array(false, $chainsCompleted, true) === false;
+        return true;
     }
 }

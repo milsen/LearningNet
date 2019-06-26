@@ -4,18 +4,27 @@ namespace LearningNet\Network;
 
 class Chain
 {
+    /**
+     * Order is given by predecessor order of units, not by array order!
+     */
     private $units;
+
+    private $lastUnit;
 
     /**
      * ConnectiveUnit that this Chain belongs to.
      */
     private $parent;
 
+    /**
+     * @param units array(Unit) order of array enforced as order of units
+     */
     public function __construct($units = array(), $parent = null)
     {
         $this->units = $units;
         $this->parent = $parent;
         $this->setPredecessors();
+        $this->lastUnit = end($this->units);
     }
 
     private function setPredecessors()
@@ -27,10 +36,11 @@ class Chain
         }
     }
 
-    public function appendElementaryUnit($id, $completed = null)
-    {
-        $this->units[] = new ElementaryUnit($id, $completed, $this, end($this->units));
-    }
+    /* public function appendElementaryUnit($id, $completed = null) */
+    /* { */
+    /*     $this->lastUnit = new ElementaryUnit($id, $completed, $this, $lastUnit); */
+    /*     $this->units[] = $this->lastUnit; */
+    /* } */
 
     public function getUnits()
     {
@@ -46,7 +56,7 @@ class Chain
     {
         return $this->isEmpty() ?
             $this->parent->isActiveChain($this) :
-            end($this->units)->isCompleted();
+            $this->lastUnit->isCompleted();
     }
 
     public function isActive()
