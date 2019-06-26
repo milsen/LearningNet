@@ -4,12 +4,7 @@ namespace LearningNet\Network;
 
 class Disjunction extends ConnectiveUnit
 {
-    const CONNECTIVE = "OR";
-
-    public function __toString()
-    {
-        return parent::toString(self::CONNECTIVE);
-    }
+    protected static $connective = "OR";
 
     public function isCompleted()
     {

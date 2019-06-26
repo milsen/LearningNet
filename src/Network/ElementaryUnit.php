@@ -15,9 +15,19 @@ class ElementaryUnit extends Unit
         $this->completed = $completed;
     }
 
-    public function __toString()
+    public function startVizRep()
     {
-        return "[" . $this->id . "]";
+        return $this->id;
+    }
+
+    public function innerVizRep()
+    {
+        return "";
+    }
+
+    public function endVizRep()
+    {
+        return $this->id;
     }
 
     public function isCompleted()

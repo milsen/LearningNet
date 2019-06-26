@@ -4,12 +4,7 @@ namespace LearningNet\Network;
 
 class Conjunction extends ConnectiveUnit
 {
-    const CONNECTIVE = "AND";
-
-    public function __toString()
-    {
-        return parent::toString(self::CONNECTIVE);
-    }
+    protected static $connective = "AND";
 
     public function isCompleted()
     {

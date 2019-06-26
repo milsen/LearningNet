@@ -4,7 +4,7 @@ namespace LearningNet\Network;
 
 class Condition extends ConnectiveUnit
 {
-    const CONNECTIVE = "?";
+    protected static $connective = "?";
 
     /**
      * Map: Chain => function returning bool
@@ -15,11 +15,6 @@ class Condition extends ConnectiveUnit
     {
         parent::__construct($chains, $parentChain, $predecessor);
         $this->conditions = $conditions;
-    }
-
-    public function __toString()
-    {
-        return parent::toString(self::CONNECTIVE);
     }
 
     public function addChain($chain)

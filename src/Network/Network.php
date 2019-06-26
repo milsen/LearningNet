@@ -22,11 +22,9 @@ class Network
         return $this->chain;
     }
 
-    public function __toString()
+    public function vizRep()
     {
-        return $this->chain->isEmpty() ?
-            "s -> t" :
-            "s -> " . $this->chain->__toString() . " -> t";
+        return "digraph Network {\n" . $this->chain->vizRep("S", "T") . "}\n";
     }
 
 }

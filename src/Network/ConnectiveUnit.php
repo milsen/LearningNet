@@ -6,10 +6,17 @@ abstract class ConnectiveUnit extends Unit
 {
     private $chains;
 
+    private $id;
+
+    private static $connective;
+
+    private static $idCount = 0;
+
     public function __construct($chains = array(), $parentChain = null, $predecessor = null)
     {
         parent::__construct($parentChain, $predecessor);
         $this->chains = $chains;
+        $this->id = self::$idCount++;
     }
 
     public function removeChain()
@@ -22,27 +29,28 @@ abstract class ConnectiveUnit extends Unit
         $this->chains[] = $chain;
     }
 
-    abstract public function __toString();
-
-    /**
-     *
-     */
-    protected function toString($connective)
+    public function startVizRep()
     {
-        $first = true;
-        $str = "<" . $connective . ">( ";
+        return static::$connective . "_open_" . $this->id;
+    }
+
+    public function endVizRep()
+    {
+        return static::$connective . "_close_" . $this->id;
+    }
+
+    public function innerVizRep()
+    {
+        $str = "";
+        $openName = $this->startVizRep();
+        $closeName = $this->endVizRep();
 
         // For each chain in chains:
         foreach ($this->chains as $chain) {
-            if ($first) {
-                $first = false;
-            } else {
-                $str .= " | ";
-            }
-
-            $str .= $chain->__toString();
+            $str .= $chain->vizRep($openName, $closeName);
         }
-        return $str . " )";
+
+        return $str;
     }
 
     /**

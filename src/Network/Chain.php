@@ -11,6 +11,8 @@ class Chain
 
     private $lastUnit;
 
+    private $firstUnit;
+
     /**
      * ConnectiveUnit that this Chain belongs to.
      */
@@ -23,16 +25,22 @@ class Chain
     {
         $this->units = $units;
         $this->parent = $parent;
-        $this->setPredecessors();
+        $this->setPointers();
         $this->lastUnit = end($this->units);
+        $this->firstUnit = reset($this->units);
     }
 
-    private function setPredecessors()
+    /**
+     * Sets predecessors and successors for units in this chain based on the
+     * order that $units is in.
+     */
+    private function setPointers()
     {
-        $prevPred = null;
+        $pred = null;
         foreach ($this->units as $unit) {
-            $unit->setPredecessor($prevPred);
-            $prevPred = $unit;
+            $unit->setPred($pred);
+            /* $pred->setSucc($unit); */
+            $pred = $unit;
         }
     }
 
@@ -66,18 +74,32 @@ class Chain
         return $this->parent === null || $this->parent->isActiveChain($this);
     }
 
-    public function __toString()
+    public function vizRep($from, $to)
     {
-        $str = "";
-        $first = true;
+        if ($this->isEmpty()) {
+            return $from . " -> " . $to . ";\n";
+        } else {
+            return $from . " -> " . $this->firstUnit->startVizRep() . ";\n"
+                . $this->innerVizRep()
+                . $this->lastUnit->endVizRep() . " -> ". $to . ";\n";
+        }
+    }
 
-        foreach ($this->units as $unit) {
-            if ($first) {
-                $first = false;
-            } else {
-                $str .= " -> ";
-            }
-            $str .= $unit->__toString();
+    private function innerVizRep()
+    {
+        // If there is only one unit, its innerVizRep has to be output as well.
+        if (count($this->units) === 1) {
+            return $this->firstUnit->innerVizRep();
+        }
+
+        $str = "";
+
+        $cur = $this->lastUnit;
+        while ($cur !== $this->firstUnit) {
+            $pred = $cur->getPred();
+            $str .= $pred->endVizRep() . " -> " . $cur->startVizRep() . ";\n";
+            $str .= $cur->innerVizRep();
+            $cur = $pred;
         }
 
         return $str;

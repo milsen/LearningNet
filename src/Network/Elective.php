@@ -4,15 +4,18 @@ namespace LearningNet\Network;
 
 class Elective extends ConnectiveUnit
 {
-    const CONNECTIVE = "#";
+    protected static $connective = "#";
 
+    /**
+     * How many chains have to be completed before this elective connective is
+     * completed.
+     */
     private $howMany;
 
     public function __construct($howMany, $chains = array(), $parentChain = null, $predecessor = null)
     {
         parent::__construct($chains, $parentChain, $predecessor);
         $this->howMany = $howMany;
-        // TODO restrict howMany to >= 1, use disjunction with empty chain instead
     }
 
     public function isCompleted()
@@ -33,10 +36,5 @@ class Elective extends ConnectiveUnit
 
         // If one entry is true, return true, else false.
         return false;
-    }
-
-    public function __toString()
-    {
-        return parent::toString(self::CONNECTIVE);
     }
 }

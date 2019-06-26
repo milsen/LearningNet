@@ -17,7 +17,20 @@ abstract class Unit
         $this->predecessor = $predecessor;
     }
 
-    abstract public function __toString();
+    /**
+     * Returns the Viz statements that represent this (connective) unit.
+     */
+    abstract public function innerVizRep();
+
+    /**
+     * Returns the id shown after the " -> " that leads to this unit.
+     */
+    abstract public function startVizRep();
+
+    /**
+     * Returns the id shown before the " -> " that leads away from this unit.
+     */
+    abstract public function endVizRep();
 
     abstract public function isCompleted();
 
@@ -28,9 +41,14 @@ abstract class Unit
             $this->predecessor->isCompleted();
     }
 
-    public function setPredecessor($predecessor)
+    public function setPred($predecessor)
     {
         $this->predecessor = $predecessor;
+    }
+
+    public function getPred()
+    {
+        return $this->predecessor;
     }
 
 }
