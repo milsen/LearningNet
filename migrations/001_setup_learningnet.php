@@ -22,19 +22,11 @@ class SetupLearningNet extends Migration
 
         // If no LearningNet.installation is found, create the tables.
         // Create table ln_dependencies here.
-        /* $db->exec("CREATE TABLE IF NOT EXISTS `mooc_blocks` ( */
-        /*   `id` int(11) NOT NULL AUTO_INCREMENT, */
-        /*   `type` varchar(64) NOT NULL, */
-        /*   `sub_type` varchar(64) DEFAULT NULL, */
-        /*   `parent_id` int(11) DEFAULT NULL, */
-        /*   `seminar_id` varchar(32) DEFAULT NULL, */
-        /*   `title` varchar(255) DEFAULT NULL, */
-        /*   `position` int(11) DEFAULT '0', */
-        /*   `publication_date` int(11) DEFAULT NULL, */
-        /*   `chdate` int(11) DEFAULT NULL, */
-        /*   `mkdate` int(11) DEFAULT NULL, */
-        /*   PRIMARY KEY (`id`) */
-        /* )"); */
+        $db->exec("CREATE TABLE IF NOT EXISTS `learningnet_networks` (
+          `seminar_id` varchar(32) DEFAULT NULL,
+          `network` varchar(64) NOT NULL,
+          PRIMARY KEY (`id`)
+        )");
 
         /* $db->exec("CREATE TABLE IF NOT EXISTS `mooc_fields` ( */
         /*   `block_id` int(11) NOT NULL, */
@@ -72,7 +64,7 @@ class SetupLearningNet extends Migration
         // remove the following "return;"-statement to clean tables on uninstall
         return;
 
-        DBManager::get()->exec("DROP TABLE ln_dependencies");
+        DBManager::get()->exec("DROP TABLE learningnet_networks");
 
         Config::get()->delete(\LearningNet\PLUGIN_DISPLAY_NAME_ID);
 
