@@ -2,7 +2,6 @@
     "name": "milsen/learningnet",
     "description":"Learning path extraction",
     "require": {
-        "slim/slim": "^3.12"
     },
     "require-dev": {
         "phpunit/phpunit": "^7"
