@@ -3,6 +3,7 @@
 use LearningNet\Network\Network;
 use Fhaculty\Graph\Graph;
 use Graphp\GraphViz\GraphViz;
+use Mooc\DB\Block;
 
 class NetController extends PluginController {
 
@@ -16,29 +17,12 @@ class NetController extends PluginController {
         $this->cwActivated = $this->coursewareInstalled();
 
         // Get all Courseware sections of this course.
-        // TODO Use SORM MOOC/DB/Block?
         $courseId = \Request::option('cid');
+        $sectionIds = array_map(function ($entry) { return $entry['id']; },
+            Mooc\DB\Block::findBySQL("type = 'Section' AND seminar_id = ?", array($courseId))
+        );
         $this->cid = $courseId;
-
-        $db = DBManager::get();
-        $stmt = $db->prepare("
-            SELECT
-                id
-            FROM
-                mooc_blocks
-            WHERE
-                type = 'Section'
-            AND
-                seminar_id = :cid
-        ");
-        $stmt->bindParam(':cid', $courseId);
-        $stmt->execute();
-
-        $section_ids = array();
-        while ($row = $stmt->fetch(PDO::FETCH_NUM, PDO::FETCH_ORI_NEXT)) {
-            array_push($section_ids, $row[0]);
-        }
-        $this->sections = $section_ids;
+        $this->sections = $sectionIds;
 
         // Show example graph.
         $graph = new Fhaculty\Graph\Graph();
