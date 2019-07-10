@@ -1,5 +1,5 @@
 {
-    "name": "milsen@uos.de/LearningNet",
+    "name": "milsen/learningnet",
     "description":"Learning path extraction",
     "require": {
         "slim/slim": "^3.12"
