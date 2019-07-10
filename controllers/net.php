@@ -1,5 +1,9 @@
 <?php
 
+use LearningNet\Network\Network;
+use Fhaculty\Graph\Graph;
+use Graphp\GraphViz\GraphViz;
+
 class NetController extends PluginController {
 
     /**
@@ -35,6 +39,22 @@ class NetController extends PluginController {
             array_push($section_ids, $row[0]);
         }
         $this->sections = $section_ids;
+
+        // Show example graph.
+        $graph = new Fhaculty\Graph\Graph();
+
+        $blue = $graph->createVertex('blue');
+        $blue->setAttribute('graphviz.color', 'blue');
+
+        $red = $graph->createVertex('red');
+        $red->setAttribute('graphviz.color', 'red');
+
+        $edge = $blue->createEdgeTo($red);
+        $edge->setAttribute('graphviz.color', 'grey');
+
+        $graphviz = new Graphp\GraphViz\GraphViz();
+        $graphviz->setFormat('svg');
+        $this->netsvg = $graphviz->createImageHtml($graph);
     }
 
     /**
