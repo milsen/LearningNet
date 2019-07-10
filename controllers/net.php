@@ -26,15 +26,17 @@ class NetController extends PluginController {
 
         // Show example graph.
         $graph = new Fhaculty\Graph\Graph();
+        $graph->setAttribute('graphviz.graph.rankdir', 'LR');
 
-        $blue = $graph->createVertex('blue');
-        $blue->setAttribute('graphviz.color', 'blue');
+        foreach ($sectionIds as $sectionId) {
+            $v = $graph->createVertex($sectionId);
+            /* $blue->setAttribute('graphviz.color', 'blue'); */
+        }
 
-        $red = $graph->createVertex('red');
-        $red->setAttribute('graphviz.color', 'red');
-
-        $edge = $blue->createEdgeTo($red);
-        $edge->setAttribute('graphviz.color', 'grey');
+        $vertices = $graph->getVertices()->getVector();
+        for ($i = 0; $i < count($vertices) - 1; $i++) {
+            $vertices[$i]->createEdgeTo($vertices[$i+1]);
+        }
 
         $graphviz = new Graphp\GraphViz\GraphViz();
         $graphviz->setFormat('svg');
