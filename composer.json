@@ -10,7 +10,8 @@
     },
     "autoload": {
         "psr-4": {
-            "LearningNet\\" : "src/"
+            "LearningNet\\" : "src/",
+            "LearningNet\\DB\\" : "models/"
         }
     }
 }
