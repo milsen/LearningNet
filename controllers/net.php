@@ -59,6 +59,12 @@ class NetController extends PluginController {
         return version_compare('4.4.2', $version) >= 0;
     }
 
+    public function ajaxdata_action()
+    {
+        // TODO example
+        $this->data = "digraph D { A -> {B, C, D} -> {F} }";
+    }
+
     /**
      * Callback function being called before an action is executed.
      */
@@ -77,5 +83,7 @@ class NetController extends PluginController {
         // Set help bar content.
         $description = _ln('Mit LearningNet können Lernmodule, die in Courseware erstellt wurden, in einem Netz angeordnet werden. Den Studierenden wird anhand auswählbarer Kriterien empfohlen, welche Lernmodule sie als nächstes bearbeiten sollen. Das Abarbeiten individualisierter Lernpfade ermöglicht es den Studierenden, effektiver zu lernen.');
         Helpbar::get()->addPlainText(_ln('Information'), $description, 'icons/white/info-circle.svg');
+
+        PageLayout::addScript($this->plugin->getPluginURL().'/assets/js/net.js');
     }
 }
