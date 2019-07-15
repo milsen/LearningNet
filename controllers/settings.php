@@ -1,6 +1,6 @@
 <?php
 
-class PropertiesController extends PluginController {
+class SettingsController extends PluginController {
 
     /**
      * Action for properties/index.php
@@ -17,8 +17,8 @@ class PropertiesController extends PluginController {
         parent::before_filter($action, $args);
 
         // Activate navigation item.
-        if (Navigation::hasItem('/course/learningnet/properties')) {
-            Navigation::activateItem('/course/learningnet/properties');
+        if (Navigation::hasItem('/course/learningnet/settings')) {
+            Navigation::activateItem('/course/learningnet/settings');
         }
     }
 }

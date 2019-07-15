@@ -66,11 +66,11 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
         $navigation->setActiveImage(Icon::create('group3', 'info'));
 
         // Add subnavigation.
-        // TODO edit/properties should be turned off for students
+        // TODO edit/settings should be turned off for students
         // TODO disable complete plugin without courseware
         $this->addSubnavigation($navigation, _cw('LearningNet'), 'net');
         $this->addSubnavigation($navigation, _cw('Stuktur bearbeiten'), 'edit');
-        $this->addSubnavigation($navigation, _cw('Einstellungen'), 'properties');
+        $this->addSubnavigation($navigation, _cw('Einstellungen'), 'settings');
         /* $this->addSubnavigation($navigation, _cw('Export'), 'export'); */
         /* $this->addSubnavigation($navigation, _cw('Import'), 'import'); */
 
