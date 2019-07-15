@@ -1,0 +1,28 @@
+{
+  "name": "learningnet",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build:dev": "webpack",
+    "build:prod": "NODE_ENV=production webpack",
+    "wds": "webpack-dev-server",
+    "zip": "zip -r learningnet-v$npm_package_version.zip assets controllers export import locale migrations models vendor views LICENSE LearningNet.php plugin.manifest README.md"
+  },
+  "keywords": [
+    "learning",
+    "graph",
+    "network"
+  ],
+  "author": "Max Ilsen",
+  "license": "GPL-2.0",
+  "dependencies": {
+    "dagre-d3": "^0.6.3"
+  },
+  "devDependencies": {
+    "webpack": "^4.35.3"
+  }
+}

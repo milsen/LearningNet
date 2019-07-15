@@ -9,4 +9,4 @@ LearningNet für Kurs <?= $cid; ?>: <br>
 ?>
 
 <br>
-<?= $netsvg; ?>
+<svg></svg>
