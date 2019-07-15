@@ -1,5 +1,6 @@
-import dagreD3 from 'dagre-d3/dist/dagre-d3';
-import * as d3 from "d3";
+import css from 'CSS/network.css';
+import dagreD3 from 'dagre-d3';
+import * as d3 from 'd3';
 
 const AJAX_ROUTE = "ajaxdata.php";
 let path = window.location.pathname;

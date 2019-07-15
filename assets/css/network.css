@@ -1,0 +1,10 @@
+.node rect, .node circle, .node ellipse {
+    stroke: #333;
+    fill: #fff;
+    stroke-width: 1.5px;
+}
+
+.edgePath path.path {
+    stroke: #333;
+    stroke-width: 1.5px;
+}
