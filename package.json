@@ -20,7 +20,8 @@
   "author": "Max Ilsen",
   "license": "GPL-2.0",
   "dependencies": {
-    "dagre-d3": "^0.6.3"
+    "dagre-d3": "^0.6.3",
+    "graphlib-dot": "^0.6.2"
   },
   "devDependencies": {
     "css-loader": "^3.0.0",
