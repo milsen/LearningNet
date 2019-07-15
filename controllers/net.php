@@ -1,9 +1,8 @@
 <?php
 
-use LearningNet\Network\Network;
-use Fhaculty\Graph\Graph;
-use Graphp\GraphViz\GraphViz;
 use Mooc\DB\Block;
+use LearningNet\Network\Network;
+use LearningNet\DB\Networks;
 
 class NetController extends PluginController {
 
@@ -16,31 +15,9 @@ class NetController extends PluginController {
         // Member variables can be used in corresponding view.
         $this->cwActivated = $this->coursewareInstalled();
 
-        // Get all Courseware sections of this course.
+        // Get all Courseware section ids of this course.
         $courseId = \Request::option('cid');
-        $sectionIds = array_map(function ($entry) { return $entry['id']; },
-            Mooc\DB\Block::findBySQL("type = 'Section' AND seminar_id = ?", array($courseId))
-        );
         $this->cid = $courseId;
-        $this->sections = $sectionIds;
-
-        // Show example graph.
-        $graph = new Fhaculty\Graph\Graph();
-        $graph->setAttribute('graphviz.graph.rankdir', 'LR');
-
-        foreach ($sectionIds as $sectionId) {
-            $v = $graph->createVertex($sectionId);
-            /* $blue->setAttribute('graphviz.color', 'blue'); */
-        }
-
-        $vertices = $graph->getVertices()->getVector();
-        for ($i = 0; $i < count($vertices) - 1; $i++) {
-            $vertices[$i]->createEdgeTo($vertices[$i+1]);
-        }
-
-        $graphviz = new Graphp\GraphViz\GraphViz();
-        $graphviz->setFormat('svg');
-        $this->netsvg = $graphviz->createImageHtml($graph);
     }
 
     /**
@@ -61,8 +38,23 @@ class NetController extends PluginController {
 
     public function ajaxdata_action()
     {
-        // TODO example
-        $this->data = "digraph D { A -> {B, C, D} -> {F} }";
+        $graphRep = LearningNet\DB\Networks::find($courseId);
+
+        $network = "";
+        if ($graphRep) {
+            // Get graph from database if possible.
+            $network = $graphRep->network;
+        } else {
+            // Create new network with one isolated node for each section.
+            $network = new LearningNet\Network\Network();
+            $courseId = \Request::get('cid');
+            $sections = Mooc\DB\Block::findBySQL(
+                "type = 'Section' AND seminar_id = ?", array($courseId));
+            $sectionIds = array_map(function ($sec) { return $sec['id']; }, $sections);
+            $network = "digraph D { " . join("; ", $sectionIds) . "; }";
+        }
+
+        $this->data = $network;
     }
 
     /**
