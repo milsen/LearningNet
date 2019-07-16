@@ -38,25 +38,48 @@ class NetController extends PluginController {
         $this->setupPage('settings');
     }
 
-    public function ajaxdata_action()
+    /**
+     * AJAX: Get dot representation of the network for a certain seminar_id
+     */
+    public function data_action()
     {
+        $courseId = \Request::get('cid');
         $graphRep = LearningNet\DB\Networks::find($courseId);
 
         $network = "";
-        if ($graphRep) {
-            // Get graph from database if possible.
-            $network = $graphRep->network;
-        } else {
+        if ($graphRep === null) {
             // Create new network with one isolated node for each section.
-            $network = new LearningNet\Network\Network();
-            $courseId = \Request::get('cid');
             $sections = Mooc\DB\Block::findBySQL(
                 "type = 'Section' AND seminar_id = ?", array($courseId));
             $sectionIds = array_map(function ($sec) { return $sec['id']; }, $sections);
             $network = "digraph D { " . join("; ", $sectionIds) . "; }";
+
+            // Store new network in database.
+            $graphRep = new LearningNet\DB\Networks();
+            $graphRep->seminar_id = $courseId;
+            $graphRep->network = $network;
+            $graphRep->store();
+        } else {
+            // Get graph from database if possible.
+            $network = $graphRep->network;
         }
 
         $this->render_text($network);
+    }
+
+    /**
+     * AJAX: Store dot representation of the network for a certain seminar_id
+     */
+    public function store_action()
+    {
+        $courseId = \Request::get('cid');
+        $network = \Request::get('network');
+
+        $graphRep = LearningNet\DB\Networks::find($courseId);
+        $graphRep->network = $network;
+        $graphRep->store();
+
+        $this->render_text("Network stored successfully!");
     }
 
     /**

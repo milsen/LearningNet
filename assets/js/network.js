@@ -1,17 +1,18 @@
 import css from 'CSS/network.css';
 import dagreD3 from 'dagre-d3';
+import graphlib from 'graphlib';
 import dot from 'graphlib-dot';
 import * as d3 from 'd3';
 
-const AJAX_ROUTE = "ajaxdata";
+const DATA_ROUTE = 'data';
+
+export function ajaxURL(route) {
+    return window.STUDIP.ABSOLUTE_URI_STUDIP + 'plugins.php/learningnet/net/' +
+        route + window.location.search;
+}
 
 export function withGraphData(func) {
-    let path = window.location.pathname;
-    let basePath = path.substring(0, path.lastIndexOf('/') + 1);
-    let ajaxUrl = window.location.origin + basePath + "/" +
-        AJAX_ROUTE + window.location.search;
-
-    $.get(ajaxUrl, func);
+    $.get(ajaxURL(DATA_ROUTE), func);
 }
 
 export function setupNetwork() {
@@ -27,6 +28,7 @@ export function setupNetwork() {
 }
 
 export function drawNetwork(dotInput) {
+    console.log("draw: " + dotInput);
     let g;
     try {
         g = dot.read(dotInput);
@@ -59,7 +61,19 @@ export function drawNetwork(dotInput) {
     render(d3.select("svg g"), g);
 
     // Center the graph.
+    // TODO fix graph size, just zoom.
     let svg = d3.select("svg");
     svg.attr("height", g.graph().height + 5);
     svg.attr("width", g.graph().width + 5);
+}
+
+export function checkNetwork(dotInput) {
+    let graph;
+    try {
+        graph = dot.read(dotInput);
+    } catch (e) {
+        return false;
+    }
+
+    return graphlib.alg.isAcyclic(graph);
 }

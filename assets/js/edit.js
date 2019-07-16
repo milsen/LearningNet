@@ -24,4 +24,30 @@ $(function() {
 
     // Set drawing handler for keyup-event in input form.
     $('#inputGraph').keyup(function() { tryDraw(); });
+
+    const STORE_ROUTE = "store";
+
+    // TODO replace console.log by messages on page
+    $('#submit').click(function() {
+        if (network.checkNetwork(inputGraph.value)) {
+            $.ajax({
+                url: network.ajaxURL(STORE_ROUTE),
+                type: 'POST',
+                data: { network : inputGraph.value },
+                success: function(msg) {
+                    console.log(msg);
+                }
+            });
+        } else {
+            console.log("input graph not correct")
+        }
+    });
 });
+
+// TODO
+// * add operator nodes
+// * delete operator nodes
+// * add edges (check acyclicity?)
+// * delete edges
+// * change conditions
+// * change join numbers
