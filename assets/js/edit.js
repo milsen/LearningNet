@@ -39,6 +39,7 @@ function drawNetwork(dotInput) {
     render(d3.select("svg g"), g);
 
     // Center the graph.
+    let svg = d3.select("svg");
     svg.attr("height", g.graph().height + 5);
     svg.attr("width", g.graph().width + 5);
 }
@@ -63,9 +64,19 @@ $(function() {
     });
     svg.call(zoom);
 
+    // Set initial input for form.
+    const AJAX_ROUTE = "ajaxdata";
+    let path = window.location.pathname;
+    let basePath = path.substring(0, path.lastIndexOf('/') + 1);
+    let ajaxUrl = window.location.origin + basePath + "/" + AJAX_ROUTE + window.location.search;
+
+    $.get(ajaxUrl, function(data, status) {
+        $('#inputGraph').val(data);
+
+        // Draw network once initially.
+        tryDraw();
+    });
+
     // Set drawing handler for keyup-event in input form.
     $('#inputGraph').keyup(function() { tryDraw(); });
-
-    // Draw network once initially.
-    tryDraw();
 });
