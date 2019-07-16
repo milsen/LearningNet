@@ -56,7 +56,7 @@ class NetController extends PluginController {
             $network = "digraph D { " . join("; ", $sectionIds) . "; }";
         }
 
-        $this->data = $network;
+        $this->render_text($network);
     }
 
     /**
