@@ -4,10 +4,10 @@ import dot from 'graphlib-dot';
 import * as d3 from 'd3';
 
 $(function() {
-    const AJAX_ROUTE = "ajaxdata.php";
+    const AJAX_ROUTE = "ajaxdata";
     let path = window.location.pathname;
-    // let basePath = path.substring(0, path.lastIndexOf('/') + 1);
-    let ajaxUrl = window.location.origin + path + "/" + AJAX_ROUTE + window.location.search;
+    let basePath = path.substring(0, path.lastIndexOf('/') + 1);
+    let ajaxUrl = window.location.origin + basePath + "/" + AJAX_ROUTE + window.location.search;
     console.log(window.location);
     console.log(ajaxUrl);
 

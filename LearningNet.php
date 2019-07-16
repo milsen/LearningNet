@@ -68,7 +68,7 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
         // Add subnavigation.
         // TODO edit/settings should be turned off for students
         // TODO disable complete plugin without courseware
-        $this->addSubnavigation($navigation, _cw('LearningNet'), 'net');
+        $this->addSubnavigation($navigation, _cw('LearningNet'), 'index');
         $this->addSubnavigation($navigation, _cw('Stuktur bearbeiten'), 'edit');
         $this->addSubnavigation($navigation, _cw('Einstellungen'), 'settings');
         /* $this->addSubnavigation($navigation, _cw('Export'), 'export'); */
@@ -87,7 +87,7 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
      */
     private function addSubnavigation(&$navigation, $title, $route)
     {
-        $url = PluginEngine::getURL($this, compact('cid'), $route, true);
+        $url = PluginEngine::getURL($this, compact('cid'), 'net/' . $route, true);
         $nav_item = new Navigation($title, $url);
         $navigation->addSubnavigation($route, $nav_item);
     }

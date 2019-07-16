@@ -9,9 +9,9 @@ module.exports = {
     watch: true,
     devtool: isProd ? 'source-map' : '#eval-source-map',
     entry: {
-        net: path.join(dirAssets, 'js', 'net.js'),
+        index: path.join(dirAssets, 'js', 'index.js'),
         edit: path.join(dirAssets, 'js', 'edit.js'),
-        settings: path.join(dirAssets, 'js', 'edit.js')
+        settings: path.join(dirAssets, 'js', 'settings.js')
     },
     output: {
         path: path.join(dirAssets, './dist'),
