@@ -20,5 +20,7 @@ class EditController extends PluginController {
         if (Navigation::hasItem('/course/learningnet/edit')) {
             Navigation::activateItem('/course/learningnet/edit');
         }
+
+        PageLayout::addScript($this->plugin->getPluginURL().'/assets/dist/edit.js');
     }
 }
