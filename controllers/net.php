@@ -4,8 +4,8 @@ use Mooc\DB\Block;
 use LearningNet\Network\Network;
 use LearningNet\DB\Networks;
 
-define('EXE_PATH', '/src/Pathfinder/build/src/learningnet-pathfinder');
-define('EXAMPLE_PATH', '/src/Pathfinder/example.lgf');
+define('EXE_PATH', '/pathfinder/build/src/learningnet-pathfinder');
+define('EXAMPLE_PATH', '/pathfinder/example.lgf');
 
 class NetController extends PluginController {
 
