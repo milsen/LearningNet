@@ -4,6 +4,9 @@ use Mooc\DB\Block;
 use LearningNet\Network\Network;
 use LearningNet\DB\Networks;
 
+define('EXE_PATH', '/src/Pathfinder/build/src/learningnet-pathfinder');
+define('EXAMPLE_PATH', '/src/Pathfinder/example.lgf');
+
 class NetController extends PluginController {
 
     /**
@@ -20,6 +23,11 @@ class NetController extends PluginController {
         // Get all Courseware section ids of this course.
         $courseId = \Request::option('cid');
         $this->cid = $courseId;
+        $output = array();
+        exec($this->plugin->getPluginPath() . EXE_PATH .
+            ' "$(cat ' . $this->plugin->getPluginPath() . EXAMPLE_PATH . ')"'
+        , $output);
+        $this->out = $output;
     }
 
     /**
@@ -93,8 +101,9 @@ class NetController extends PluginController {
             Navigation::activateItem($item);
         }
 
-        PageLayout::addScript($this->plugin->getPluginURL().'/assets/dist/' . $keyword . '.js');
-
+        PageLayout::addScript(
+            $this->plugin->getPluginURL() . '/assets/dist/' . $keyword . '.js'
+        );
     }
 
     /**

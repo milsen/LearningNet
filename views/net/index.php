@@ -1,4 +1,8 @@
 LearningNet für Kurs <?= $cid; ?>: <br>
+<?php
+    print_r($out);
+?>
+<br>
 
 <?php
     if ($cwActivated) {
