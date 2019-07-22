@@ -2,23 +2,48 @@
 
 # weight only needed for passing to lemonlib, not to frontend
 label  type name                    cost
-1      0    "sectionname with link" 13
-2      1    "sectionname with link" 13
-3      2    "sectionname with link" 42.4
-4      10   "ignored"               0
-5      11   "ignored"               0
-6      20   "ignored"               0
-7      20   "ignored"               0
-# can splits/joins be completed?
+1      2   "sectionname with link" 13
+2      2   "sectionname with link" 13
+3      2   "sectionname with link" 42.4
+4      2   "ignored"               0
+5      10  "ignored"               0
+6      0   "ignored"               0
+7      0   "ignored"               0
+8      22  "ignored"               0
+9      10  "ignored"               0
+10     0   "ignored"               0
+11     0   "ignored"               0
+
+# can splits/joins be completed? no, not stored in Stud:IP db
+# 0: inactive unit
+# 1: active unit
+# 2: completed unit
+# 10: split
+# 11: condition
+# 20: join with one needed inedge
+# 20 + x: join with (x+1) needed completed inedges
+#
 
 # has map or - if no map in header
 # weight only needed for passing to lemonlib, not to frontend
+# conditions for frontend
 @arcs
     cost
 1 2 2.24
-5 7 3.14
+4 5 10
+5 6 11
+5 7 2
+2 8 9
+3 8 9
+6 8 9
+7 8 9
+8 9 333
+9 10 98
+9 11 28
 
 @attributes
 # target might be join or unit
 # multiple target might be combined with a target join
 target 7
+
+#@extrasectionpossible
