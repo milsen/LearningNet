@@ -60,7 +60,7 @@ export function drawNetwork(data) {
         }
         if (node.class === "join") {
             // Show how many predecessors have to be completed for the join.
-            node.label = (parseInt(node.type) - 20).toString() + "!";
+            node.label = (parseInt(node.type) - 20).toString() + "*";
         }
     });
 

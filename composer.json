@@ -2,8 +2,6 @@
     "name": "milsen/learningnet",
     "description":"Learning path extraction",
     "require": {
-        "clue/graph": "~0.9.0",
-        "graphp/graphviz": "~0.2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^7"
