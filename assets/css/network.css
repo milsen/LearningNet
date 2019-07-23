@@ -3,15 +3,31 @@ svg {
 }
 
 .node {
+    stroke: white;
+    stroke-width: 1.5px;
     white-space: nowrap;
+    border-width: 2px;
 }
 
-.node rect,
-.node circle,
-.node ellipse {
-    stroke: #333;
-    fill: #fff;
-    stroke-width: 1.5px;
+.node.inactive {
+    stroke: black;
+    fill: white;
+}
+
+.node.active {
+    fill: #899ab9;
+}
+
+.node.completed {
+    fill: #28497c;
+}
+
+.node.join,
+.node.split {
+    fill: light-gray;
+}
+
+.node.target {
 }
 
 .cluster rect {

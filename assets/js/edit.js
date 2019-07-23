@@ -39,7 +39,7 @@ $(function() {
                 }
             });
         } else {
-            console.log("input graph not correct")
+            console.log("Input graph not correct.");
         }
     });
 });

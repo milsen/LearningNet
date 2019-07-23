@@ -21,11 +21,11 @@
   "license": "GPL-2.0",
   "dependencies": {
     "dagre-d3": "^0.6.3",
-    "graphlib-dot": "^0.6.2"
+    "graphlib": "^2.1.7"
   },
   "devDependencies": {
-    "css-loader": "^3.0.0",
+    "css-loader": "^3.1.0",
     "style-loader": "^0.23.1",
-    "webpack": "^4.35.3"
+    "webpack": "^4.36.1"
   }
 }

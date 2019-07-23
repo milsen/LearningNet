@@ -23,11 +23,6 @@ class NetController extends PluginController {
         // Get all Courseware section ids of this course.
         $courseId = \Request::option('cid');
         $this->cid = $courseId;
-        $output = array();
-        exec($this->plugin->getPluginPath() . EXE_PATH .
-            ' "$(cat ' . $this->plugin->getPluginPath() . EXAMPLE_PATH . ')"'
-        , $output);
-        $this->out = $output;
     }
 
     /**
@@ -49,7 +44,7 @@ class NetController extends PluginController {
     /**
      * AJAX: Get dot representation of the network for a certain seminar_id
      */
-    public function data_action()
+    public function network_action()
     {
         $courseId = \Request::get('cid');
         $graphRep = LearningNet\DB\Networks::find($courseId);
@@ -60,7 +55,7 @@ class NetController extends PluginController {
             $sections = Mooc\DB\Block::findBySQL(
                 "type = 'Section' AND seminar_id = ?", array($courseId));
             $sectionIds = array_map(function ($sec) { return $sec['id']; }, $sections);
-            $network = "digraph D { " . join("; ", $sectionIds) . "; }";
+            $network = "@nodes\nlabel\n" . join("\n", $sectionIds);
 
             // Store new network in database.
             $graphRep = new LearningNet\DB\Networks();
@@ -73,6 +68,18 @@ class NetController extends PluginController {
         }
 
         $this->render_text($network);
+    }
+
+    /**
+     * AJAX: Get activity of nodes and recommended path for a certain seminar_id/user
+     */
+    public function user_data_action()
+    {
+        $output = array();
+        exec($this->plugin->getPluginPath() . EXE_PATH .
+            ' "$(cat ' . $this->plugin->getPluginPath() . EXAMPLE_PATH . ')"'
+        , $output);
+        $this->render_json($output);
     }
 
     /**
