@@ -19,10 +19,6 @@ class NetController extends PluginController {
         // Find out whether the correct Courseware version is installed.
         // Member variables can be used in corresponding view.
         $this->cwActivated = $this->coursewareInstalled();
-
-        // Get all Courseware section ids of this course.
-        $courseId = \Request::option('cid');
-        $this->cid = $courseId;
     }
 
     /**
