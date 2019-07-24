@@ -78,7 +78,7 @@ void setActivity(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 				type[v] = Unit::active;
 				break;
 			case Unit::active:
-				std::cout << "Input has active units set already. Why?" << std::endl;
+				std::cerr << "Input has active units set already. Why?" << std::endl;
 				break;
 			case Unit::completed:
 			case Unit::split:
@@ -96,7 +96,7 @@ void setActivity(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 				}
 				break;
 			default:
-				std::cout << "Input has nodes of unknown type." << std::endl;
+				std::cerr << "Input has nodes of unknown type." << std::endl;
 				break;
 		}
 	}
@@ -105,28 +105,49 @@ void setActivity(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 int main(int argc, char *argv[])
 {
 	// Read lemon graph file given as arg.
-	std::istringstream iss(argv[1]);
+	std::istringstream networkIss(argv[1]);
 	ListDigraph g;
+	ListDigraph::NodeMap<int> section(g);
 	ListDigraph::NodeMap<int> type(g);
-	ListDigraph::NodeMap<double> vCost(g);
-	ListDigraph::ArcMap<double> eCost(g);
+	/* ListDigraph::NodeMap<double> vCost(g); */
+	/* ListDigraph::ArcMap<double> eCost(g); */
 	ListDigraph::Node tgt;
 
-	DigraphReader<ListDigraph>(g, iss)
+	DigraphReader<ListDigraph>(g, networkIss)
 		.nodeMap("type", type)
-		.nodeMap("cost", vCost)
-		.arcMap("cost", eCost)
+		.nodeMap("section", section)
+		/* .nodeMap("cost", vCost) */
+		/* .arcMap("cost", eCost) */
 		.node("target", tgt)
 		.run();
 
+	std::map<int, ListDigraph::Node> sectionNode;
+	for (ListDigraph::NodeIt v(g); v != INVALID; ++v) {
+		sectionNode[section[v]] = v;
+	}
+
+	// Set type of completed units to 2.
+	// Completed units are given by agv[2], string is split using vector c'tor.
+	std::istringstream completedIss(argv[2]);
+	std::vector<std::string> completedSections(
+		std::istream_iterator<std::string>{completedIss},
+		std::istream_iterator<std::string>()
+	);
+	for (std::string str : completedSections) {
+		int completedSection = std::stoi(str);
+		type[sectionNode[completedSection]] = 2;
+	}
+
 	setActivity(g, type);
 
-	// TODO exported node ids are different from input labels
+	// TODO give out only active nodes, only type? use skipArcs
+	// next line: next recommended item
+	// next line: recommended path as list of nodes
 	// Write lemon graph file to cout.
 	DigraphWriter<ListDigraph>(g, std::cout)
 		.nodeMap("type", type)
-		.nodeMap("cost", vCost)
-		.arcMap("cost", eCost)
+		.nodeMap("section", section)
+		/* .skipArcs() */
 		.node("target", tgt)
         .run();
 

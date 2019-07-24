@@ -50,8 +50,8 @@ export function ajaxURL(route) {
         route + window.location.search;
 }
 
-export function withGraphData(func) {
-    $.get(ajaxURL(DATA_ROUTE), func);
+export function withGraphData(func, getUserData = false) {
+    $.get(ajaxURL(DATA_ROUTE), { getUserData : getUserData }, func);
 }
 
 export function withSectionTitles(func) {

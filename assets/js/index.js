@@ -4,5 +4,5 @@ $(function() {
     network.withGraphData(function(data) {
         network.setupNetwork();
         network.drawNetwork(data);
-    });
+    }, true);
 });

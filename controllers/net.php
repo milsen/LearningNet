@@ -38,11 +38,14 @@ class NetController extends PluginController {
     }
 
     /**
-     * AJAX: Get dot representation of the network for a certain seminar_id
+     * AJAX: Get representation of the network for a certain seminar_id
+     * If getUserData is set, get activity of nodes and recommended path for
+     * a certain seminar_id/user as well.
      */
     public function network_action()
     {
         $courseId = \Request::get('cid');
+        $getUserData = \Request::get('getUserData');
         $graphRep = LearningNet\DB\Networks::find($courseId);
 
         $network = "";
@@ -63,19 +66,23 @@ class NetController extends PluginController {
             $network = $graphRep->network;
         }
 
-        $this->render_text($network);
-    }
+        if ($getUserData === "true") {
+            //  Get completed sections.
+            $userId = isset($GLOBALS['user']) ? $GLOBALS['user']->id : 'nobody';
+            $completed = Mooc\DB\Field::findBySQL(
+                "user_id = ? AND name = 'visited' AND json_data = 'true'", array($userId));
+            $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
+            $completedIds = join(" ", $completedIds);
 
-    /**
-     * AJAX: Get activity of nodes and recommended path for a certain seminar_id/user
-     */
-    public function user_data_action()
-    {
-        $output = array();
-        exec($this->plugin->getPluginPath() . EXE_PATH .
-            ' "$(cat ' . $this->plugin->getPluginPath() . EXAMPLE_PATH . ')"'
-        , $output);
-        $this->render_json($output);
+            $output = array();
+            $command = $this->plugin->getPluginPath() . EXE_PATH .
+                ' "' . $graphRep->network . '" ' .
+                ' "' . $completedIds . '"';
+            exec($command, $output);
+            $network = join("\n", $output);
+        }
+
+        $this->render_text($network);
     }
 
     /**
