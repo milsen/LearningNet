@@ -1,18 +1,18 @@
 @nodes
 
 # weight only needed for passing to lemonlib, not to frontend
-label  type section name                    cost
-1      2    19      "sectionname with link" 13
-2      2    19      "sectionname with link" 13
-3      2    19      "sectionname with link" 42.4
-4      2    19      "ignored"               0
-5      10   19      "ignored"               0
-6      0    19      "ignored"               0
-7      0    19      "ignored"               0
-8      22   19      "ignored"               0
-9      10   19      "ignored"               0
-10     0    19      "ignored"               0
-11     0    19      "ignored"               0
+label  type section  cost
+1      2    19       13
+2      2    21       13
+3      2    34       42.4
+4      2    25       0
+5      10   0        0
+6      0    27       0
+7      0    33       0
+8      22   0        0
+9      10   0        0
+10     0    35       0
+11     0    36       0
 
 # can splits/joins be completed? no, not stored in Stud:IP db
 # 0: inactive unit

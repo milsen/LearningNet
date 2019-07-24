@@ -83,6 +83,23 @@ class NetController extends PluginController {
     }
 
     /**
+     * AJAX: Get map of ids to titles of all Courseware sections
+     */
+    public function section_titles_action()
+    {
+        $courseId = \Request::get('cid');
+        $sectionTitles = array();
+
+        $sections = Mooc\DB\Block::findBySQL(
+            "type = 'Section' AND seminar_id = ?", array($courseId));
+        foreach ($sections as $section) {
+            $sectionTitles[$section['id']] = $section['title'];
+        }
+
+        $this->render_json($sectionTitles);
+    }
+
+    /**
      * AJAX: Store dot representation of the network for a certain seminar_id
      */
     public function store_action()

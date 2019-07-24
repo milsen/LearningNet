@@ -5,6 +5,7 @@ import graphlib from 'graphlib';
 import * as d3 from 'd3';
 
 const DATA_ROUTE = 'network';
+const SECTION_ROUTE = 'section_titles';
 
 function typeToClass(type) {
     type = parseInt(type);
@@ -53,6 +54,10 @@ export function withGraphData(func) {
     $.get(ajaxURL(DATA_ROUTE), func);
 }
 
+export function withSectionTitles(func) {
+    $.get(ajaxURL(SECTION_ROUTE), func);
+}
+
 export function setupNetwork() {
     // Set up an SVG group so that we can translate the final graph.
     let svg = d3.select("svg");
@@ -73,53 +78,55 @@ export function drawNetwork(data) {
     }
 
     // Set styles of nodes: CSS classes, labels etc.
-    g.nodes().forEach(function(v) {
-        let node = g.node(v);
-        node.rx = node.ry = 5;
+    withSectionTitles(function(sectionTitles) {
+        g.nodes().forEach(function(v) {
+            let node = g.node(v);
+            node.rx = node.ry = 5;
 
-        node.class = typeToClass(node.type);
-        if (node.class === "split") {
-            node.label = "";
-        } else if (node.class === "join") {
-            // Show how many predecessors have to be completed for the join.
-            node.label = (parseInt(node.type) - 20).toString() + "*";
-        } else {
-            // Label with link.
-            node.labelType = 'svg';
-            node.label = createNodeLabel(node.section, node.name);
+            node.class = typeToClass(node.type);
+            if (node.class === "split") {
+                node.label = "";
+            } else if (node.class === "join") {
+                // Show how many predecessors have to be completed for the join.
+                node.label = (parseInt(node.type) - 20).toString() + "*";
+            } else {
+                // Label with link.
+                node.labelType = 'svg';
+                node.label = createNodeLabel(node.section, sectionTitles[node.section]);
+            }
+        });
+
+        // Set style of target node.
+        let tgtNode = g.node(g.graph().target);
+        if (tgtNode) {
+            tgtNode.class += " target";
+            tgtNode.rx = tgtNode.ry = 100;
         }
+
+        // Set margin if not present already.
+        if (!g.graph().hasOwnProperty("marginx") &&
+            !g.graph().hasOwnProperty("marginy")) {
+            g.graph().marginx = 20;
+            g.graph().marginy = 20;
+        }
+
+        // Set transition.
+        g.graph().transition = function(selection) {
+            return selection.transition().duration(500);
+        };
+
+        // Create the renderer.
+        let render = new dagreD3.render();
+
+        // Run the renderer. This is what draws the final graph.
+        render(d3.select("svg g"), g);
+
+        // Center the graph.
+        // TODO fix graph size, just zoom.
+        let svg = d3.select("svg");
+        svg.attr("height", g.graph().height + 5);
+        svg.attr("width", g.graph().width + 5);
     });
-
-    // Set style of target node.
-    let tgtNode = g.node(g.graph().target);
-    if (tgtNode) {
-        tgtNode.class += " target";
-        tgtNode.rx = tgtNode.ry = 100;
-    }
-
-    // Set margin if not present already.
-    if (!g.graph().hasOwnProperty("marginx") &&
-        !g.graph().hasOwnProperty("marginy")) {
-        g.graph().marginx = 20;
-        g.graph().marginy = 20;
-    }
-
-    // Set transition.
-    g.graph().transition = function(selection) {
-        return selection.transition().duration(500);
-    };
-
-    // Create the renderer.
-    let render = new dagreD3.render();
-
-    // Run the renderer. This is what draws the final graph.
-    render(d3.select("svg g"), g);
-
-    // Center the graph.
-    // TODO fix graph size, just zoom.
-    let svg = d3.select("svg");
-    svg.attr("height", g.graph().height + 5);
-    svg.attr("width", g.graph().width + 5);
 }
 
 export function checkNetwork(data) {
