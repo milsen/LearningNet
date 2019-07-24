@@ -1,19 +1,17 @@
 @nodes
-
-# weight only needed for passing to lemonlib, not to frontend
-label  type section  cost
-1      0    19       13
-2      0    21       13
-3      0    34       42.4
-4      0    25       0
-5      10   0        0
-6      0    27       0
-7      0    33       0
-8      22   0        0
-9      10   0        0
-10     0    35       0
-11     0    36       0
-
+label	type	section
+0	0	19
+1	0	21
+2	0	34
+3	0	25
+4	10	0
+5	0	27
+6	0	33
+7	22	0
+8	10	0
+9	0	35
+10	0	36
+11	0	37
 # can splits/joins be completed? no, not stored in Stud:IP db
 # 0: inactive unit
 # 1: active unit
@@ -22,28 +20,23 @@ label  type section  cost
 # 11: condition
 # 20: join with one needed inedge
 # 20 + x: join with (x+1) needed completed inedges
-#
-
-# has map or - if no map in header
-# weight only needed for passing to lemonlib, not to frontend
-# conditions for frontend
 @arcs
-    cost
-1 2 2.24
-4 5 10
-5 6 11
-5 7 2
-2 8 9
-3 8 9
-6 8 9
-7 8 9
-8 9 333
-9 10 98
-9 11 28
-
+# TODO: conditions for frontend
+		-
+0	1
+3	4
+4	5
+4	6
+1	7
+2	7
+5	7
+6	7
+7	8
+8	9
+8	10
+10    11
 @attributes
 # target might be join or unit
 # multiple target might be combined with a target join
-target 7
-
+target 11
 #@extrasectionpossible

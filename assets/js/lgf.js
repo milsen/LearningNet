@@ -14,7 +14,7 @@ function assign(elem, columns, headers) {
 
 function parseRow(row) {
     // Split at white space unless you're in a quoted string.
-    let columns = row.match(/[\w\.]+|"(?:\\."|[^"])*"/g);
+    let columns = row.match(/[^\s]+|"(?:\\."|[^"])*"/g);
     // Remove outer quotes of string values.
     columns.forEach(function(val, index, arr) {
         if (val[0] === "\"" && val.slice(-1) === "\"") {
