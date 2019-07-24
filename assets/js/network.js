@@ -21,6 +21,29 @@ function typeToClass(type) {
     }
 }
 
+function createNodeLabel(section, name) {
+    // Build label of node: link to courseware section.
+    let url = window.STUDIP.ABSOLUTE_URI_STUDIP +
+        'plugins.php/courseware/courseware' +
+        window.location.search + '&selected=' + section;
+
+    // Create the SVG label to pass in, must create in SVG namespace
+    // http://stackoverflow.com/questions/7547117/add-a-new-line-in-svg-bug-cannot-see-the-line
+    // This mimics the same way string labels get added in Dagre-D3
+    let svg_label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    let tspan = document.createElementNS('http://www.w3.org/2000/svg','tspan');
+    tspan.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve');
+    tspan.setAttribute('dy', '1em');
+    tspan.setAttribute('x', '1');
+    let link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
+    link.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', url);
+    link.setAttribute('target', '_blank')
+    link.textContent = name;
+    tspan.appendChild(link);
+    svg_label.appendChild(tspan);
+    return svg_label;
+}
+
 export function ajaxURL(route) {
     return window.STUDIP.ABSOLUTE_URI_STUDIP + 'plugins.php/learningnet/net/' +
         route + window.location.search;
@@ -45,7 +68,7 @@ export function setupNetwork() {
 export function drawNetwork(data) {
     let g = lgf.read(data);
     if (g === null) {
-        console.err("drawNetwork: Reading network from data failed.");
+        console.log("drawNetwork: Reading network from data failed.");
         return;
     }
 
@@ -57,17 +80,22 @@ export function drawNetwork(data) {
         node.class = typeToClass(node.type);
         if (node.class === "split") {
             node.label = "";
-        }
-        if (node.class === "join") {
+        } else if (node.class === "join") {
             // Show how many predecessors have to be completed for the join.
             node.label = (parseInt(node.type) - 20).toString() + "*";
+        } else {
+            // Label with link.
+            node.labelType = 'svg';
+            node.label = createNodeLabel(node.section, node.name);
         }
     });
 
     // Set style of target node.
     let tgtNode = g.node(g.graph().target);
-    tgtNode.class += " target";
-    tgtNode.rx = tgtNode.ry = 100;
+    if (tgtNode) {
+        tgtNode.class += " target";
+        tgtNode.rx = tgtNode.ry = 100;
+    }
 
     // Set margin if not present already.
     if (!g.graph().hasOwnProperty("marginx") &&

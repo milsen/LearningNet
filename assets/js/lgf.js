@@ -5,8 +5,23 @@ function assign(elem, columns, headers) {
         //TODO error?
     // }
     for (var i = 0; i < columns.length; i++) {
-        elem[headers[i]] = columns[i];
+        let attrName = headers[i];
+        // LGF labels are node ids, graphlib labels are text labels.
+        attrName = attrName === "label" ? "id" : attrName;
+        elem[attrName] = columns[i];
     }
+}
+
+function parseRow(row) {
+    // Split at white space unless you're in a quoted string.
+    let columns = row.match(/[\w\.]+|"(?:\\."|[^"])*"/g);
+    // Remove outer quotes of string values.
+    columns.forEach(function(val, index, arr) {
+        if (val[0] === "\"" && val.slice(-1) === "\"") {
+            arr[index] = JSON.parse(val); //val.slice(1,-1);
+        }
+    });
+    return columns;
 }
 
 export function read(lgfInput) {
@@ -34,7 +49,7 @@ export function read(lgfInput) {
             readingHeader = true;
         } else if (str !== '' && str[0] !== '#') {
             // Not empty, not a comment: Column of data.
-            let columns = str.split(/\s+/);
+            let columns = parseRow(str);
             switch (mode) {
                 case '@nodes':
                     if (readingHeader) {
@@ -42,11 +57,11 @@ export function read(lgfInput) {
                     } else {
                         let obj = {};
                         assign(obj, columns, nodeHeaders);
-                        if (!('label' in obj)) {
-                            console.log("read(lgfInput): No node label found.");
+                        if (!('id' in obj)) {
+                            console.log('read(lgfInput): No node label found.');
                             return null;
                         }
-                        g.setNode(obj.label, obj);
+                        g.setNode(obj.id, obj);
                     }
                     break;
                 case '@arcs':
