@@ -86,9 +86,11 @@ export function drawNetwork(data) {
             node.class = typeToClass(node.type);
             if (node.class === "split") {
                 node.label = "";
+                node.shape = "diamond";
             } else if (node.class === "join") {
                 // Show how many predecessors have to be completed for the join.
                 node.label = (parseInt(node.type) - 20).toString() + "*";
+                node.shape = "diamond";
             } else {
                 // Label with link.
                 node.labelType = 'svg';
@@ -100,7 +102,7 @@ export function drawNetwork(data) {
         let tgtNode = g.node(g.graph().target);
         if (tgtNode) {
             tgtNode.class += " target";
-            tgtNode.rx = tgtNode.ry = 100;
+            tgtNode.shape = "circle";
         }
 
         // Set margin if not present already.

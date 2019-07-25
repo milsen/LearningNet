@@ -24,7 +24,7 @@ svg {
 
 .node.join,
 .node.split {
-    fill: light-gray;
+    fill: #3c454e;
 }
 
 .node.target {
