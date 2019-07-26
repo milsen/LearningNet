@@ -1,15 +1,11 @@
 #include <lemon/arg_parser.h>
 #include <lemon/list_graph.h>
 #include <lemon/concepts/digraph.h>
-#include <lemon/lgf_reader.h>
-#include <unordered_map>
 #include <lemon/connectivity.h> // for dag
 #include <learningnet/LearningNet.hpp>
 
 using namespace lemon;
 using namespace learningnet;
-
-using Graph = ListDigraph;
 
 void topologicalSort(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 {
@@ -44,14 +40,14 @@ void topologicalSort(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 	}
 }
 
-void setActivity(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
+void setActivity(LearningNet &net)
 {
 	// sources = actives
 	std::vector<ListDigraph::Node> sources;
 
 	// Collect nodes with indegree 0.
-	for (ListDigraph::NodeIt v(g); v != INVALID; ++v) {
-		if (countInArcs(g, v) == 0) {
+	for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
+		if (countInArcs(net, v) == 0) {
 			sources.push_back(v);
 		}
 	}
@@ -59,9 +55,9 @@ void setActivity(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 	while (!sources.empty()) {
 		ListDigraph::Node v = sources.back();
 		sources.pop_back();
-		switch (type[v]) {
+		switch (net.getType(v)) {
 			case Unit::inactive:
-				type[v] = Unit::active;
+				net.setType(v, Unit::active);
 				break;
 			case Unit::active:
 				std::cerr << "Input has active units set already. Why?" << std::endl;
@@ -70,13 +66,16 @@ void setActivity(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 			case Unit::split:
 			case Unit::join:
 				// For all outedges (in the completed case: only one).
-				for (ListDigraph::OutArcIt a(g, v); a != INVALID; ++a) {
-					ListDigraph::Node u = g.target(a);
+				for (ListDigraph::OutArcIt a(net, v); a != INVALID; ++a) {
+					ListDigraph::Node u = net.target(a);
 					// Only join nodes can have multiple inedges.
 					// Push those to sources once alle necessary inedges were activated.
 					// TODO: changing directly number of howMany of join-nodes
 					// in type might not be good
-					if (type[u] <= Unit::join || --type[u] == Unit::join) {
+					if (net.getType(u) > Unit::join) {
+						net.setType(u, net.getType(u) - 1);
+					}
+					if (net.getType(u) <= Unit::join) {
 						sources.push_back(u);
 					}
 				}
@@ -88,29 +87,11 @@ void setActivity(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 	}
 }
 
-bool setActivity(const std::string &network, const std::string &completed)
+bool setActivity(LearningNet &net, const std::string &completed)
 {
-	// Read lemon graph file given as arg.
-	std::istringstream networkIss(network);
-	ListDigraph g;
-	ListDigraph::NodeMap<int> section(g);
-	ListDigraph::NodeMap<int> type(g);
-	ListDigraph::Node tgt;
-
-	try {
-		DigraphReader<ListDigraph>(g, networkIss)
-			.nodeMap("type", type)
-			.nodeMap("section", section)
-			.node("target", tgt)
-			.run();
-	} catch (Exception &e) {
-		std::cerr << e.what() << std::endl;
-		return false;
-	}
-
 	std::map<int, ListDigraph::Node> sectionNode;
-	for (ListDigraph::NodeIt v(g); v != INVALID; ++v) {
-		sectionNode[section[v]] = v;
+	for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
+		sectionNode[net.getSection(v)] = v;
 	}
 
 	// Set type of completed units to 2.
@@ -122,43 +103,22 @@ bool setActivity(const std::string &network, const std::string &completed)
 	);
 	for (std::string str : completedSections) {
 		int completedSection = std::stoi(str);
-		type[sectionNode[completedSection]] = 2;
+		net.setType(sectionNode[completedSection], 2);
 	}
 
-	setActivity(g, type);
+	setActivity(net);
 
 	// Write lemon graph file to cout.
-	DigraphWriter<ListDigraph>(g, std::cout)
-		.nodeMap("type", type)
-		.nodeMap("section", section)
-		.node("target", tgt)
-        .run();
+	net.write();
 
 	return true;
 }
 
-bool checkNetwork(const std::string &network)
+bool checkNetwork(const LearningNet &net)
 {
-	// Read lemon graph file given as arg.
-	std::istringstream networkIss(network);
-	ListDigraph g;
-	ListDigraph::NodeMap<int> section(g);
-	ListDigraph::NodeMap<int> type(g);
-	ListDigraph::Node tgt;
-
-	try {
-		DigraphReader<ListDigraph>(g, networkIss)
-			.nodeMap("type", type)
-			.nodeMap("section", section)
-			.node("target", tgt)
-			.run();
-	} catch (Exception &e) {
-		std::cerr << e.what() << std::endl;
-		return false;
-	}
-
 	// TODO when conditions exist, there must exist a path to target
-	return dag(g);
+	// => topological sort?
+	return dag(net);
 }
 
 /* createNetwork() */
@@ -226,19 +186,17 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (ap.given("network")) {
-		LearningNet net(network);
-	}
-
 	try {
 		// Execute action.
 		if (ap.given("check")) {
-			return checkNetwork(network);
+			LearningNet net(network);
+			return checkNetwork(net);
 		} else if (ap.given("create")) {
 			/* return createNetwork(sections); */
 			return EXIT_FAILURE;
 		} else if (ap.given("active")) {
-			return setActivity(network, sections);
+			LearningNet net(network);
+			return setActivity(net, sections);
 		} else if (ap.given("recnext")) {
 			return EXIT_FAILURE;
 		} else if (ap.given("recpath")) {
