@@ -1,18 +1,12 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-## Here comes the name of your project:
-
-SET(PROJECT_NAME "LEARNINGNET-PATHFINDER")
-
-## Change 'hg-tip' to the current version number of your project if you wish.
-## Optionally, you can leave it as is and set PROJECT_VERSION from
-## the cmake-gui when you make a release.
-## The last parameter is a help string displayed by CMAKE.
-SET(PROJECT_VERSION "x"
-    CACHE STRING "${PROJECT_NAME} version string")
+## Name of project, learningnet library and executable:
+SET(PROJECT_NAME "LEARNINGNET")
+set(LEARNINGNET_LIBRARIES "LN")
+set(EXECUTABLE "learningnet-pathfinder")
 
 ## Do not edit this.
-PROJECT(${PROJECT_NAME})
+PROJECT(${PROJECT_NAME} CXX)
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -71,27 +65,58 @@ ELSE()
   FIND_PACKAGE(LEMON REQUIRED)
 ENDIF()
 
-## This line finds doxygen (for document creation)
+INCLUDE_DIRECTORIES(${LEMON_INCLUDE_DIRS})
+
+# This line finds doxygen (for documentation creation)
 
 FIND_PACKAGE(Doxygen)
 
-## These are the include directories used by the compiler.
-
-INCLUDE_DIRECTORIES(
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_BINARY_DIR}
-  ${LEMON_INCLUDE_DIRS}
-)
-
+# Set warning flags
 IF(CMAKE_COMPILER_IS_GNUCXX)
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-ADD_SUBDIRECTORY(src)
 
-## Sometimes MSVC overwhelms you with compiler warnings which are impossible to
-## avoid. Then comment out these sections. Normally you won't need it as the
-## LEMON include headers suppress these warnings anyway.
+
+### LEARNINGNET_LIBRARIES
+# Collect all hpp/cpp-files in ./include/learningnet/ and ./src/learningnet.
+file(GLOB LN_HEADERS include/learningnet/*.hpp)
+file(GLOB LN_SOURCES src/learningnet/*.cpp)
+set(LN_SOURCES "${LN_HEADERS};${LN_SOURCES}")
+
+# Create the library.
+# For header-only library: add_library(${LEARNINGNET_LIBRARIES} INTERFACE)
+add_library(${LEARNINGNET_LIBRARIES} "${LN_SOURCES}")
+
+# Link LN with lemon.
+target_link_libraries(${LEARNINGNET_LIBRARIES} ${LEMON_LIBRARIES})
+
+# Specify the include-directory of the MCG library as ./include/.
+# For header-only library:
+# target_include_directories(${LEARNINGNET_LIBRARIES} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(${LEARNINGNET_LIBRARIES} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+
+### EXECUTABLE
+# Compile main.cpp to a binary with name ${EXECUTABLE}.
+add_executable(${EXECUTABLE} main.cpp)
+
+# Link ${EXECUTABLE} with lemon and learningnet.
+target_link_libraries(${EXECUTABLE} ${LEMON_LIBRARIES})
+target_link_libraries(${EXECUTABLE} ${LEARNINGNET_LIBRARIES})
+
+# This tells cmake to install the binary to $PREFIX/bin when 'make install'
+# is executed. You can give more targets separated by whitespaces.
+INSTALL(
+  TARGETS learningnet-pathfinder
+  RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+  COMPONENT bin
+)
+
+
+# Sometimes MSVC overwhelms you with compiler warnings which are impossible to
+# avoid. Then comment out these sections. Normally you won't need it as the
+# LEMON include headers suppress these warnings anyway.
 
 #IF(MSVC)
 #  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}

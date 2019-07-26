@@ -4,28 +4,12 @@
 #include <lemon/lgf_reader.h>
 #include <unordered_map>
 #include <lemon/connectivity.h> // for dag
+#include <learningnet/LearningNet.hpp>
 
 using namespace lemon;
+using namespace learningnet;
 
 using Graph = ListDigraph;
-
-class Unit {
-	private:
-		int m_underlying;
-
-	public:
-		static constexpr int inactive = 0;
-		static constexpr int active = 1;
-		static constexpr int completed = 2;
-		static constexpr int split = 10;
-		static constexpr int join = 20;
-
-		Unit(int v) : m_underlying(v) {}
-
-		operator int() {
-			return m_underlying;
-		}
-};
 
 void topologicalSort(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
 {
@@ -240,6 +224,10 @@ int main(int argc, char *argv[])
 	 || (ap.given("recpath") && !(ap.given("network") && ap.given("costs")))) {
 		std::cerr << "Not all necessary parameters for the given action found." << std::endl;
 		return EXIT_FAILURE;
+	}
+
+	if (ap.given("network")) {
+		LearningNet net(network);
 	}
 
 	try {

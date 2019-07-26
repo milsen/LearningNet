@@ -9,7 +9,7 @@ namespace LearningNet;
  */
 class NetworkCalculations
 {
-    const EXE_PATH = '/pathfinder/build/src/learningnet-pathfinder';
+    const EXE_PATH = '/pathfinder/build/learningnet-pathfinder';
 
     /**
      * The singleton instance.

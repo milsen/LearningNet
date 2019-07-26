@@ -4,13 +4,12 @@ FIND_PATH(LEMON_INCLUDE_DIR
   lemon/core.h
   HINTS ${LEMON_ROOT_DIR}/include
         "C:/Program Files/LEMON/include"
-        
+
 )
 FIND_LIBRARY(LEMON_LIBRARY
   NAMES lemon emon
   HINTS ${LEMON_ROOT_DIR}/lib
-        "C:/Program Files/LEMON/lib" 
-        
+        "C:/Program Files/LEMON/lib"
 )
 
 INCLUDE(FindPackageHandleStandardArgs)
