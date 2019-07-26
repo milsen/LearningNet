@@ -1,11 +1,8 @@
 <?php
 
 use Mooc\DB\Block;
-use LearningNet\Network\Network;
+use LearningNet\NetworkCalculations;
 use LearningNet\DB\Networks;
-
-define('EXE_PATH', '/pathfinder/build/src/learningnet-pathfinder');
-define('EXAMPLE_PATH', '/pathfinder/example.lgf');
 
 class NetController extends PluginController {
 
@@ -74,12 +71,8 @@ class NetController extends PluginController {
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
             $completedIds = join(" ", $completedIds);
 
-            $output = array();
-            $command = $this->plugin->getPluginPath() . EXE_PATH .
-                ' "' . $graphRep->network . '" ' .
-                ' "' . $completedIds . '"';
-            exec($command, $output);
-            $network = join("\n", $output);
+            $network = NetworkCalculations::getInstance($this->plugin->getPluginPath())
+                            ->getActives($graphRep->network, $completedIds);
         }
 
         $this->render_text($network);
