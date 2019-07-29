@@ -41,7 +41,7 @@ export function read(lgfInput) {
     let edgeHeaders = [];
 
     // For each line in LGF.
-    lgfInput.split('\n').forEach(function(str) {
+    for (let str of lgfInput.split('\n')) {
         str = str.trim();
         if (str[0] === '@') {
             // Section beginning.
@@ -72,6 +72,11 @@ export function read(lgfInput) {
                     } else {
                         let obj = {};
                         assign(obj, columns, edgeHeaders);
+                        if (!g.node(obj.src) || !g.node(obj.tgt)) {
+                            console.log(`read(lgfInput): Nodes ${obj.src} and` +
+                                ` ${obj.tgt} not both available for edge creation.`);
+                            return null;
+                        }
                         g.setEdge(obj.src, obj.tgt, obj);
                     }
                     break;
@@ -81,13 +86,16 @@ export function read(lgfInput) {
                     }
                     // Ignore attributes other than target.
                     break;
+                case '':
+                    console.log('read(lgfInput): Found data outside of section.');
+                    return null;
                 default:
                     console.log('Unknown section in LGF data.')
             }
 
             readingHeader = false;
         }
-    });
+    }
 
     return g;
 }
