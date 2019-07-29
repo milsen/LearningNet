@@ -1,130 +1,9 @@
 #include <lemon/arg_parser.h>
-#include <lemon/list_graph.h>
-#include <lemon/concepts/digraph.h>
-#include <lemon/connectivity.h> // for dag
-#include <learningnet/LearningNet.hpp>
+#include <learningnet/NetworkChecker.hpp>
+#include <learningnet/ActivitySetter.hpp>
 
 using namespace lemon;
 using namespace learningnet;
-
-void topologicalSort(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
-{
-	std::vector<ListDigraph::Node> sources;
-	ListDigraph::NodeMap<int> indeg(g);
-
-	// Get indegree for each node.
-	for (ListDigraph::ArcIt a(g); a != INVALID; ++a) {
-		indeg[g.target(a)]++;
-	}
-
-	// Collect nodes with indegree 0.
-	for (ListDigraph::NodeIt v(g); v != INVALID; ++v) {
-		if (indeg[v] == 0) {
-			sources.push_back(v);
-		}
-	}
-
-	int count = 0;
-	while (!sources.empty()) {
-		ListDigraph::Node v = sources.back();
-		sources.pop_back();
-		type[v] = count++;
-
-		// For all outedges:
-		for (ListDigraph::OutArcIt a(g, v); a != INVALID; ++a) {
-			ListDigraph::Node u = g.target(a);
-			if (--indeg[u] == 0) {
-				sources.push_back(u);
-			}
-		}
-	}
-}
-
-void setActivity(LearningNet &net)
-{
-	// sources = actives
-	std::vector<ListDigraph::Node> sources;
-
-	// Collect nodes with indegree 0.
-	for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
-		if (countInArcs(net, v) == 0) {
-			sources.push_back(v);
-		}
-	}
-
-	while (!sources.empty()) {
-		ListDigraph::Node v = sources.back();
-		sources.pop_back();
-		switch (net.getType(v)) {
-			case Unit::inactive:
-				net.setType(v, Unit::active);
-				break;
-			case Unit::active:
-				std::cerr << "Input has active units set already. Why?" << std::endl;
-				break;
-			case Unit::completed:
-			case Unit::split:
-			case Unit::join:
-				// For all outedges (in the completed case: only one).
-				for (ListDigraph::OutArcIt a(net, v); a != INVALID; ++a) {
-					ListDigraph::Node u = net.target(a);
-					// Only join nodes can have multiple inedges.
-					// Push those to sources once alle necessary inedges were activated.
-					// TODO: changing directly number of howMany of join-nodes
-					// in type might not be good
-					if (net.getType(u) > Unit::join) {
-						net.setType(u, net.getType(u) - 1);
-					}
-					if (net.getType(u) <= Unit::join) {
-						sources.push_back(u);
-					}
-				}
-				break;
-			default:
-				std::cerr << "Input has nodes of unknown type." << std::endl;
-				break;
-		}
-	}
-}
-
-bool setActivity(LearningNet &net, const std::string &completed)
-{
-	std::map<int, ListDigraph::Node> sectionNode;
-	for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
-		sectionNode[net.getSection(v)] = v;
-	}
-
-	// Set type of completed units to 2.
-	// Completed units are given by agv[2], string is split using vector c'tor.
-	std::istringstream completedIss(completed);
-	std::vector<std::string> completedSections(
-		std::istream_iterator<std::string>{completedIss},
-		std::istream_iterator<std::string>()
-	);
-	for (std::string str : completedSections) {
-		int completedSection = std::stoi(str);
-		net.setType(sectionNode[completedSection], 2);
-	}
-
-	setActivity(net);
-
-	// Write lemon graph file to cout.
-	net.write();
-
-	return true;
-}
-
-bool checkNetwork(const LearningNet &net)
-{
-	// TODO when conditions exist, there must exist a path to target
-	// => topological sort?
-	return dag(net);
-}
-
-/* createNetwork() */
-/* { */
-
-/* } */
 
 int main(int argc, char *argv[])
 {
@@ -172,7 +51,8 @@ int main(int argc, char *argv[])
 	// setting is in use.
 	try {
 		ap.parse();
-	} catch (ArgParserException &) {
+	} catch (ArgParserException &e) {
+		std::cout << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 
@@ -182,7 +62,7 @@ int main(int argc, char *argv[])
 	 || (ap.given("active")  && !(ap.given("network") && ap.given("sections")))
 	 || (ap.given("recnext") && !(ap.given("network") && ap.given("costs")))
 	 || (ap.given("recpath") && !(ap.given("network") && ap.given("costs")))) {
-		std::cerr << "Not all necessary parameters for the given action found." << std::endl;
+		std::cout << "Not all necessary parameters for the given action found." << std::endl;
 		return EXIT_FAILURE;
 	}
 
@@ -190,19 +70,24 @@ int main(int argc, char *argv[])
 		// Execute action.
 		if (ap.given("check")) {
 			LearningNet net(network);
-			return checkNetwork(net);
+			NetworkChecker checker(net);
+			return checker.handleSuccess();
 		} else if (ap.given("create")) {
-			/* return createNetwork(sections); */
-			return EXIT_FAILURE;
+			LearningNet *net = LearningNet::create(sections);
+			net->write();
+			delete net;
+			return EXIT_SUCCESS;
 		} else if (ap.given("active")) {
 			LearningNet net(network);
-			return setActivity(net, sections);
+			ActivitySetter act(net, sections);
+			net.write();
+			return act.handleSuccess();
 		} else if (ap.given("recnext")) {
 			return EXIT_FAILURE;
 		} else if (ap.given("recpath")) {
 			return EXIT_FAILURE;
 		} else {
-			std::cerr << "No action given." << std::endl;
+			std::cout << "No action given." << std::endl;
 			return EXIT_FAILURE;
 		}
 	} catch (Exception &e) {
