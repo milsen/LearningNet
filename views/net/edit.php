@@ -1,9 +1,9 @@
 <div class="row">
     <div class="column left">
         <form>
+            <button type="button" id="submit">Netzwerk speichern</button>
             <textarea id="inputGraph" rows="25">
             </textarea>
-            <button type="button" id="submit">Netzwerk speichern</button>
         </form>
     </div>
     <div class="column right">
