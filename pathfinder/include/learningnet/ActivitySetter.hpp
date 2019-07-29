@@ -77,7 +77,7 @@ public:
 						// Push those to sources once alle necessary inedges were activated.
 						// TODO: changing directly number of howMany of join-nodes
 						// in type might not be good
-						if (net.isJoin(u)) {
+						if (net.isJoin(u) && net.necessaryInArcs(u) > 0) {
 							net.setType(u, net.getType(u) - 1);
 						}
 						if (net.getType(u) <= NodeType::join) {
