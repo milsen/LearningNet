@@ -1,8 +1,14 @@
-<form style:"float: left">
-    <label for="inputGraph">Graphviz Definition</label>
-    <textarea id="inputGraph" rows="20" style="float: left; width: 500px;">
-    </textarea>
-    <button type="button" id="submit">Netzwerk speichern</button>
-</form>
+<div class="row">
+    <div class="column left">
+        <form>
+            <textarea id="inputGraph" rows="25">
+            </textarea>
+            <button type="button" id="submit">Netzwerk speichern</button>
+        </form>
+    </div>
+    <div class="column right">
+        <svg></svg>
+    </div>
+</div>
 
-<svg></svg>
+

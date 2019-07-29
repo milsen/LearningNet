@@ -73,7 +73,7 @@ export function setupNetwork() {
 export function drawNetwork(data) {
     let g = lgf.read(data);
     if (g === null) {
-        console.log("drawNetwork: Reading network from data failed.");
+        console.log("drawNetwork(): Reading network from data failed.");
         return;
     }
 
@@ -129,9 +129,4 @@ export function drawNetwork(data) {
         svg.attr("height", g.graph().height + 5);
         svg.attr("width", g.graph().width + 5);
     });
-}
-
-export function checkNetwork(data) {
-    let graph = lgf.read(data);
-    return graph !== null && graphlib.alg.isAcyclic(graph);
 }

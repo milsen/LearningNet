@@ -1,3 +1,4 @@
+import css from 'CSS/edit.css';
 import * as network from 'JS/network.js';
 
 let oldInputGraphValue = "";
