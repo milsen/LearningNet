@@ -11,43 +11,16 @@ class NetworkCalculations
 {
     const EXE_PATH = '/pathfinder/build/learningnet-pathfinder';
 
-    /**
-     * The singleton instance.
-     *
-     * @access  private
-     * @var     NetworkCalculations
-     */
-    private static $instance = null;
+    private static $executablePath = "";
 
-    private static $pluginPath = "";
-
-    /**
-     * @access private
-     *
-     * @return void
-     */
-    private function __construct()
-    { }
-
-    /**
-     * This method returns the singleton instance of this class.
-     *
-     * @param $path string The plugin path to use for finding the executable.
-     * @return NetworkCalculations the singleton instance
-     */
-    static public function getInstance($path)
+    public function __construct($pluginPath)
     {
-        self::$pluginPath = $path;
-
-        if (is_null(self::$instance)) {
-            self::$instance = new NetworkCalculations();
-        }
-        return self::$instance;
+        $this->executablePath = $pluginPath . self::EXE_PATH;
     }
 
     private function buildCommand($args)
     {
-        $command = self::$pluginPath . self::EXE_PATH;
+        $command = $this->executablePath;
         foreach ($args as $arg) {
             $command .= ' "' . $arg . '"';
         }
@@ -57,13 +30,13 @@ class NetworkCalculations
     private function runCommand($args)
     {
         $output = array();
-        $returnVal = null;
+        $returnVar = 0;
 
-        exec($this->buildCommand($args), $output, $returnVal);
+        exec($this->buildCommand($args), $output, $returnVar);
 
         return array(
-            'output' => join("\n", $output),
-            'returnValue' => $returnVal
+            'message' => join("\n", $output),
+            'succeeded' => $returnVar === 0
         );
     }
 
@@ -72,7 +45,7 @@ class NetworkCalculations
         return $this->runCommand(array(
             '-check',
             '-network', $networkLGF)
-        )['output'];
+        );
     }
 
     public function getActives($networkLGF, $completedSections)
@@ -81,14 +54,14 @@ class NetworkCalculations
             '-active',
             '-network', $networkLGF,
             '-sections', $completedSections)
-        )['output'];
+        );
     }
 
-    public function createEmptyNetwork($sectionIds)
+    public function createNetwork($sectionIds)
     {
         return $this->runCommand(array(
             '-create',
             '-sections', $sectionIds)
-        )['output'];
+        );
     }
 }

@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 		if (ap.given("check")) {
 			LearningNet net(network);
 			NetworkChecker checker(net);
-			return checker.handleSuccess();
+			return checker.handleFailure();
 		} else if (ap.given("create")) {
 			LearningNet *net = LearningNet::create(sections);
 			net->write();
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 			LearningNet net(network);
 			ActivitySetter act(net, sections);
 			net.write();
-			return act.handleSuccess();
+			return act.handleFailure();
 		} else if (ap.given("recnext")) {
 			return EXIT_FAILURE;
 		} else if (ap.given("recpath")) {
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 	} catch (Exception &e) {
-		std::cerr << e.what() << std::endl;
+		std::cout << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 }

@@ -27,20 +27,16 @@ $(function() {
 
     const STORE_ROUTE = "store";
 
-    // TODO replace console.log by messages on page
     $('#submit').click(function() {
-        if (network.checkNetwork(inputGraph.value)) {
-            $.ajax({
-                url: network.ajaxURL(STORE_ROUTE),
-                type: 'POST',
-                data: { network : inputGraph.value },
-                success: function(msg) {
-                    console.log(msg);
-                }
-            });
-        } else {
-            console.log("Input graph not correct.");
-        }
+        $.ajax({
+            url: network.ajaxURL(STORE_ROUTE),
+            type: 'POST',
+            data: { network : inputGraph.value },
+            success: function(htmlMsg) {
+                console.log(htmlMsg)
+                $("#layout_content").prepend(htmlMsg);
+            }
+        });
     });
 });
 

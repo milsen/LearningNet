@@ -6,6 +6,14 @@ use LearningNet\DB\Networks;
 
 class NetController extends PluginController {
 
+    private $executableInterface;
+
+    public function __construct($dispatcher)
+    {
+        parent::__construct($dispatcher);
+        $this->executableInterface = new NetworkCalculations($this->plugin->getPluginPath());
+    }
+
     /**
      * Action for net/index.php
      */
@@ -51,7 +59,7 @@ class NetController extends PluginController {
             $sections = Mooc\DB\Block::findBySQL(
                 "type = 'Section' AND seminar_id = ?", array($courseId));
             $sectionIds = array_map(function ($sec) { return $sec['id']; }, $sections);
-            $network = "@nodes\nlabel\n" . join("\n", $sectionIds);
+            $network = $this->executableInterface->createNetwork($sectionIds)['message'];
 
             // Store new network in database.
             $graphRep = new LearningNet\DB\Networks();
@@ -71,8 +79,9 @@ class NetController extends PluginController {
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
             $completedIds = join(" ", $completedIds);
 
-            $network = NetworkCalculations::getInstance($this->plugin->getPluginPath())
-                            ->getActives($graphRep->network, $completedIds);
+            $network = $this->executableInterface->getActives(
+                $graphRep->network, $completedIds
+            )['message'];
         }
 
         $this->render_text($network);
@@ -103,11 +112,19 @@ class NetController extends PluginController {
         $courseId = \Request::get('cid');
         $network = \Request::get('network');
 
-        $graphRep = LearningNet\DB\Networks::find($courseId);
-        $graphRep->network = $network;
-        $graphRep->store();
+        $checkObj = $this->executableInterface->checkNetwork($network);
 
-        $this->render_text("Network stored successfully!");
+        if ($checkObj['succeeded']) {
+            $graphRep = LearningNet\DB\Networks::find($courseId);
+            $graphRep->network = $network;
+            $graphRep->store();
+
+            $this->render_html(MessageBox::success('Network stored successfully!'));
+        } else {
+            $this->render_html(MessageBox::error(
+                'Network could not be stored successfully: ' . $checkObj['message']
+            ));
+        }
     }
 
     /**
@@ -155,5 +172,14 @@ class NetController extends PluginController {
         // Set help bar content.
         $description = _ln('Mit LearningNet können Lernmodule, die in Courseware erstellt wurden, in einem Netz angeordnet werden. Den Studierenden wird anhand auswählbarer Kriterien empfohlen, welche Lernmodule sie als nächstes bearbeiten sollen. Das Abarbeiten individualisierter Lernpfade ermöglicht es den Studierenden, effektiver zu lernen.');
         Helpbar::get()->addPlainText(_ln('Information'), $description, 'icons/white/info-circle.svg');
+    }
+
+    /**
+     * Render Stud.IP specific HTML
+     */
+    private function render_html($html)
+    {
+        $this->response->add_header('Content-Type', 'text/html;charset=utf-8');
+        $this->render_text($html);
     }
 }
