@@ -126,6 +126,12 @@ public:
 			countInArcs(*this, v);
 	}
 
+	int decrementNecessaryInArcs(lemon::ListDigraph::Node v) const {
+		return m_type[v] >= NodeType::join ?
+			m_type[v] - NodeType::join :
+			countInArcs(*this, v);
+	}
+
 	void write(std::ostream &out = std::cout) {
 		// Write lemon graph file to cout.
 		lemon::DigraphWriter<lemon::ListDigraph>(*this, out)

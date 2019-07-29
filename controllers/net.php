@@ -77,10 +77,9 @@ class NetController extends PluginController {
             $completed = Mooc\DB\Field::findBySQL(
                 "user_id = ? AND name = 'visited' AND json_data = 'true'", array($userId));
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
-            $completedIds = join(" ", $completedIds);
 
             $network = $this->executableInterface->getActives(
-                $graphRep->network, $completedIds
+                $network, $completedIds
             )['message'];
         }
 

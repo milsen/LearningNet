@@ -96,19 +96,28 @@ public:
 	{
 		std::map<int, ListDigraph::Node> sectionNode;
 		for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
-			sectionNode[net.getSection(v)] = v;
+			if (net.isUnit(v)) {
+				sectionNode[net.getSection(v)] = v;
+			}
 		}
 
-		// Set type of completed units to 2.
-		// Completed units are given by agv[2], string is split using vector c'tor.
+		// Completed units are given by string, which is split using vector c'tor.
 		std::istringstream completedIss(completed);
 		std::vector<std::string> completedSections(
 			std::istream_iterator<std::string>{completedIss},
 			std::istream_iterator<std::string>()
 		);
+
+		// Set type of completed units.
 		for (std::string str : completedSections) {
 			int completedSection = std::stoi(str);
-			net.setType(sectionNode[completedSection], 2);
+			auto completedNode = sectionNode.find(completedSection);
+			// Only set it for units, not for connectives!
+			if (completedNode != sectionNode.end()) {
+				net.setType(completedNode->second, NodeType::completed);
+			} else {
+				appendError("Could not find section " + str + ".");
+			}
 		}
 
 		call(net);

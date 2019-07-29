@@ -18,6 +18,11 @@ class NetworkCalculations
         $this->executablePath = $pluginPath . self::EXE_PATH;
     }
 
+    private function stringify($ids)
+    {
+        return join(" ", $ids);
+    }
+
     private function buildCommand($args)
     {
         $command = $this->executablePath;
@@ -44,8 +49,8 @@ class NetworkCalculations
     {
         return $this->runCommand(array(
             '-check',
-            '-network', $networkLGF)
-        );
+            '-network', $networkLGF
+        ));
     }
 
     public function getActives($networkLGF, $completedSections)
@@ -53,15 +58,15 @@ class NetworkCalculations
         return $this->runCommand(array(
             '-active',
             '-network', $networkLGF,
-            '-sections', $completedSections)
-        );
+            '-sections', $this->stringify($completedSections)
+        ));
     }
 
     public function createNetwork($sectionIds)
     {
         return $this->runCommand(array(
             '-create',
-            '-sections', $sectionIds)
-        );
+            '-sections', $this->stringify($sectionIds)
+        ));
     }
 }
