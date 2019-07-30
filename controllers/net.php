@@ -11,7 +11,9 @@ class NetController extends PluginController {
     public function __construct($dispatcher)
     {
         parent::__construct($dispatcher);
-        $this->executableInterface = new NetworkCalculations($this->plugin->getPluginPath());
+        $this->executableInterface = new NetworkCalculations(
+            $this->plugin->getPluginPath()
+        );
     }
 
     /**
@@ -49,41 +51,52 @@ class NetController extends PluginController {
      */
     public function network_action()
     {
+        $output = array(
+            'succeeded' => true,
+            'message' => '' // if succeeded: network, else: html with error
+        );
+
         $courseId = \Request::get('cid');
-        $getUserData = \Request::get('getUserData');
+        $getUserData = \Request::get('getUserData') === 'true';
         $graphRep = LearningNet\DB\Networks::find($courseId);
 
-        $network = "";
         if ($graphRep === null) {
             // Create new network with one isolated node for each section.
             $sections = Mooc\DB\Block::findBySQL(
                 "type = 'Section' AND seminar_id = ?", array($courseId));
             $sectionIds = array_map(function ($sec) { return $sec['id']; }, $sections);
-            $network = $this->executableInterface->createNetwork($sectionIds)['message'];
+            $output = $this->executableInterface->createNetwork($sectionIds);
 
             // Store new network in database.
-            $graphRep = new LearningNet\DB\Networks();
-            $graphRep->seminar_id = $courseId;
-            $graphRep->network = $network;
-            $graphRep->store();
+            if ($output['succeeded']) {
+                $graphRep = new LearningNet\DB\Networks();
+                $graphRep->seminar_id = $courseId;
+                $graphRep->network = $output['message'];
+                $graphRep->store();
+            }
         } else {
             // Get graph from database if possible.
-            $network = $graphRep->network;
+            $output['message'] = $graphRep->network;
         }
 
-        if ($getUserData === "true") {
+        if ($ouput['succeeded'] && $getUserData) {
             //  Get completed sections.
             $userId = isset($GLOBALS['user']) ? $GLOBALS['user']->id : 'nobody';
             $completed = Mooc\DB\Field::findBySQL(
                 "user_id = ? AND name = 'visited' AND json_data = 'true'", array($userId));
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
 
-            $network = $this->executableInterface->getActives(
-                $network, $completedIds
-            )['message'];
+            $output = $this->executableInterface->getActives(
+                $output['message'], $completedIds
+            );
         }
 
-        $this->render_text($network);
+        // If something failed, wrap the message in an error box.
+        if ($output['succeeded'] === false) {
+            $output['message'] = MessageBox::error($output['message'])->__toString();
+        }
+
+        $this->render_json($output);
     }
 
     /**
@@ -118,10 +131,10 @@ class NetController extends PluginController {
             $graphRep->network = $network;
             $graphRep->store();
 
-            $this->render_html(MessageBox::success('Network stored successfully!'));
+            $this->render_html(MessageBox::success(_ln('Netzwerk gespeichert.')));
         } else {
             $this->render_html(MessageBox::error(
-                'Network could not be stored successfully: ' . $checkObj['message']
+                _ln('Netzwerk konnte nicht gespeichert werden: ') . $checkObj['message']
             ));
         }
     }

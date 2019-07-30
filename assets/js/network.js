@@ -51,7 +51,19 @@ export function ajaxURL(route) {
 }
 
 export function withGraphData(func, getUserData = false) {
-    $.get(ajaxURL(DATA_ROUTE), { getUserData : getUserData }, func);
+    $.ajax({
+        url: ajaxURL(DATA_ROUTE),
+        data: { getUserData : getUserData },
+        datatype: 'json',
+        success: function(data) {
+            console.log(data);
+            if (data.succeeded) {
+                func(data.message);
+            } else {
+                $("#layout_content").prepend(data.message);
+            }
+        }
+    });
 }
 
 export function withSectionTitles(func) {
