@@ -12,18 +12,18 @@ public:
 		call(net, completed);
 	}
 
-	void topologicalSort(const ListDigraph &g, ListDigraph::NodeMap<int> &type)
+	void topologicalSort(const lemon::ListDigraph &g, lemon::ListDigraph::NodeMap<int> &type)
 	{
-		std::vector<ListDigraph::Node> sources;
-		ListDigraph::NodeMap<int> indeg(g);
+		std::vector<lemon::ListDigraph::Node> sources;
+		lemon::ListDigraph::NodeMap<int> indeg(g);
 
 		// Get indegree for each node.
-		for (ListDigraph::ArcIt a(g); a != INVALID; ++a) {
+		for (lemon::ListDigraph::ArcIt a(g); a != lemon::INVALID; ++a) {
 			indeg[g.target(a)]++;
 		}
 
 		// Collect nodes with indegree 0.
-		for (ListDigraph::NodeIt v(g); v != INVALID; ++v) {
+		for (lemon::ListDigraph::NodeIt v(g); v != lemon::INVALID; ++v) {
 			if (indeg[v] == 0) {
 				sources.push_back(v);
 			}
@@ -31,13 +31,13 @@ public:
 
 		int count = 0;
 		while (!sources.empty()) {
-			ListDigraph::Node v = sources.back();
+			lemon::ListDigraph::Node v = sources.back();
 			sources.pop_back();
 			type[v] = count++;
 
 			// For all outedges:
-			for (ListDigraph::OutArcIt a(g, v); a != INVALID; ++a) {
-				ListDigraph::Node u = g.target(a);
+			for (lemon::ListDigraph::OutArcIt a(g, v); a != lemon::INVALID; ++a) {
+				lemon::ListDigraph::Node u = g.target(a);
 				if (--indeg[u] == 0) {
 					sources.push_back(u);
 				}
@@ -48,17 +48,17 @@ public:
 	void call(LearningNet &net)
 	{
 		// sources = actives
-		std::vector<ListDigraph::Node> sources;
+		std::vector<lemon::ListDigraph::Node> sources;
 
 		// Collect nodes with indegree 0.
-		for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
+		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
 			if (countInArcs(net, v) == 0) {
 				sources.push_back(v);
 			}
 		}
 
 		while (!sources.empty()) {
-			ListDigraph::Node v = sources.back();
+			lemon::ListDigraph::Node v = sources.back();
 			sources.pop_back();
 			switch (net.getType(v)) {
 				case NodeType::inactive:
@@ -71,8 +71,8 @@ public:
 				case NodeType::split:
 				case NodeType::join:
 					// For all outedges (in the completed case: only one).
-					for (ListDigraph::OutArcIt a(net, v); a != INVALID; ++a) {
-						ListDigraph::Node u = net.target(a);
+					for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
+						lemon::ListDigraph::Node u = net.target(a);
 						// Only join nodes can have multiple inedges.
 						// Push those to sources once alle necessary inedges were activated.
 						// TODO: changing directly number of howMany of join-nodes
@@ -94,8 +94,8 @@ public:
 
 	void call(LearningNet &net, const std::string &completed)
 	{
-		std::map<int, ListDigraph::Node> sectionNode;
-		for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
+		std::map<int, lemon::ListDigraph::Node> sectionNode;
+		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
 			if (net.isUnit(v)) {
 				sectionNode[net.getSection(v)] = v;
 			}

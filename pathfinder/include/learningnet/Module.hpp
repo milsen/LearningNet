@@ -1,3 +1,6 @@
+#include <string>
+#include <iostream>
+
 #pragma once
 
 namespace learningnet {
