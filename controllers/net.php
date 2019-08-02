@@ -79,7 +79,7 @@ class NetController extends PluginController {
             $output['message'] = $graphRep->network;
         }
 
-        if ($ouput['succeeded'] && $getUserData) {
+        if ($output['succeeded'] && $getUserData) {
             //  Get completed sections.
             $userId = isset($GLOBALS['user']) ? $GLOBALS['user']->id : 'nobody';
             $completed = Mooc\DB\Field::findBySQL(
