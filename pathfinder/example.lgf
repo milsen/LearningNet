@@ -1,5 +1,5 @@
 @nodes
-label	type	section
+label	type	ref
 0	0	19
 1	0	21
 2	0	34
@@ -7,7 +7,7 @@ label	type	section
 4	10	0
 5	0	27
 6	0	33
-7	22	0
+7	20	2
 8	10	0
 9	0	35
 10	0	36
@@ -20,6 +20,10 @@ label	type	section
 # 11: condition
 # 20: join with one needed inedge
 # 20 + x: join with (x+1) needed completed inedges
+#
+# ref: for units the section id,
+# for splits the condition type id
+# for joins the necessary edges
 @arcs
 # TODO: conditions for frontend
 		-

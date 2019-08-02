@@ -12,6 +12,7 @@ public:
 		call(net, completed);
 	}
 
+	// TDOO remove this unused function
 	void topologicalSort(const lemon::ListDigraph &g, lemon::ListDigraph::NodeMap<int> &type)
 	{
 		std::vector<lemon::ListDigraph::Node> sources;
@@ -52,7 +53,12 @@ public:
 
 		// Collect nodes with indegree 0.
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
-			if (countInArcs(net, v) == 0) {
+			if (net.isJoin(v)) {
+				net.resetActivatedInArcs(v);
+			}
+
+			if (((net.isUnit(v) || net.isSplit(v)) && countInArcs(net, v) == 0)
+			   || net.isUnlockedJoin(v)) {
 				sources.push_back(v);
 			}
 		}
@@ -67,9 +73,12 @@ public:
 				case NodeType::active:
 					appendError("Input has active units set already. Why?");
 					break;
-				case NodeType::completed:
-				case NodeType::split:
-				case NodeType::join:
+				default:
+					if (!net.isUnit(v) && !net.isSplit(v) && !net.isJoin(v)) {
+						appendError("Input has nodes of unknown type.");
+						break;
+					}
+
 					// For all outedges (in the completed case: only one).
 					for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
 						lemon::ListDigraph::Node u = net.target(a);
@@ -77,16 +86,13 @@ public:
 						// Push those to sources once alle necessary inedges were activated.
 						// TODO: changing directly number of howMany of join-nodes
 						// in type might not be good
-						if (net.isJoin(u) && net.necessaryInArcs(u) > 0) {
-							net.setType(u, net.getType(u) - 1);
+						if (net.isJoin(u)) {
+							net.incrementActivatedInArcs(u);
 						}
-						if (net.getType(u) <= NodeType::join) {
+						if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
 							sources.push_back(u);
 						}
 					}
-					break;
-				default:
-					appendError("Input has nodes of unknown type.");
 					break;
 			}
 		}

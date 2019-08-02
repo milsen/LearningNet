@@ -22,8 +22,7 @@ public:
 
 		std::map<int, bool> sectionExists;
 		for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
-			int type = net.getType(v);
-			if (type < NodeType::split) {
+			if (net.isUnit(v)) {
 				// Each section only occurs once.
 				int section = net.getSection(v);
 				if (sectionExists[section]) {
@@ -34,7 +33,7 @@ public:
 			}
 
 			// Necessary inarcs of a join are less than actual InArcs.
-			int necessaryInArcs = net.necessaryInArcs(v);
+			int necessaryInArcs = net.getNecessaryInArcs(v);
 			int actualInArcs = countInArcs(net, v);
 			if (net.isJoin(v) && necessaryInArcs > actualInArcs) {
 				failWithError("Join node has " + std::to_string(necessaryInArcs) +

@@ -101,12 +101,13 @@ export function drawNetwork(data) {
                 node.shape = "diamond";
             } else if (node.class === "join") {
                 // Show how many predecessors have to be completed for the join.
-                node.label = (parseInt(node.type) - 20).toString() + "*";
+                let activatedInArcs = (parseInt(node.type) - 20).toString();
+                node.label = activatedInArcs + "/" + node.ref;
                 node.shape = "diamond";
             } else {
                 // Label with link.
                 node.labelType = 'svg';
-                node.label = createNodeLabel(node.section, sectionTitles[node.section]);
+                node.label = createNodeLabel(node.ref, sectionTitles[node.ref]);
             }
         });
 
