@@ -67,6 +67,28 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${LEMON_INCLUDE_DIRS})
 
+# RapidJSON
+FIND_PATH(RAPIDJSON_SOURCE_ROOT_DIR CMakeLists.txt
+  PATHS ${CMAKE_SOURCE_DIR}/rapidjson ${CMAKE_SOURCE_DIR}/deps/rapidjson
+  NO_DEFAULT_PATH
+  DOC "Location of RapidJSON source as a CMAKE subproject")
+
+IF(EXISTS ${RAPIDJSON_SOURCE_ROOT_DIR})
+  SET(RAPIDJSON_INCLUDE_DIRS
+    ${RAPIDJSON_SOURCE_ROOT_DIR}/include
+    ${CMAKE_BINARY_DIR}/deps/rapidjson/include
+  )
+  SET(RAPIDJSON_LIBRARIES RapidJSON)
+
+  file(GLOB RAPIDJSON_HEADERS ${RAPIDJSON_INCLUDE_DIRS}/rapidjson/*.h)
+  add_library(${RAPIDJSON_LIBRARIES} "${RAPIDJSON_HEADERS}")
+  set_target_properties(${RAPIDJSON_LIBRARIES} PROPERTIES LINKER_LANGUAGE CXX)
+  target_include_directories(${RAPIDJSON_LIBRARIES} INTERFACE ${RAPIDJSON_INCLUDE_DIR})
+ELSE()
+  FIND_PACKAGE(RAPIDJSON QUIET NO_MODULE)
+  FIND_PACKAGE(RAPIDJSON REQUIRED)
+ENDIF()
+
 # This line finds doxygen (for documentation creation)
 
 FIND_PACKAGE(Doxygen)
@@ -91,7 +113,7 @@ add_library(${LEARNINGNET_LIBRARIES} "${LN_SOURCES}")
 # Link LN with lemon.
 target_link_libraries(${LEARNINGNET_LIBRARIES} ${LEMON_LIBRARIES})
 
-# Specify the include-directory of the MCG library as ./include/.
+# Specify the include-directory of the learningnet library as ./include/.
 # For header-only library:
 # target_include_directories(${LEARNINGNET_LIBRARIES} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${LEARNINGNET_LIBRARIES} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -104,6 +126,7 @@ add_executable(${EXECUTABLE} main.cpp)
 # Link ${EXECUTABLE} with lemon and learningnet.
 target_link_libraries(${EXECUTABLE} ${LEMON_LIBRARIES})
 target_link_libraries(${EXECUTABLE} ${LEARNINGNET_LIBRARIES})
+target_link_libraries(${EXECUTABLE} ${RAPIDJSON_LIBRARIES})
 
 # This tells cmake to install the binary to $PREFIX/bin when 'make install'
 # is executed. You can give more targets separated by whitespaces.

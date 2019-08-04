@@ -18,26 +18,17 @@ class NetworkCalculations
         $this->executablePath = $pluginPath . self::EXE_PATH;
     }
 
-    private function stringify($ids)
+    private function buildCommand($arg)
     {
-        return join(" ", $ids);
+        return $this->executablePath . ' \'' . json_encode($arg) . '\'';
     }
 
-    private function buildCommand($args)
-    {
-        $command = $this->executablePath;
-        foreach ($args as $arg) {
-            $command .= ' "' . $arg . '"';
-        }
-        return $command;
-    }
-
-    private function runCommand($args)
+    private function runCommand($arg)
     {
         $output = array();
         $returnVar = 0;
 
-        exec($this->buildCommand($args), $output, $returnVar);
+        exec($this->buildCommand($arg), $output, $returnVar);
 
         return array(
             'message' => join("\n", $output),
@@ -48,25 +39,25 @@ class NetworkCalculations
     public function checkNetwork($networkLGF)
     {
         return $this->runCommand(array(
-            '-check',
-            '-network', $networkLGF
+            'action' => 'check',
+            'network' => $networkLGF
         ));
     }
 
     public function getActives($networkLGF, $completedSections)
     {
         return $this->runCommand(array(
-            '-active',
-            '-network', $networkLGF,
-            '-sections', $this->stringify($completedSections)
+            'action' => 'active',
+            'network' => $networkLGF,
+            'sections' => $completedSections
         ));
     }
 
     public function createNetwork($sectionIds)
     {
         return $this->runCommand(array(
-            '-create',
-            '-sections', $this->stringify($sectionIds)
+            'action' => 'create',
+            'sections' => $sectionIds
         ));
     }
 }

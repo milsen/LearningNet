@@ -8,7 +8,7 @@ namespace learningnet {
 class ActivitySetter : public Module
 {
 public:
-	ActivitySetter(LearningNet &net, const std::string &completed) : Module() {
+	ActivitySetter(LearningNet &net, const std::vector<int> &completed) : Module() {
 		call(net, completed);
 	}
 
@@ -98,7 +98,7 @@ public:
 		}
 	}
 
-	void call(LearningNet &net, const std::string &completed)
+	void call(LearningNet &net, const std::vector<int> &completed)
 	{
 		std::map<int, lemon::ListDigraph::Node> sectionNode;
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
@@ -107,22 +107,14 @@ public:
 			}
 		}
 
-		// Completed units are given by string, which is split using vector c'tor.
-		std::istringstream completedIss(completed);
-		std::vector<std::string> completedSections(
-			std::istream_iterator<std::string>{completedIss},
-			std::istream_iterator<std::string>()
-		);
-
 		// Set type of completed units.
-		for (std::string str : completedSections) {
-			int completedSection = std::stoi(str);
+		for (int completedSection : completed) {
 			auto completedNode = sectionNode.find(completedSection);
 			// Only set it for units, not for connectives!
 			if (completedNode != sectionNode.end()) {
 				net.setType(completedNode->second, NodeType::completed);
 			} else {
-				appendError("Could not find section " + str + ".");
+				appendError("Could not find section " + std::to_string(completedSection) + ".");
 			}
 		}
 

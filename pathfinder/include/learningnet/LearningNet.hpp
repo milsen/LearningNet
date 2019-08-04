@@ -60,7 +60,7 @@ public:
 
 	virtual ~LearningNet ();
 
-	static LearningNet *create(const std::vector<std::string> &sections) {
+	static LearningNet *create(const std::vector<int> &sections) {
 		LearningNet *net = new LearningNet();
 		// Connect all units with one join.
 		lemon::ListDigraph::Node join = net->addNode();
@@ -68,25 +68,16 @@ public:
 		net->setNecessaryInArcs(join, 0);
 		net->setTarget(join);
 
-		for (std::string section : sections) {
+		for (int section : sections) {
 			lemon::ListDigraph::Node v = net->addNode();
 			net->setType(v, NodeType::inactive);
-			net->setSection(v, std::stoi(section));
+			net->setSection(v, section);
 
 			net->addArc(v, join);
 			net->setType(join, net->getType(join) + 1);
 			net->setNecessaryInArcs(join, net->getNecessaryInArcs(join) + 1);
 		}
 		return net;
-	}
-
-	static LearningNet *create(const std::string &sectionStr) {
-		std::istringstream sectionsIss(sectionStr);
-		std::vector<std::string> sections(
-			std::istream_iterator<std::string>{sectionsIss},
-			std::istream_iterator<std::string>()
-		);
-		return create(sections);
 	}
 
 	// Type Checkers, Getter and Setter

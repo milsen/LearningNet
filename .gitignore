@@ -9,4 +9,4 @@ vendor
 build
 
 # c++ dependencies
-lemon
+deps

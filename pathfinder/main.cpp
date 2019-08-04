@@ -1,93 +1,102 @@
-#include <lemon/arg_parser.h>
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
 #include <learningnet/NetworkChecker.hpp>
 #include <learningnet/ActivitySetter.hpp>
 
 using namespace lemon;
 using namespace learningnet;
+using namespace rapidjson;
+
+bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *> args)
+{
+	std::map<std::string, std::function<bool(const Value&)>> typeFunc = {
+		{ "action",       std::bind(&Value::IsString, std::placeholders::_1) },
+		{ "network",      std::bind(&Value::IsString, std::placeholders::_1) },
+		{ "sections",     std::bind(&Value::IsArray, std::placeholders::_1) },
+		{ "condition",    std::bind(&Value::IsObject, std::placeholders::_1) },
+		{ "costs",        std::bind(&Value::IsObject, std::placeholders::_1) },
+		{ "useNodeCosts", std::bind(&Value::IsBool, std::placeholders::_1) }
+	};
+
+	bool result = true;
+	for (auto arg : args) {
+		result &= d.HasMember(arg) && typeFunc[arg](d[arg]);
+	}
+
+	return result;
+}
+
+bool streq(const std::string &str1, const std::string &str2)
+{
+	return str1.compare(str2) == 0;
+}
+
+std::vector<int> toVector(const Value &oldArr)
+{
+	std::vector<int> arr;
+	for (auto &v : oldArr.GetArray()) {
+		arr.push_back(std::stoi(v.GetString()));
+	}
+
+	return arr;
+}
+
+void output(const Document &d)
+{
+    StringBuffer buffer;
+    Writer<StringBuffer> writer(buffer);
+    d.Accept(writer);
+
+    std::cout << buffer.GetString() << std::endl;
+}
 
 int main(int argc, char *argv[])
 {
-	ArgParser ap(argc, argv);
-	std::string network;
-	std::string sections;
-	std::string costs;
-
-	// Set option that can be parsed.
-	ap
-		// possible actions (one and only one must be used)
-		.boolOption("check", "Check whether the input is a correct learning net. Param: network")
-		.boolOption("create", "Create a learning net without edges. Param: sections")
-		.boolOption("active", "Output active units based on completed ones. Param: network, sections")
-		.boolOption("recnext", "Output the recommended next unit. Param: network, costs")
-		.boolOption("recpath", "Output the sequence of recommended units. Param: network, costs")
-		.optionGroup("action", "check")
-		.optionGroup("action", "create")
-		.optionGroup("action", "active")
-		.optionGroup("action", "recnext")
-		.optionGroup("action", "recpath")
-		.mandatoryGroup("action")
-		.onlyOneGroup("action")
-
-		// possible arguments
-		.refOption("network", "Network as space-separated string.", network)
-		.refOption("costs", "Costs as space-separated string.", costs) // TODO will not work
-		.refOption("sections", "Relevant sections as space-separated string.", sections)
-
-		// whether costs are for nodes or edges
-		.boolOption("edgecosts", "Use costs for edges.")
-		.boolOption("nodecosts", "Use costs for nodes.")
-		.optionGroup("costtype", "edgecosts")
-		.optionGroup("costtype", "nodecosts")
-		.onlyOneGroup("costtype");
-
-	// Throw an exception when problems occurs.
-	// The default behavior is to exit(1) on these cases, but this makes
-	// Valgrind falsely warn about memory leaks.
-	ap.throwOnProblems();
-
-	// Perform the parsing process
-	// (in case of any error it terminates the program)
-	// The try {} construct is necessary only if the ap.trowOnProblems()
-	// setting is in use.
 	try {
-		ap.parse();
-	} catch (ArgParserException &e) {
-		std::cout << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
+		Document d;
+		d.Parse(argv[1]);
 
-	// Check for correct parameters.
-	if ((ap.given("check")   && !ap.given("network"))
-	 || (ap.given("create")  && !ap.given("sections"))
-	 || (ap.given("active")  && !(ap.given("network") && ap.given("sections")))
-	 || (ap.given("recnext") && !(ap.given("network") && ap.given("costs")))
-	 || (ap.given("recpath") && !(ap.given("network") && ap.given("costs")))) {
-		std::cout << "Not all necessary parameters for the given action found." << std::endl;
-		return EXIT_FAILURE;
-	}
+		if (!hasCorrectArgs(d, {"action"})) {
+			std::cout << "No action string given." << std::endl;
+			return EXIT_FAILURE;
+		}
 
-	try {
+		std::string action = d["action"].GetString();
+
+		// Check for correct parameters.
+		if ((streq(action, "check")   && !hasCorrectArgs(d, {"network"}))
+		 || (streq(action, "create")  && !hasCorrectArgs(d, {"sections"}))
+		 || (streq(action, "active")  && !hasCorrectArgs(d, {"network","sections"}))
+		 || (streq(action, "recnext") && !hasCorrectArgs(d, {"network","costs"}))
+		 || (streq(action, "recpath") && !hasCorrectArgs(d, {"network","costs"}))) {
+			std::cout << "Not all necessary parameters for the given action found." << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		// TODO type checks for arrays/objects
+
 		// Execute action.
-		if (ap.given("check")) {
-			LearningNet net(network);
+		if (streq(action, "check")) {
+			LearningNet net(d["network"].GetString());
 			NetworkChecker checker(net);
 			return checker.handleFailure();
-		} else if (ap.given("create")) {
-			LearningNet *net = LearningNet::create(sections);
+		} else if (streq(action, "create")) {
+			LearningNet *net = LearningNet::create(toVector(d["sections"]));
 			net->write();
 			delete net;
 			return EXIT_SUCCESS;
-		} else if (ap.given("active")) {
-			LearningNet net(network);
-			ActivitySetter act(net, sections);
+		} else if (streq(action, "active")) {
+			LearningNet net(d["network"].GetString());
+			ActivitySetter act(net, toVector(d["sections"]));
 			net.write();
 			return act.handleFailure();
-		} else if (ap.given("recnext")) {
+		} else if (streq(action, "recnext")) {
 			return EXIT_FAILURE;
-		} else if (ap.given("recpath")) {
+		} else if (streq(action, "recpath")) {
 			return EXIT_FAILURE;
 		} else {
-			std::cout << "No action given." << std::endl;
+			std::cout << "No known action given." << std::endl;
 			return EXIT_FAILURE;
 		}
 	} catch (Exception &e) {
