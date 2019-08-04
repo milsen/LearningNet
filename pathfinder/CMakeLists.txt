@@ -1,15 +1,15 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-## Name of project, learningnet library and executable:
+# Name of project, learningnet library and executable:
 SET(PROJECT_NAME "LEARNINGNET")
 set(LEARNINGNET_LIBRARIES "LN")
 set(EXECUTABLE "learningnet-pathfinder")
 
-## Do not edit this.
 PROJECT(${PROJECT_NAME} CXX)
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+# Set install directories
 IF(UNIX)
   SET(INSTALL_BIN_DIR "bin" CACHE STRING
     "Subdir for installing the binaries")
@@ -33,16 +33,16 @@ ELSE(UNIX)
                        "Subdir for installing the examples")
 ENDIF(UNIX)
 
-## The next part looks for LEMON. Typically, you don't want to modify it.
-##
-## First, it tries to use LEMON as a CMAKE subproject by looking for
-## it in the 'lemon' or 'deps/lemon' subdirectories or in directory
-## given by the LEMON_SOURCE_ROOT_DIR variable.
-## If LEMON isn't there, then CMAKE will try to find an installed
-## version of LEMON. If it is installed at some non-standard place,
-## then you must tell its location in the LEMON_ROOT_DIR CMAKE config
-## variable. (Do not hard code it into your config! Others may keep
-## LEMON at different places.)
+
+## LEMON
+# First, it tries to use LEMON as a CMAKE subproject by looking for
+# it in the 'lemon' or 'deps/lemon' subdirectories or in directory
+# given by the LEMON_SOURCE_ROOT_DIR variable.
+# If LEMON isn't there, then CMAKE will try to find an installed
+# version of LEMON. If it is installed at some non-standard place,
+# then you must tell its location in the LEMON_ROOT_DIR CMAKE config
+# variable. (Do not hard code it into your config! Others may keep
+# LEMON at different places.)
 
 FIND_PATH(LEMON_SOURCE_ROOT_DIR CMakeLists.txt
   PATHS ${CMAKE_SOURCE_DIR}/lemon ${CMAKE_SOURCE_DIR}/deps/lemon
@@ -67,7 +67,10 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${LEMON_INCLUDE_DIRS})
 
-# RapidJSON
+
+## RapidJSON
+# Search for RapidJSON under rapidjson and deps/rapidjson.
+# If found, add it as a header-only library.
 FIND_PATH(RAPIDJSON_SOURCE_ROOT_DIR CMakeLists.txt
   PATHS ${CMAKE_SOURCE_DIR}/rapidjson ${CMAKE_SOURCE_DIR}/deps/rapidjson
   NO_DEFAULT_PATH
@@ -80,53 +83,41 @@ IF(EXISTS ${RAPIDJSON_SOURCE_ROOT_DIR})
   )
   SET(RAPIDJSON_LIBRARIES RapidJSON)
 
-  file(GLOB RAPIDJSON_HEADERS ${RAPIDJSON_INCLUDE_DIRS}/rapidjson/*.h)
-  add_library(${RAPIDJSON_LIBRARIES} "${RAPIDJSON_HEADERS}")
-  set_target_properties(${RAPIDJSON_LIBRARIES} PROPERTIES LINKER_LANGUAGE CXX)
-  target_include_directories(${RAPIDJSON_LIBRARIES} INTERFACE ${RAPIDJSON_INCLUDE_DIR})
+  FILE(GLOB RAPIDJSON_HEADERS ${RAPIDJSON_INCLUDE_DIRS}/rapidjson/*.h)
+  ADD_LIBRARY(${RAPIDJSON_LIBRARIES} "${RAPIDJSON_HEADERS}")
+  SET_TARGET_PROPERTIES(${RAPIDJSON_LIBRARIES} PROPERTIES LINKER_LANGUAGE CXX)
+  TARGET_INCLUDE_DIRECTORIES(${RAPIDJSON_LIBRARIES} INTERFACE ${RAPIDJSON_INCLUDE_DIR})
 ELSE()
   FIND_PACKAGE(RAPIDJSON QUIET NO_MODULE)
   FIND_PACKAGE(RAPIDJSON REQUIRED)
 ENDIF()
 
-# This line finds doxygen (for documentation creation)
 
+## Doxygen
 FIND_PACKAGE(Doxygen)
 
-# Set warning flags
-IF(CMAKE_COMPILER_IS_GNUCXX)
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-
-### LEARNINGNET_LIBRARIES
+## LEARNINGNET_LIBRARIES
 # Collect all hpp/cpp-files in ./include/learningnet/ and ./src/learningnet.
-file(GLOB LN_HEADERS include/learningnet/*.hpp)
-file(GLOB LN_SOURCES src/learningnet/*.cpp)
-set(LN_SOURCES "${LN_HEADERS};${LN_SOURCES}")
+FILE(GLOB LN_HEADERS include/learningnet/*.hpp)
+FILE(GLOB LN_SOURCES src/learningnet/*.cpp)
+SET(LN_SOURCES "${LN_HEADERS};${LN_SOURCES}")
 
-# Create the library.
-# For header-only library: add_library(${LEARNINGNET_LIBRARIES} INTERFACE)
-add_library(${LEARNINGNET_LIBRARIES} "${LN_SOURCES}")
-
-# Link LN with lemon.
-target_link_libraries(${LEARNINGNET_LIBRARIES} ${LEMON_LIBRARIES})
-
-# Specify the include-directory of the learningnet library as ./include/.
-# For header-only library:
-# target_include_directories(${LEARNINGNET_LIBRARIES} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(${LEARNINGNET_LIBRARIES} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# Create the library, link it with lemon, set its include-dir as ./include.
+ADD_LIBRARY(${LEARNINGNET_LIBRARIES} "${LN_SOURCES}")
+TARGET_LINK_LIBRARIES(${LEARNINGNET_LIBRARIES} ${LEMON_LIBRARIES})
+TARGET_INCLUDE_DIRECTORIES(${LEARNINGNET_LIBRARIES} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
 ### EXECUTABLE
 # Compile main.cpp to a binary with name ${EXECUTABLE}.
-add_executable(${EXECUTABLE} main.cpp)
+ADD_EXECUTABLE(${EXECUTABLE} main.cpp)
 
 # Link ${EXECUTABLE} with lemon and learningnet.
-target_link_libraries(${EXECUTABLE} ${LEMON_LIBRARIES})
-target_link_libraries(${EXECUTABLE} ${LEARNINGNET_LIBRARIES})
-target_link_libraries(${EXECUTABLE} ${RAPIDJSON_LIBRARIES})
+TARGET_LINK_LIBRARIES(${EXECUTABLE} ${LEMON_LIBRARIES})
+TARGET_LINK_LIBRARIES(${EXECUTABLE} ${LEARNINGNET_LIBRARIES})
+TARGET_LINK_LIBRARIES(${EXECUTABLE} ${RAPIDJSON_LIBRARIES})
+
 
 # This tells cmake to install the binary to $PREFIX/bin when 'make install'
 # is executed. You can give more targets separated by whitespaces.
@@ -136,6 +127,11 @@ INSTALL(
   COMPONENT bin
 )
 
+# Set warning flags
+IF(CMAKE_COMPILER_IS_GNUCXX)
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 # Sometimes MSVC overwhelms you with compiler warnings which are impossible to
 # avoid. Then comment out these sections. Normally you won't need it as the
