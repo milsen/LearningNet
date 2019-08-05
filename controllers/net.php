@@ -2,6 +2,7 @@
 
 use Mooc\DB\Block;
 use LearningNet\NetworkCalculations;
+use LearningNet\ConditionHandler;
 use LearningNet\DB\Networks;
 
 class NetController extends PluginController {
@@ -86,8 +87,11 @@ class NetController extends PluginController {
                 "user_id = ? AND name = 'visited' AND json_data = 'true'", array($userId));
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
 
+            $network = $output['message'];
+            $conditionHandler = new ConditionHandler($network, $courseId, $userId);
+            $conditionValues = $conditionHandler->getConditionVals();
             $output = $this->executableInterface->getActives(
-                $output['message'], $completedIds
+                $network, $completedIds, $conditionValues
             );
         }
 

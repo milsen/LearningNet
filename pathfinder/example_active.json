@@ -1,6 +1,6 @@
 {
     "action" : "active",
-    "network" : "@nodes\nlabel type ref\n0 0 19\n1 0 21\n2 0 34\n3 0 25\n4 10 0\n5 0 27\n6 0 33\n7 20 2\n8 10 0\n9 0 35\n10 0 36\n11 0 37\n@arcs\n  -\n0 1\n3 4\n4 5\n4 6\n1 7\n2 7\n5 7\n6 7\n7 8\n8 9\n8 10\n10 11\n@attributes\ntarget 11\n",
-    "sections" : ["19","21","25","34"]
+    "network" : "@nodes\nlabel type ref\n0 0 19\n1 0 21\n2 0 34\n3 0 25\n4 10 0\n5 0 27\n6 0 33\n7 20 2\n8 10 2\n9 0 35\n10 0 36\n11 0 37\n@arcs\n    condition\n0 1 \"\"\n3 4 \"\"\n4 5 \"\"\n4 6 \"\"\n1 7 \"\"\n2 7 \"\"\n5 7 \"\"\n6 7 \"\"\n7 8 \"\"\n8 9  \"Bachelor\"\n8 10 \"else\"\n10 11 \"\"\n@attributes\ntarget 11\n",
+    "sections" : ["19","21","25","34"],
+    "conditions" : { "2" : ["Bachelor","Master"] }
 }
-

@@ -22,6 +22,25 @@ function typeToClass(type) {
     }
 }
 
+function splitRefToLabel(ref) {
+    ref = parseInt(ref);
+
+    switch (ref) {
+        case 0:
+            return "";
+        case 1:
+            return 'Bevorzugte Sprache';
+        case 2:
+            return 'Studienfach';
+        case 3:
+            return 'Studienabschluss';
+        case 5:
+            return 'Institut';
+        default:
+            return "";
+    }
+}
+
 function createNodeLabel(section, name) {
     // Build label of node: link to courseware section.
     let url = window.STUDIP.ABSOLUTE_URI_STUDIP +
@@ -97,8 +116,12 @@ export function drawNetwork(data) {
 
             node.class = typeToClass(node.type);
             if (node.class === "split") {
-                node.label = "";
+                node.label = splitRefToLabel(node.ref);
                 node.shape = "diamond";
+                g.outEdges(v).forEach(function(e) {
+                    let edge = g.edge(e);
+                    edge.label = edge.condition;
+                });
             } else if (node.class === "join") {
                 // Show how many predecessors have to be completed for the join.
                 let activatedInArcs = (parseInt(node.type) - 20).toString();

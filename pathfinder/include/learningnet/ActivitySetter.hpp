@@ -2,14 +2,21 @@
 
 #include <learningnet/Module.hpp>
 #include <learningnet/LearningNet.hpp>
+#include <map>
 
 namespace learningnet {
+
+using ConditionMap = std::map<int, std::vector<std::string>>;
 
 class ActivitySetter : public Module
 {
 public:
-	ActivitySetter(LearningNet &net, const std::vector<int> &completed) : Module() {
-		call(net, completed);
+	ActivitySetter(
+		LearningNet &net,
+		const std::vector<int> &completed,
+		const ConditionMap &conditionVals)
+	: Module() {
+		call(net, completed, conditionVals);
 	}
 
 	// TDOO remove this unused function
@@ -46,7 +53,7 @@ public:
 		}
 	}
 
-	void call(LearningNet &net)
+	void call(LearningNet &net, const ConditionMap &conditionVals)
 	{
 		// sources = actives
 		std::vector<lemon::ListDigraph::Node> sources;
@@ -81,16 +88,20 @@ public:
 
 					// For all outedges (in the completed case: only one).
 					for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
-						lemon::ListDigraph::Node u = net.target(a);
-						// Only join nodes can have multiple inedges.
-						// Push those to sources once alle necessary inedges were activated.
-						// TODO: changing directly number of howMany of join-nodes
-						// in type might not be good
-						if (net.isJoin(u)) {
-							net.incrementActivatedInArcs(u);
-						}
-						if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
-							sources.push_back(u);
+						std::vector<std::string> nothing = {};
+						const std::vector<std::string> &vals = net.getConditionId(v) == 0 ? nothing : conditionVals.at(net.getConditionId(v));
+						if (!net.isSplit(v) || net.getConditionId(v) == 0 || std::find(vals.begin(), vals.end(), net.getCondition(a)) != vals.end()) {
+							lemon::ListDigraph::Node u = net.target(a);
+							// Only join nodes can have multiple inedges.
+							// Push those to sources once alle necessary inedges were activated.
+							// TODO: changing directly number of howMany of join-nodes
+							// in type might not be good
+							if (net.isJoin(u)) {
+								net.incrementActivatedInArcs(u);
+							}
+							if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
+								sources.push_back(u);
+							}
 						}
 					}
 					break;
@@ -98,7 +109,7 @@ public:
 		}
 	}
 
-	void call(LearningNet &net, const std::vector<int> &completed)
+	void call(LearningNet &net, const std::vector<int> &completed, const ConditionMap &conditionVals)
 	{
 		std::map<int, lemon::ListDigraph::Node> sectionNode;
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
@@ -118,7 +129,7 @@ public:
 			}
 		}
 
-		call(net);
+		call(net, conditionVals);
 	}
 };
 

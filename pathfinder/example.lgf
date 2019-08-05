@@ -8,39 +8,23 @@ label	type	ref
 5	0	27
 6	0	33
 7	20	2
-8	10	0
+8	10	2
 9	0	35
 10	0	36
 11	0	37
-# can splits/joins be completed? no, not stored in Stud:IP db
-# 0: inactive unit
-# 1: active unit
-# 2: completed unit
-# 10: split
-# 11: condition
-# 20: join with one needed inedge
-# 20 + x: join with (x+1) needed completed inedges
-#
-# ref: for units the section id,
-# for splits the condition type id
-# for joins the necessary edges
 @arcs
-# TODO: conditions for frontend
-		-
-0	1
-3	4
-4	5
-4	6
-1	7
-2	7
-5	7
-6	7
-7	8
-8	9
-8	10
-10    11
+		condition
+0	1  ""
+3	4  ""
+4	5  ""
+4	6  ""
+1	7  ""
+2	7  ""
+5	7  ""
+6	7  ""
+7	8  ""
+8	9  "Bachelor"
+8	10 "else"
+10    11 ""
 @attributes
-# target might be join or unit
-# multiple target might be combined with a target join
 target 11
-#@extrasectionpossible

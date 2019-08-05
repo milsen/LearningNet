@@ -31,6 +31,7 @@ class LearningNet : public lemon::ListDigraph
 private:
 	lemon::ListDigraph::NodeMap<int> m_type;
 	lemon::ListDigraph::NodeMap<int> m_ref;
+	lemon::ListDigraph::ArcMap<std::string> m_condition;
 	lemon::ListDigraph::Node m_target;
 
 	void setReference(const lemon::ListDigraph::Node &v, int ref) {
@@ -42,6 +43,7 @@ public:
 		: lemon::ListDigraph()
 		, m_type{*this}
 		, m_ref{*this}
+		, m_condition{*this}
 		{}
 
 	/**
@@ -54,6 +56,7 @@ public:
 		lemon::DigraphReader<lemon::ListDigraph>(*this, networkIss)
 			.nodeMap("type", m_type)
 			.nodeMap("ref", m_ref)
+			.arcMap("condition", m_condition)
 			.node("target", m_target)
 			.run();
 	};
@@ -150,6 +153,13 @@ public:
 
 	void setTarget(const lemon::ListDigraph::Node &tgt) {
 		m_target = tgt;
+	}
+
+	// @}
+	// Condition Getter
+	// @{
+	std::string getCondition(const lemon::ListDigraph::Arc &a) const {
+		return m_condition[a];
 	}
 
 	// @}

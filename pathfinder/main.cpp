@@ -14,7 +14,7 @@ bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *>
 		{ "action",       std::bind(&Value::IsString, std::placeholders::_1) },
 		{ "network",      std::bind(&Value::IsString, std::placeholders::_1) },
 		{ "sections",     std::bind(&Value::IsArray, std::placeholders::_1) },
-		{ "condition",    std::bind(&Value::IsObject, std::placeholders::_1) },
+		{ "conditions",   std::bind(&Value::IsObject, std::placeholders::_1) },
 		{ "costs",        std::bind(&Value::IsObject, std::placeholders::_1) },
 		{ "useNodeCosts", std::bind(&Value::IsBool, std::placeholders::_1) }
 	};
@@ -32,7 +32,7 @@ bool streq(const std::string &str1, const std::string &str2)
 	return str1.compare(str2) == 0;
 }
 
-std::vector<int> toVector(const Value &oldArr)
+std::vector<int> toIntVector(const Value &oldArr)
 {
 	std::vector<int> arr;
 	for (auto &v : oldArr.GetArray()) {
@@ -40,6 +40,26 @@ std::vector<int> toVector(const Value &oldArr)
 	}
 
 	return arr;
+}
+
+std::vector<std::string> toStringVector(const Value &oldArr)
+{
+	std::vector<std::string> arr;
+	for (auto &v : oldArr.GetArray()) {
+		arr.push_back(v.GetString());
+	}
+
+	return arr;
+}
+
+ConditionMap toMap(const Value &oldObj)
+{
+	ConditionMap idToVal;
+	for (auto &m : oldObj.GetObject()) {
+		idToVal[std::stoi(m.name.GetString())] = toStringVector(m.value);
+	}
+
+	return idToVal;
 }
 
 void output(const Document &d)
@@ -67,7 +87,7 @@ int main(int argc, char *argv[])
 		// Check for correct parameters.
 		if ((streq(action, "check")   && !hasCorrectArgs(d, {"network"}))
 		 || (streq(action, "create")  && !hasCorrectArgs(d, {"sections"}))
-		 || (streq(action, "active")  && !hasCorrectArgs(d, {"network","sections"}))
+		 || (streq(action, "active")  && !hasCorrectArgs(d, {"network","sections","conditions"}))
 		 || (streq(action, "recnext") && !hasCorrectArgs(d, {"network","costs"}))
 		 || (streq(action, "recpath") && !hasCorrectArgs(d, {"network","costs"}))) {
 			std::cout << "Not all necessary parameters for the given action found." << std::endl;
@@ -82,13 +102,13 @@ int main(int argc, char *argv[])
 			NetworkChecker checker(net);
 			return checker.handleFailure();
 		} else if (streq(action, "create")) {
-			LearningNet *net = LearningNet::create(toVector(d["sections"]));
+			LearningNet *net = LearningNet::create(toIntVector(d["sections"]));
 			net->write();
 			delete net;
 			return EXIT_SUCCESS;
 		} else if (streq(action, "active")) {
 			LearningNet net(d["network"].GetString());
-			ActivitySetter act(net, toVector(d["sections"]));
+			ActivitySetter act(net, toIntVector(d["sections"]), toMap(d["conditions"]));
 			net.write();
 			return act.handleFailure();
 		} else if (streq(action, "recnext")) {
