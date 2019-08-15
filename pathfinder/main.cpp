@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
 			net.write();
 			return act.handleFailure();
 		} else if (streq(action, "recnext")) {
+			// TODO just set one item type to 3 (=recommended)
 			return EXIT_FAILURE;
 		} else if (streq(action, "recpath")) {
 			return EXIT_FAILURE;

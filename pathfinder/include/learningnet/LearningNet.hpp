@@ -15,6 +15,7 @@ class NodeType {
 		static constexpr int active = 1;
 		static constexpr int completed = 2;
 		static constexpr int split = 10;
+		static constexpr int condition = 11;
 		static constexpr int join = 20;
 
 		NodeType(int v) : m_underlying(v) {}
@@ -83,14 +84,37 @@ public:
 		return net;
 	}
 
+	/**
+	 * @param v node that is checked for being a source.
+	 * @return whether the node \p v has zero inedges.
+	 */
+	bool isSource(const lemon::ListDigraph::Node &v) const {
+		lemon::ListDigraph::InArcIt a(*this, v);
+		return a == lemon::INVALID;
+	}
+
+	/**
+	 * @param v node that is checked for being a dead end.
+	 * @return whether the node \p v has zero outedges.
+	 */
+	bool isDeadEnd(const lemon::ListDigraph::Node &v) const {
+		lemon::ListDigraph::OutArcIt a(*this, v);
+		return a == lemon::INVALID;
+	}
+
 	// Type Checkers, Getter and Setter
 	// @{
+
 	bool isUnit(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] < NodeType::split;
 	}
 
 	bool isSplit(const lemon::ListDigraph::Node &v) const {
-		return m_type[v] >= NodeType::split && m_type[v] < NodeType::join;
+		return m_type[v] == NodeType::split;
+	}
+
+	bool isCondition(const lemon::ListDigraph::Node &v) const {
+		return m_type[v] >= NodeType::condition && m_type[v] < NodeType::join;
 	}
 
 	bool isJoin(const lemon::ListDigraph::Node &v) const {
@@ -153,6 +177,14 @@ public:
 
 	void setTarget(const lemon::ListDigraph::Node &tgt) {
 		m_target = tgt;
+	}
+
+	/**
+	 * @param v node that is checked for being the target.
+	 * @return whether the node \p v is the target.
+	 */
+	bool isTarget(const lemon::ListDigraph::Node &v) const {
+		return v == m_target;
 	}
 
 	// @}
