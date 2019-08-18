@@ -2,6 +2,8 @@
 
 namespace LearningNet;
 
+use LearningNet\DataExtractor;
+
 /**
  * TODO
  *
@@ -37,90 +39,44 @@ class ConditionHandler
         ]
     ];
 
-    // Condition id that signifies no condition.
-    const NONE_CONDITION = 0;
-    // Type id for split nodes.
-    const SPLIT_TYPE = 10;
-    // Header strings used for the columns of node types.
-    const TYPE_HEADER = "type";
-    // Header strings used for the columns of node references.
-    const REF_HEADER = "ref";
-
     private $conditionVals;
 
-    public function __construct($network, $courseId, $userId)
+    public function __construct($network, $userId)
     {
         $this->conditionVals = array();
-        foreach ($this->extractUsedConditions($network) as $conditionId) {
+        $extractor = new DataExtractor();
+        foreach ($extractor->extractUsedConditions($network) as $conditionId) {
             $this->conditionVals[$conditionId] =
-                $this->getValues($conditionId, $courseId, $userId);
+                $this->getValues($conditionId, $userId);
         }
     }
 
-    public function getValues($conditionId, $courseId, $userId)
+    public function getValues($conditionId, $userId)
     {
-        $condtion = self::CONDITION_MAP[$conditionId];
+        $condition = self::CONDITION_MAP[$conditionId];
 
+        // Key and table are not bound using bindParam since they should not be
+        // packed into strings. This is only fine as long as they are hardcoded
+        // above and not given by user-input!
         $db = \DBManager::get();
         $stmt = $db->prepare("
             SELECT
-                :key
+                " . $condition['key'] . "
             FROM
-                :table
+                " . $condition['table'] . "
             WHERE
                 user_id = :userid
-            AND
-                seminar_id = :cid
         ");
-        $stmt->bindParam(':key', $condition['key']);
-        $stmt->bindParam(':table', $condition['table']);
         $stmt->bindParam(':userid', $userId);
-        $stmt->bindParam(':cid', $courseId);
         $stmt->execute();
 
         $values = array();
-        while ($row = $stmt->fetch(PDO::FETCH_NUM, PDO::FETCH_ORI_NEXT)) {
+        while ($row = $stmt->fetch(\PDO::FETCH_NUM, \PDO::FETCH_ORI_NEXT)) {
             array_push($values, $row[0]);
         }
         // There might be multiple values, e.g. one student may be part of
         // multiple institutes.
         return $values;
-    }
-
-    public function extractUsedConditions($network)
-    {
-        $conditionIds = array();
-
-        $read = "nodeSection";
-        $typeColumn = 0;
-        $refColumn = 0;
-
-        // For every non-empty non-comment line.
-        foreach (explode("\n", $network) as $line) {
-            $line = trim($line);
-
-            if ($line !== "" && $line[0] !== "#") {
-                if ($line[0] === "@" && $line !== "@nodes") {
-                    // If we see a non-node section, wait again until the
-                    // nodeSection arrives.
-                    $read = "nodeSection";
-                } else if ($read === "nodeSection" && $line === "@nodes") {
-                    $read = "nodeHeader";
-                } else if ($read === "nodeHeader") {
-                    $headers = preg_split("/\s+/", $line);
-                    $typeColumn = array_search(self::TYPE_HEADER, $headers);
-                    $refColumn = array_search(self::REF_HEADER, $headers);
-                    $read = "rows";
-                } else if ($read === "rows") {
-                    $row = preg_split("/\s+/", $line);
-                    if ($row[$typeColumn] === self::SPLIT_TYPE &&
-                        $row[$refColumn] !== self::NONE_CONDITION) {
-                        array_push($conditionIds, $row[$refColumn]);
-                    }
-                }
-            }
-        }
-        return array_unique($conditionIds);
     }
 
     public function getConditionVals()
@@ -160,7 +116,7 @@ class ConditionHandler
         $stmt->execute();
 
         $values = array();
-        while ($row = $stmt->fetch(PDO::FETCH_NUM, PDO::FETCH_ORI_NEXT)) {
+        while ($row = $stmt->fetch(\PDO::FETCH_NUM, \PDO::FETCH_ORI_NEXT)) {
             array_push($values, $row[0]);
         }
         // There should not be multiple values, i.e. :key should be the single

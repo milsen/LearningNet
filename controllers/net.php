@@ -88,7 +88,7 @@ class NetController extends PluginController {
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
 
             $network = $output['message'];
-            $conditionHandler = new ConditionHandler($network, $courseId, $userId);
+            $conditionHandler = new ConditionHandler($network, $userId);
             $conditionValues = $conditionHandler->getConditionVals();
             $output = $this->executableInterface->getActives(
                 $network, $completedIds, $conditionValues
