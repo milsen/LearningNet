@@ -13,47 +13,60 @@ class ConditionHandler
 {
     // There should not be multiple values, i.e. :key should be the single
     // primary key, otherwise there should not be a translation_table.
-    // TODO gettext
+    // If CONDITION_MAP is updated, getConditionTitles should be updated, too!
     const CONDITION_MAP = [
-        1 => [
-            'name' => 'Bevorzugte Sprache',
+        0 => [
             'table' => 'user_info',
             'key' => 'preferred_language'
         ],
-        2 => [
-            'name' => 'Studienfach',
+        1 => [
             'table' => 'user_studiengang',
             'key' => 'fach_id',
             'translation_table' => 'fach',
             'translation_key' => 'name',
         ],
-        3 => [
-            'name' => 'Studienabschluss',
+        2 => [
             'table' => 'user_studiengang',
             'key' => 'abschluss_id'
         ],
-        4 => [
-            'name' => 'Institut',
+        3 => [
             'table' => 'user_inst',
             'key' => 'Institut_id'
         ]
     ];
 
-    private $conditionVals;
-
-    public function __construct($network, $userId)
+    // For AJAX stuff
+    public static function getConditionTitles()
     {
-        $this->conditionVals = array();
-        $extractor = new DataExtractor();
-        foreach ($extractor->extractUsedConditions($network) as $conditionId) {
-            $this->conditionVals[$conditionId] =
-                $this->getValues($conditionId, $userId);
-        }
+        return [
+            "0" => _ln('Bevorzugte Sprache'),
+            "1" => _ln('Studienfach'),
+            "2" => _ln('Studienabschluss'),
+            "3" => _ln('Institut')
+        ];
     }
 
-    public function getValues($conditionId, $userId)
+    const CONDITION_ELSE_BRANCH_KEYWORD = "SONST";
+
+    /* Get User Values for Conditions */
+
+    public function getConditionValues($network, $userId)
+    {
+        $conditionVals = [];
+        $extractor = new DataExtractor();
+        foreach ($extractor->extractConditions($network) as $conditionId) {
+            $conditionVals[$conditionId] =
+                $this->getValuesByConditionID($conditionId, $userId);
+        }
+        return $conditionVals;
+    }
+
+    public function getValuesByConditionID($conditionId, $userId)
     {
         $condition = self::CONDITION_MAP[$conditionId];
+        if ($condition === null) {
+            return [];
+        }
 
         // Key and table are not bound using bindParam since they should not be
         // packed into strings. This is only fine as long as they are hardcoded
@@ -79,39 +92,55 @@ class ConditionHandler
         return $values;
     }
 
-    public function getConditionVals()
-    {
-        return $this->conditionVals;
-    }
+    /* Translate Condition Branches */
 
-    // For AJAX stuff
-    public function getConditionName($conditionId)
+    /**
+     * @param $conditionIdToBranches [ conditionId => [branchname] ]
+     * @return [ conditionId => [branchname => translatedBranchName] ]
+     */
+    public function getConditionBranches($conditionIdToBranches)
     {
-        return self::CONDITION_MAP[$conditionId]['name'];
+        $translations = [];
+
+        foreach ($conditionIdToBranches as $conditionId => $branches) {
+            $translations[$conditionId] = [];
+
+            foreach ($branches as $branch) {
+                // Only translate if it is not the else branch.
+                $translations[$conditionId][$branch] =
+                    $branch === self::CONDITION_ELSE_BRANCH_KEYWORD ?
+                    self::CONDITION_ELSE_BRANCH_KEYWORD :
+                    $this->getBranchesByConditionID($conditionId, $branch);
+            }
+        }
+        return $translations;
     }
 
     /**
      * Translate id (e.g. fach_id) into its name
      */
-    public function getValueName($conditionId, $value)
+    private function getBranchesByConditionID($conditionId, $value)
     {
         $condition = self::CONDITION_MAP[$conditionId];
+        if ($condition === null) {
+            return "";
+        }
         if (!array_key_exists('translation_table', $condition)) {
             return $value;
         }
 
+        // Keys and table are not bound using bindParam since they should not be
+        // packed into strings. This is only fine as long as they are hardcoded
+        // above and not given by user-input!
         $db = \DBManager::get();
         $stmt = $db->prepare("
             SELECT
-                :translation_key
+                " . $condition['translation_key'] . "
             FROM
-                :translation_table
+                " . $condition['translation_table'] . "
             WHERE
-                :key = :value
+                " . $condition['key'] . " = :value
         ");
-        $stmt->bindParam(':translation_key', $condition['translation_key']);
-        $stmt->bindParam(':translation_table', $condition['translation_table']);
-        $stmt->bindParam(':key', $condition['key']);
         $stmt->bindParam(':value', $value);
         $stmt->execute();
 

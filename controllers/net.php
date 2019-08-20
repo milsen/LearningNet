@@ -88,8 +88,8 @@ class NetController extends PluginController {
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
 
             $network = $output['message'];
-            $conditionHandler = new ConditionHandler($network, $userId);
-            $conditionValues = $conditionHandler->getConditionVals();
+            $conditionHandler = new ConditionHandler();
+            $conditionValues = $conditionHandler->getConditionValues($network, $userId);
             $output = $this->executableInterface->getActives(
                 $network, $completedIds, $conditionValues
             );
@@ -106,18 +106,32 @@ class NetController extends PluginController {
     /**
      * AJAX: Get map of ids to titles of all Courseware sections
      */
-    public function section_titles_action()
+    public function labels_action()
     {
         $courseId = \Request::get('cid');
-        $sectionTitles = array();
+        $conditionBranchesByID = \Request::getInstance()['conditionBranchesByID'];
 
+        // Get section titles.
+        $sectionTitles = array();
         $sections = Mooc\DB\Block::findBySQL(
             "type = 'Section' AND seminar_id = ?", array($courseId));
         foreach ($sections as $section) {
             $sectionTitles[$section['id']] = $section['title'];
         }
 
-        $this->render_json($sectionTitles);
+        // Get condition names.
+        $conditionHandler = new ConditionHandler();
+        $conditionTitles = $conditionHandler->getConditionTitles();
+
+        // Get condition branch titles.
+        $conditionBranches =
+            $conditionHandler->getConditionBranches($conditionBranchesByID);
+
+        $this->render_json([
+            'section_titles' => $sectionTitles,
+            'condition_titles' => $conditionTitles,
+            'condition_branches' => $conditionBranches
+        ]);
     }
 
     /**

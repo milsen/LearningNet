@@ -4,8 +4,8 @@ import dagreD3 from 'dagre-d3';
 import graphlib from 'graphlib';
 import * as d3 from 'd3';
 
-const DATA_ROUTE = 'network';
-const SECTION_ROUTE = 'section_titles';
+const NETWORK_ROUTE = 'network';
+const LABELS_ROUTE = 'labels';
 
 function typeToClass(type) {
     type = parseInt(type);
@@ -17,27 +17,10 @@ function typeToClass(type) {
         return "completed";
     } else if (type === 10) {
         return "split";
+    } else if (type === 11) {
+        return "condition";
     } else if (type >= 20) {
         return "join";
-    }
-}
-
-function splitRefToLabel(ref) {
-    ref = parseInt(ref);
-
-    switch (ref) {
-        case 0:
-            return "";
-        case 1:
-            return 'Bevorzugte Sprache';
-        case 2:
-            return 'Studienfach';
-        case 3:
-            return 'Studienabschluss';
-        case 5:
-            return 'Institut';
-        default:
-            return "";
     }
 }
 
@@ -71,7 +54,7 @@ export function ajaxURL(route) {
 
 export function withGraphData(func, getUserData = false) {
     $.ajax({
-        url: ajaxURL(DATA_ROUTE),
+        url: ajaxURL(NETWORK_ROUTE),
         data: { getUserData : getUserData },
         datatype: 'json',
         success: function(data) {
@@ -85,8 +68,13 @@ export function withGraphData(func, getUserData = false) {
     });
 }
 
-export function withSectionTitles(func) {
-    $.get(ajaxURL(SECTION_ROUTE), func);
+export function withLabels(conditionBranchesByID, func) {
+    $.ajax({
+        url: ajaxURL(LABELS_ROUTE),
+        data: { conditionBranchesByID : conditionBranchesByID },
+        datatype: 'json',
+        success: func
+    });
 }
 
 export function setupNetwork() {
@@ -108,19 +96,46 @@ export function drawNetwork(data) {
         return;
     }
 
+    // TODO Can performance be improved by doing this elsewhere?
+    let conditionBranchesByID = {};
+    g.nodes().forEach(function(v) {
+        let node = g.node(v);
+        if (typeToClass(node.type) === "condition") {
+            let conditionId = node.ref;
+            if (conditionBranchesByID[conditionId] === undefined) {
+                conditionBranchesByID[conditionId] = [];
+            }
+
+            g.outEdges(v).forEach(function(e) {
+                conditionBranchesByID[conditionId].push(g.edge(e).condition);
+            });
+        }
+    });
+
     // Set styles of nodes: CSS classes, labels etc.
-    withSectionTitles(function(sectionTitles) {
+    withLabels(conditionBranchesByID, function(labels) {
+        let sectionTitles = labels['section_titles'];
+        let conditionTitles = labels['condition_titles'];
+        let conditionBranches = labels['condition_branches'];
+
         g.nodes().forEach(function(v) {
             let node = g.node(v);
             node.rx = node.ry = 5;
 
             node.class = typeToClass(node.type);
             if (node.class === "split") {
-                node.label = splitRefToLabel(node.ref);
+                node.label = "";
+                node.shape = "diamond";
+            } else if (node.class === "condition") {
+                node.label = conditionTitles[node.ref];
                 node.shape = "diamond";
                 g.outEdges(v).forEach(function(e) {
                     let edge = g.edge(e);
-                    edge.label = edge.condition;
+                    edge.label = conditionBranches &&
+                        conditionBranches[node.ref] &&
+                        conditionBranches[node.ref][edge.condition] ?
+                        conditionBranches[node.ref][edge.condition] :
+                        "";
                 });
             } else if (node.class === "join") {
                 // Show how many predecessors have to be completed for the join.

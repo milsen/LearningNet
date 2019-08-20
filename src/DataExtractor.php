@@ -9,10 +9,8 @@ namespace LearningNet;
  */
 class DataExtractor
 {
-    // Condition id that signifies no condition.
-    const NONE_CONDITION = 0;
-    // Type id for split nodes.
-    const SPLIT_TYPE = 10;
+    // Type id for condition nodes.
+    const CONDITION_TYPE = 11;
     // Header strings used for the columns of node types.
     const TYPE_HEADER = "type";
     // Header strings used for the columns of node references.
@@ -21,7 +19,7 @@ class DataExtractor
     public function __construct()
     { }
 
-    public function extractUsedConditions($network)
+    public function extractConditions($network)
     {
         $conditionIds = array();
 
@@ -47,8 +45,7 @@ class DataExtractor
                     $read = "rows";
                 } else if ($read === "rows") {
                     $row = preg_split("/\s+/", $line);
-                    if (intval($row[$typeColumn]) === self::SPLIT_TYPE &&
-                        intval($row[$refColumn]) !== self::NONE_CONDITION) {
+                    if (intval($row[$typeColumn]) === self::CONDITION_TYPE) {
                         array_push($conditionIds, intval($row[$refColumn]));
                     }
                 }

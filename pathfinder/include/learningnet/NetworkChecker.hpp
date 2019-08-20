@@ -10,6 +10,9 @@ using namespace lemon;
 
 class NetworkChecker : public Module
 {
+	// TODO static, to cpp file
+	const std::string CONDITION_ELSE_BRANCH_KEYWORD{"SONST"};
+
 private:
 
 #if 0
@@ -229,7 +232,18 @@ public:
 				if (countInArcs(net, v) > 1) {
 					failWithError("Condition node has more than one in-arc.");
 				}
-				// TODO else-branch for conditions
+
+				// Check that each condition has an else-branch (otherwise it
+				// might not always be possible to reach the target).
+				bool elseBranchFound = false;
+				for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID && !elseBranchFound; ++out) {
+					if (net.getCondition(out) == CONDITION_ELSE_BRANCH_KEYWORD) {
+						elseBranchFound = true;
+					}
+				}
+				if (!elseBranchFound) {
+					failWithError("Condition has no else branch.");
+				}
 			}
 		}
 

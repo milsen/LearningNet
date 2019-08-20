@@ -121,6 +121,12 @@ public:
 		return m_type[v] >= NodeType::join;
 	}
 
+	bool isUnknown(const lemon::ListDigraph::Node &v) const {
+		return m_type[v] < NodeType::inactive
+		   || (m_type[v] > NodeType::completed && m_type[v] < NodeType::split)
+		   || (m_type[v] > NodeType::condition && m_type[v] < NodeType::join);
+	}
+
 	int getType(const lemon::ListDigraph::Node &v) const {
 		return m_type[v];
 	}
@@ -231,6 +237,7 @@ public:
 		lemon::DigraphWriter<lemon::ListDigraph>(*this, out)
 			.nodeMap("type", m_type)
 			.nodeMap("ref", m_ref)
+			.arcMap("condition", m_condition)
 			.node("target", m_target)
 			.run();
 	}

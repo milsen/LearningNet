@@ -81,21 +81,22 @@ public:
 					appendError("Input has active units set already. Why?");
 					break;
 				default:
-					if (!net.isUnit(v) && !net.isSplit(v) && !net.isJoin(v)) {
+					if (net.isUnknown(v)) {
 						appendError("Input has nodes of unknown type.");
 						break;
 					}
 
 					// For all outedges (in the completed case: only one).
 					for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
+						// TODO check else branch
 						std::vector<std::string> nothing = {};
 						const std::vector<std::string> &vals = net.getConditionId(v) == 0 ? nothing : conditionVals.at(net.getConditionId(v));
-						if (!net.isSplit(v) || net.getConditionId(v) == 0 || std::find(vals.begin(), vals.end(), net.getCondition(a)) != vals.end()) {
+						if (!net.isSplit(v) || net.getConditionId(v) == 0 ||
+							std::find(vals.begin(), vals.end(), net.getCondition(a)) != vals.end()) {
+
 							lemon::ListDigraph::Node u = net.target(a);
-							// Only join nodes can have multiple inedges.
-							// Push those to sources once alle necessary inedges were activated.
-							// TODO: changing directly number of howMany of join-nodes
-							// in type might not be good
+							// Only join nodes can have multiple in-edges.
+							// Push those once all necessary in-edges were activated.
 							if (net.isJoin(u)) {
 								net.incrementActivatedInArcs(u);
 							}
