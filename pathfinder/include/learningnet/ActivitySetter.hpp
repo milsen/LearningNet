@@ -64,7 +64,7 @@ public:
 				net.resetActivatedInArcs(v);
 			}
 
-			if (((net.isUnit(v) || net.isSplit(v)) && countInArcs(net, v) == 0)
+			if ((!net.isJoin(v) && countInArcs(net, v) == 0)
 			   || net.isUnlockedJoin(v)) {
 				sources.push_back(v);
 			}
@@ -86,25 +86,40 @@ public:
 						break;
 					}
 
-					// For all outedges (in the completed case: only one).
-					for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
-						// TODO check else branch
-						std::vector<std::string> nothing = {};
-						const std::vector<std::string> &vals = net.getConditionId(v) == 0 ? nothing : conditionVals.at(net.getConditionId(v));
-						if (!net.isSplit(v) || net.getConditionId(v) == 0 ||
-							std::find(vals.begin(), vals.end(), net.getCondition(a)) != vals.end()) {
+					// Function to push an arc's target to sources.
+					auto exploreArc = [&](const lemon::ListDigraph::OutArcIt &a) {
+						lemon::ListDigraph::Node u = net.target(a);
+						// Push join nodes only if all necessary in-edges are
+						// activated. All other nodes only have one in-edge and
+						// can be pushed directly when explored.
+						if (net.isJoin(u)) {
+							net.incrementActivatedInArcs(u);
+						}
+						if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
+							sources.push_back(u);
+						}
+					};
 
-							lemon::ListDigraph::Node u = net.target(a);
-							// Only join nodes can have multiple in-edges.
-							// Push those once all necessary in-edges were activated.
-							if (net.isJoin(u)) {
-								net.incrementActivatedInArcs(u);
-							}
-							if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
-								sources.push_back(u);
+					// For a condition, only explore out-edges corresponding to set user-values.
+					if (net.isCondition(v)) {
+						// Get user values for this condition.
+						std::vector<std::string> vals = conditionVals.at(net.getConditionId(v));
+						if (vals.empty()) {
+							vals.push_back(CONDITION_ELSE_BRANCH_KEYWORD);
+						}
+
+						for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
+							if (std::find(vals.begin(), vals.end(), net.getCondition(a)) != vals.end()) {
+								exploreArc(a);
 							}
 						}
+					} else {
+						// Else explore all out-edges (for completed units: only one).
+						for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
+							exploreArc(a);
+						}
 					}
+
 					break;
 			}
 		}

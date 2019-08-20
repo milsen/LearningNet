@@ -10,9 +10,6 @@ using namespace lemon;
 
 class NetworkChecker : public Module
 {
-	// TODO static, to cpp file
-	const std::string CONDITION_ELSE_BRANCH_KEYWORD{"SONST"};
-
 private:
 
 #if 0

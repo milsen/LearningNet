@@ -6,6 +6,9 @@
 
 namespace learningnet {
 
+// TODO static, to LearningNet cpp file
+const std::string CONDITION_ELSE_BRANCH_KEYWORD{"SONST"};
+
 class NodeType {
 	private:
 		int m_underlying;
@@ -40,6 +43,7 @@ private:
 	}
 
 public:
+
 	LearningNet()
 		: lemon::ListDigraph()
 		, m_type{*this}
@@ -163,11 +167,11 @@ public:
 	}
 
 	int getConditionId(const lemon::ListDigraph::Node &v) const {
-		return isSplit(v) ? m_ref[v] : 0;
+		return isCondition(v) ? m_ref[v] : 0;
 	}
 
 	void setConditionId(const lemon::ListDigraph::Node &v, int conditionId) {
-		if (isSplit(v)) {
+		if (isCondition(v)) {
 			setReference(v, conditionId);
 		} else {
 			throw "setConditionId() on node which is not a split.";
