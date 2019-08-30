@@ -48,7 +48,21 @@ class NetworkCalculations
         $completedSections, $conditionValues, $testGrades)
     {
         return $this->runCommand(array(
-            'action' => 'active',
+            'action' => 'recommend',
+            'recTypes' => ['active'],
+            'network' => $networkLGF,
+            'sections' => $completedSections,
+            'conditions' => $conditionValues,
+            'test_grades' => $testGrades
+        ));
+    }
+
+    public function getRecommended($networkLGF,
+        $completedSections, $conditionValues, $testGrades)
+    {
+        return $this->runCommand(array(
+            'action' => 'recommend',
+            'recTypes' => ['active','next','path'],
             'network' => $networkLGF,
             'sections' => $completedSections,
             'conditions' => $conditionValues,

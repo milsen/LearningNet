@@ -44,6 +44,20 @@ class NetController extends PluginController {
     public function settings_action()
     {
         $this->setupPage('settings');
+        // TODO replace example by DB call for cost functions activated in this course
+        // found in db: active
+        // not found in db but avaiable: inactive (set weight to 0)
+        $this->costFunctions = [
+            "Schwierigkeit" => 0.5,
+            "Kontinuität" => 0.25
+        ];
+        $inactiveCostFunctions = [
+            "Lernstil"
+        ];
+
+        foreach ($inactiveCostFunctions as $func) {
+            $this->costFunctions[$func] = 0.0;
+        }
     }
 
     /**

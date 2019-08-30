@@ -1,28 +1,19 @@
+Pathfinder uses a JSON object as input, with the following keys:
 
-Pathfinder uses a JSON string as input:
-
-
-		.boolOption("check", "Check whether the input is a correct learning net. Param: network")
-		.boolOption("create", "Create a learning net without edges. Param: sections")
-		.boolOption("active", "Output active units based on completed ones. Param: network, sections")
-		.boolOption("recnext", "Output the recommended next unit. Param: network, costs")
-		.boolOption("recpath", "Output the sequence of recommended units. Param: network, costs")
-		.optionGroup("action", "check")
-		.optionGroup("action", "create")
-		.optionGroup("action", "active")
-		.optionGroup("action", "recnext")
-		.optionGroup("action", "recpath")
-		.mandatoryGroup("action")
-		.onlyOneGroup("action")
-
-		// possible arguments
-		.refOption("network", "Network as space-separated string.", network)
-		.refOption("costs", "Costs as space-separated string.", costs) // TODO will not work
-		.refOption("sections", "Relevant sections as space-separated string.", sections)
-
-		// whether costs are for nodes or edges
-		.boolOption("edgecosts", "Use costs for edges.")
-		.boolOption("nodecosts", "Use costs for nodes.")
-		.optionGroup("costtype", "edgecosts")
-		.optionGroup("costtype", "nodecosts")
-		.onlyOneGroup("costtype");
+* action: ["check", "create", "recommend"],
+* recType (for "recommend"): ["active", "next", "path"]
+    For every recType, the full learning net with active nodes set is written to stdout.
+    If "active" is given, the path attribute is not set.
+    If "next" is given, the recommended-attribute is set to one recommended unit node.
+    If "path" is given, the recommended-attribute is set to a sequence of recommended node.
+* network (for "check", "recommend"): Network as string.
+* sections (for "create", "recommend"): Relevant sections as space-separated string.
+    Marks completed sections for "recommend".
+* conditionValues (for "recommend"): Array using conditionIds as indices, of the form
+    [[conditionBranchNames]]
+  for each conditionId.
+* testGrades (for "recommend"): Object of the form  { testId : grade }.
+* nodeCosts (for "recommend", "next" or "path"): Array of the form
+    [ { "weight" : weight, "costs" : { sectionId : costValue } ].
+* nodePairCosts (for "recommend", "next" or "path"): Array of the form
+    [ { "weight" : weight, "costs" : { sectionId : { sectionId : costValue }} ].
