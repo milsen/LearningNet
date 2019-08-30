@@ -9,7 +9,7 @@ namespace LearningNet;
  */
 class NetworkCalculations
 {
-    const EXE_PATH = '/pathfinder/build/learningnet-pathfinder';
+    const EXE_PATH = '/backend/build/learningnet-pathfinder';
 
     private static $executablePath = "";
 
