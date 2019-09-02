@@ -109,7 +109,7 @@ public:
 						}
 
 						for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
-							if (std::find(vals.begin(), vals.end(), net.getCondition(a)) != vals.end()) {
+							if (std::find(vals.begin(), vals.end(), net.getConditionBranch(a)) != vals.end()) {
 								exploreArc(a);
 							}
 						}

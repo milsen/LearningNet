@@ -200,7 +200,7 @@ public:
 	// @}
 	// Condition Getter
 	// @{
-	std::string getCondition(const lemon::ListDigraph::Arc &a) const {
+	std::string getConditionBranch(const lemon::ListDigraph::Arc &a) const {
 		return m_condition[a];
 	}
 
