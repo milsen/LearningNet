@@ -1,7 +1,7 @@
 #pragma once
 
+#include <learningnet/Compressor.hpp>
 #include <learningnet/Module.hpp>
-#include <learningnet/LearningNet.hpp>
 #include <lemon/connectivity.h> // for dag
 #include <deque>
 
@@ -154,95 +154,6 @@ private:
 		return true;
 	}
 
-#if 0
-	void compress(LearningNet &net)
-	{
-		std::vector<lemon::ListDigraph::Node> nodeStack;
-		lemon::ListDigraph::NodeMap<bool> visited(net, false);
-		lemon::ListDigraph::NodeMap<int> visitedFromHowManyPreds(net, 0);
-
-		// sources
-		std::vector<lemon::ListDigraph::Node> sources;
-
-		// Collect nodes with indegree 0.
-		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
-			if (net.isJoin(v)) {
-				net.resetActivatedInArcs(v);
-			}
-
-			if ((!net.isJoin(v) && countInArcs(net, v) == 0)
-			   || net.isUnlockedJoin(v)) {
-				sources.push_back(v);
-			}
-		}
-
-
-		// Start at sources...
-		// Start breadth-first search at every source.
-		while (!sources.empty()) {
-			lemon::ListDigraph::Node v = sources.front();
-			nodeStack.pop_front();
-			visited[v] = true;
-
-			// Contract nodes depending on their type.
-			// If a node is a unit, just remove it and continue.
-			if (net.isUnit(v)) {
-				if (net.isSource(v)) {
-					// Remove source units. Even if they are targets,
-					// they can be definitely reached.
-					net.erase(v);
-				} else {
-					// Else contract them with their predecessor.
-					lemon::ListDigraph::InArcIt in(net, v);
-					lemon::ListDigraph::Node pred = net.source(in);
-					if (net.isTarget(v)) {
-						net.setTarget(pred);
-					}
-					net.contract(pred, v);
-				}
-				continue;
-			} else
-
-
-			// Add unvisited successors to the stack.
-			for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
-				lemon::ListDigraph::Node tgt = net.target(out);
-				if (!visited[tgt]) {
-					nodeStack.push_back(tgt);
-				}
-			}
-
-			} else if (net.isSplit(v)) {
-				// Combine splits.
-				for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
-					lemon::ListDigraph::Node succ = net.target(out);
-					if (net.isSplit(succ)) {
-						if (net.isTarget(succ)) {
-							net.setTarget(v);
-						}
-						net.contract(v, succ);
-					}
-				}
-
-			} else if (net.isJoin(v)) {
-				// Combine 1-joins or *-joins.
-				lemon::ListDigraph::OutArcIt out(net, v);
-				lemon::ListDigraph::Node succ = net.target(out);
-				if (out != lemon::INVALID && net.isJoin(succ)) {
-					int necArcsV = net.getNecessaryInArcs(v);
-					int necArcsSucc = net.getNecessaryInArcs(succ);
-					if ((necArcsV == 1 && necArcsSucc == 1)
-						|| (necArcsV == countInArcs(net, v) &&
-							necArcsSucc == countInArcs(net, succ))) {
-						if (net.isTarget(succ)) {
-							net.setTarget(v);
-						}
-						net.contract(v, succ);
-					}
-				}
-			}
-	}
-#endif
 
 public:
 	NetworkChecker(LearningNet &net) : Module() {
@@ -330,8 +241,8 @@ public:
 		}
 
 		// TODO when conditions exist, there must exist a path to target
-		/* compress(net); */
-		return pathsForAllConditions(net, conditionIdToBranches);
+		Compressor comp;
+		return comp.compress(net) || pathsForAllConditions(net, conditionIdToBranches);
 	}
 };
 

@@ -66,8 +66,6 @@ public:
 			.run();
 	};
 
-	virtual ~LearningNet ();
-
 	static LearningNet *create(const std::vector<int> &sections) {
 		LearningNet *net = new LearningNet();
 		// Connect all units with one join.
