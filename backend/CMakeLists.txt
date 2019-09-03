@@ -98,15 +98,10 @@ FIND_PACKAGE(Doxygen)
 
 
 ## LEARNINGNET_LIBRARIES
-# Collect all hpp/cpp-files in ./include/learningnet/ and ./src/learningnet.
-FILE(GLOB LN_HEADERS include/learningnet/*.hpp)
-FILE(GLOB LN_SOURCES src/learningnet/*.cpp)
-SET(LN_SOURCES "${LN_HEADERS};${LN_SOURCES}")
-
-# Create the library, link it with lemon, set its include-dir as ./include.
-ADD_LIBRARY(${LEARNINGNET_LIBRARIES} "${LN_SOURCES}")
-TARGET_LINK_LIBRARIES(${LEARNINGNET_LIBRARIES} ${LEMON_LIBRARIES})
-TARGET_INCLUDE_DIRECTORIES(${LEARNINGNET_LIBRARIES} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# Create the header-only library, set its include-dir as ./include.
+ADD_LIBRARY(${LEARNINGNET_LIBRARIES} INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(${LEARNINGNET_LIBRARIES} INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
 ### EXECUTABLE
