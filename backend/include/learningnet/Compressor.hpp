@@ -62,12 +62,13 @@ public:
 	{
 		std::vector<lemon::ListDigraph::Node> succs;
 		std::map<lemon::ListDigraph::Node, int> visitedFromHowManyPreds; // for join nodes
+		lemon::ListDigraph::NodeMap<int> indeg{net, 0};
 
 		// Collect sources: nodes with indegree 0.
 		std::vector<lemon::ListDigraph::Node> initialSources;
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
-			if ((!net.isJoin(v) && hasAtMostNSuccs(net, v, 0))
-			   || net.isUnlockedJoin(v)) {
+			indeg[v] = countInArcs(net, v);
+			if (indeg[v] == 0) {
 				initialSources.push_back(v);
 			}
 		}
@@ -82,18 +83,21 @@ public:
 				return true;
 			}
 
-			if (!net.isCondition(v)) {
-				// TODO joins
+			if (net.isCondition(v)) {
+				sources.push_back(v);
+			} else {
 				for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
-					initialSources.push_back(net.target(out));
+					lemon::ListDigraph::Node w = net.target(out);
+					indeg[w]--;
+					if (indeg[w] == 0) {
+						initialSources.push_back(w);
+					}
 				}
 				net.erase(v);
-			} else {
-				sources.push_back(v);
 			}
 		}
 
-		// Get univisited node v. Try to contract v->w such that w is removed.
+		// For each source v:
 		while (!sources.empty()) {
 			lemon::ListDigraph::Node v = sources.back();
 			sources.pop_back();
@@ -103,12 +107,13 @@ public:
 				succs.push_back(net.target(out));
 			}
 
+			// Get successor w of v. Try to contract v->w such that w is removed.
 			while (!succs.empty()) {
 				lemon::ListDigraph::Node w = succs.back();
 				succs.pop_back();
 
 				// Contract nodes depending on their type.
-				// If a node is a unit, just contract it with its predecessor and continue.
+				// If a node is a unit, just combine it with its predecessor.
 				if (net.isUnit(w)) {
 					contract(net, succs, v, w);
 				} else if (net.isSplit(w)) {
@@ -124,12 +129,11 @@ public:
 						int necArcsV = net.getNecessaryInArcs(v);
 						int necArcsSucc = net.getNecessaryInArcs(w);
 						if ((necArcsV == 1 && necArcsSucc == 1)
-						 || (necArcsV == countInArcs(net, v) &&
-							necArcsSucc == countInArcs(net, w))) {
+						 || (necArcsV == indeg[v] && necArcsSucc == indeg[w])) {
 							contract(net, succs, v, w);
 						}
 					} else if ((net.isSplit(v) || net.isCondition(v))
-						&& visitedFromHowManyPreds[w] == countInArcs(net, w)) {
+						&& visitedFromHowManyPreds[w] == indeg[w]) {
 						// Combine splits/conditions with join-successors whose
 						// in-arcs all come from the respective split/condition.
 						// Only check this after all in-arcs were visited such
@@ -150,9 +154,16 @@ public:
 			// contracting them with joins.
 			// Even if they are targets, they can be definitely reached.
 			// If v is not a source, it'll be contracted later with its pred.
-			if ((net.isUnit(v) || (net.isSplit(v) && hasAtMostNSuccs(net, v, 1)))
-				&& net.isSource(v)) {
-				net.erase(v);
+			if (net.isUnit(v) || (net.isSplit(v) && hasAtMostNSuccs(net, v, 1))) {
+				if (indeg[v] == 0) {
+					net.erase(v);
+					if (net.isTarget(v)) {
+						return true;
+					}
+				} else {
+					lemon::ListDigraph::InArcIt in(net, v);
+					net.contract(net.source(in), v);
+				}
 			}
 
 			for (lemon::ListDigraph::Node succ : succs) {

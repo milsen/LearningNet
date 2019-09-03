@@ -18,15 +18,15 @@ private:
 	{
 		bool targetReachable = false;
 
+		// Collect sources: nodes with indegree 0.
 		std::deque<lemon::ListDigraph::Node> sources;
-
-		// Collect nodes with indegree 0.
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
-			if (net.isSource(v)) {
-				sources.push_back(v);
-			}
 			if (net.isJoin(v)) {
 				net.resetActivatedInArcs(v);
+			}
+
+			if (net.isSource(v)) {
+				sources.push_back(v);
 			}
 		}
 
@@ -66,7 +66,7 @@ private:
 						explored = true;
 						exploreArc(a);
 					} else if (net.getConditionBranch(a) == CONDITION_ELSE_BRANCH_KEYWORD) {
-						 elseBranch = a;
+						elseBranch = a;
 					}
 				}
 
@@ -240,9 +240,10 @@ public:
 			return true;
 		}
 
-		// TODO when conditions exist, there must exist a path to target
+		// Conditions exist, there must exist a path to target for each branch.
 		Compressor comp;
-		return comp.compress(net) || pathsForAllConditions(net, conditionIdToBranches);
+		return comp.compress(net)
+		    || pathsForAllConditions(net, conditionIdToBranches);
 	}
 };
 

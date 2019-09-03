@@ -30,8 +30,7 @@ public:
 				net.resetActivatedInArcs(v);
 			}
 
-			if ((!net.isJoin(v) && countInArcs(net, v) == 0)
-			   || net.isUnlockedJoin(v)) {
+			if (countInArcs(net, v) == 0) {
 				sources.push_back(v);
 			}
 		}
