@@ -3,6 +3,7 @@
 #include <learningnet/Module.hpp>
 #include <learningnet/LearningNet.hpp>
 #include <lemon/connectivity.h> // for dag
+#include <deque>
 
 namespace learningnet {
 
@@ -12,90 +13,148 @@ class NetworkChecker : public Module
 {
 private:
 
-	// TDOO remove this unused function
-	bool pathsForAllConditions(const LearningNet &net,
-			const std::map<int, std::vector<std::string>> &conditionIdToBranches)
+	bool targetReachableByTopSort(LearningNet &net,
+			const std::map<int, std::string> &branchCombination)
 	{
-		std::vector<lemon::ListDigraph::Node> sources;
-		/* lemon::ListDigraph::NodeMap<bool> targetReachable(net, false); */
-		/* targetReachable[net.getTarget()] = true; */
-		std::map<lemon::ListDigraph::Node, lemon::ListDigraph::OutArcIt> currentConditionCase(net);
+		bool targetReachable = false;
 
-		// TODO remove targetReachable or use it by checking whether conditions
-		// themselves without any previous
+		std::deque<lemon::ListDigraph::Node> sources;
 
 		// Collect nodes with indegree 0.
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
 			if (net.isSource(v)) {
 				sources.push_back(v);
 			}
+			if (net.isJoin(v)) {
+				net.resetActivatedInArcs(v);
+			}
 		}
 
-		// Save stack of visited nodes, the last of which are to be marked as
-		// targetReachable after target is reached (or simply removed from stack
-		// if no path reaches the target).
-		std::vector<lemon::ListDigraph::Node> visitedNodes;
+		// Function to push an arc's target to sources.
+		auto exploreArc = [&](const lemon::ListDigraph::OutArcIt &a) {
+			lemon::ListDigraph::Node u = net.target(a);
+
+			if (net.isJoin(u)) {
+				net.incrementActivatedInArcs(u);
+			}
+
+			if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
+				// Push conditions to front, they'll be used after other
+				// nodes such that those nodes are visited less often.
+				if (net.isCondition(u)) {
+					sources.push_front(u);
+				} else {
+					sources.push_back(u);
+				}
+			}
+		};
 
 		while (!sources.empty()) {
 			lemon::ListDigraph::Node v = sources.back();
 			sources.pop_back();
-			visitedNodes.push_back(v); // remember v for later backtracking in dfs
 
 			if (v == net.getTarget()) {
-				// If target is reachable from v, pop all last visited nodes
-				// until last condition split from visitedNodes stack and mark
-				// them as targetReachable.
-				while (!visitedNodes.empty()) {
-					lemon::ListDigraph::Node visitedNode = visitedNodes.back();
-
-					// If the node is a condition with at least one case not
-					// explored, explore that case and break this loop.
-					if (net.isCondition(visitedNode)) {
-						lemon::ListDigraph::OutArcIt condCase = currentConditionCase[visitedNode];
-						++condCase;
-						if (condCase != lemon::INVALID) {
-							currentConditionCase[visitedNode] = condCase;
-							sources.push_back(net.target(condCase));
-							break;
-						}
-					} else if (net.isJoin(visitedNode)) {
-						// decrementActivatedInArcs
-					}
-
-					visitedNodes.pop_back();
-				}
+				targetReachable = true;
+				break;
 			} else if (net.isCondition(v)) { // target not yet reachable
-				// Condition: only push first condition case, later push other cases
-				lemon::ListDigraph::OutArcIt a(net, v);
-				currentConditionCase[v] = a;
-				sources.push_back(net.target(a));
+				// Condition: only visit branch given by branchCombination.
+				std::string branch = branchCombination.at(net.getConditionId(v));
+				bool explored = false;
+				lemon::ListDigraph::OutArcIt elseBranch;
+				for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
+					if (net.getConditionBranch(a) == branch) {
+						explored = true;
+						exploreArc(a);
+					} else if (net.getConditionBranch(a) == CONDITION_ELSE_BRANCH_KEYWORD) {
+						 elseBranch = a;
+					}
+				}
+
+				// If no other branch was visited, the else-branch is explored.
+				if (!explored) {
+					exploreArc(elseBranch);
+				}
 			} else {
 				// Non-Condition: Push all successors (unless it is still a locked join).
 				for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
-					lemon::ListDigraph::Node u = net.target(a);
-
-					if (net.isJoin(u)) {
-						net.incrementActivatedInArcs(u);
-					}
-
-					if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
-						// Push conditions to front, they'll be used after other
-						// nodes such that those nodes are visited less often.
-						if (net.isCondition(u)) {
-							sources.push_front(u);
-						} else {
-							sources.push_back(u);
-						}
-					}
+					exploreArc(a);
 				}
 			}
 		}
 
-		// If we were able to pop all visitedNodes:
-		// Path from source to target exists for every condition case.
-		return visitedNodes.empty();
+		return targetReachable;
 	}
 
+	bool pathsForAllConditions(LearningNet &net,
+			std::map<int, std::vector<std::string>> &conditionIdToBranches)
+	{
+		// Start with first branch for every condition.
+		// conditionId -> (iterator in conditionIdToBranches->second)
+		std::map<int, std::vector<std::string>::iterator> branchIterators;
+		for (auto branches : conditionIdToBranches) {
+			branchIterators[std::get<0>(branches)] =
+				std::get<1>(branches).begin();
+		}
+		auto conditionIt = conditionIdToBranches.begin();
+
+		while (conditionIt != conditionIdToBranches.end()) {
+			// dereference iterators to get strings
+			std::map<int, std::string> branchCombination;
+			for (auto branches : conditionIdToBranches) {
+				int conditionId = std::get<0>(branches);
+				branchCombination[conditionId] = *branchIterators[conditionId];
+			}
+
+			if (!targetReachableByTopSort(net, branchCombination)) {
+				failWithError("No path to target for condition branches:");
+				for (auto branches : conditionIdToBranches) {
+					int conditionId = std::get<0>(branches);
+					appendError(std::to_string(conditionId) + ": " +
+							branchCombination[conditionId]);
+				}
+				return false;
+			}
+
+			// TODO really combination
+			// Get next combination of condition branches:
+			// Increment the branch of the current condition.
+			//
+			//
+			/* while (it[0] != v[0].end()) { */
+				// process the pointed-to elements
+
+				// the following increments the "odometer" by 1
+				/* ++it[K-1]; */
+				/* for (int i = K-1; (i > 0) && (it[i] == v[i].end()); --i) { */
+				/* 	it[i] = v[i].begin(); */
+				/* 	++it[i-1]; */
+				/* } */
+			/* } */
+
+			//
+			//
+			auto &branchIt = branchIterators[std::get<0>(*conditionIt)];
+			auto branches = std::get<1>(*conditionIt);
+			branchIt++;
+			// If the iterator reach the end of the branches for this condition,
+			// reset branches for all conditions until the current one,
+			// increment branch for next condition.
+			if (branchIt == branches.end()) {
+				conditionIt++;
+				auto prevConditionIt = conditionIdToBranches.begin();
+				while (std::get<0>(*prevConditionIt) != std::get<0>(*conditionIt)) {
+					branchIterators[std::get<0>(*prevConditionIt)] =
+						std::get<1>(*prevConditionIt).begin();
+					prevConditionIt++;
+				}
+				branchIterators[std::get<0>(*conditionIt)]++;
+			}
+		}
+
+		return true;
+	}
+
+#if 0
 	void compress(LearningNet &net)
 	{
 		std::vector<lemon::ListDigraph::Node> nodeStack;
@@ -183,6 +242,7 @@ private:
 				}
 			}
 	}
+#endif
 
 public:
 	NetworkChecker(LearningNet &net) : Module() {
@@ -240,12 +300,17 @@ public:
 				// Check that each condition has an else-branch (otherwise it
 				// might not always be possible to reach the target).
 				bool elseBranchFound = false;
-				for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID && !elseBranchFound; ++out) {
+				for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
 					std::string conditionBranch = net.getConditionBranch(out);
 					if (conditionBranch == CONDITION_ELSE_BRANCH_KEYWORD) {
 						elseBranchFound = true;
 					} else {
-						conditionIdToBranches[net.getConditionId(v)].push_back(conditionBranch);
+						int conditionId = net.getConditionId(v);
+						if (conditionIdToBranches.find(conditionId) == conditionIdToBranches.end()) {
+							std::vector<std::string> branches;
+							conditionIdToBranches[conditionId] = branches;
+						}
+						conditionIdToBranches[conditionId].push_back(conditionBranch);
 					}
 				}
 				if (!elseBranchFound) {
@@ -265,8 +330,7 @@ public:
 		}
 
 		// TODO when conditions exist, there must exist a path to target
-		// => topological sort?
-		compress(net);
+		/* compress(net); */
 		return pathsForAllConditions(net, conditionIdToBranches);
 	}
 };

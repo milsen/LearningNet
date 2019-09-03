@@ -2,6 +2,4 @@
 
 namespace learningnet {
 
-LearningNet::~LearningNet () { }
-
 }

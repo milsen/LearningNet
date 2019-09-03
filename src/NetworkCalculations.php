@@ -20,7 +20,7 @@ class NetworkCalculations
 
     private function buildCommand($arg)
     {
-        return $this->executablePath . ' \'' . json_encode($arg) . '\'';
+        return $this->executablePath . ' \'' . json_encode($arg) . '\' 2>&1';
     }
 
     private function runCommand($arg)

@@ -19,40 +19,6 @@ public:
 		call(net, completed, conditionVals);
 	}
 
-	// TDOO remove this unused function
-	void topologicalSort(const lemon::ListDigraph &g, lemon::ListDigraph::NodeMap<int> &type)
-	{
-		std::vector<lemon::ListDigraph::Node> sources;
-		lemon::ListDigraph::NodeMap<int> indeg(g);
-
-		// Get indegree for each node.
-		for (lemon::ListDigraph::ArcIt a(g); a != lemon::INVALID; ++a) {
-			indeg[g.target(a)]++;
-		}
-
-		// Collect nodes with indegree 0.
-		for (lemon::ListDigraph::NodeIt v(g); v != lemon::INVALID; ++v) {
-			if (indeg[v] == 0) {
-				sources.push_back(v);
-			}
-		}
-
-		int count = 0;
-		while (!sources.empty()) {
-			lemon::ListDigraph::Node v = sources.back();
-			sources.pop_back();
-			type[v] = count++;
-
-			// For all outedges:
-			for (lemon::ListDigraph::OutArcIt a(g, v); a != lemon::INVALID; ++a) {
-				lemon::ListDigraph::Node u = g.target(a);
-				if (--indeg[u] == 0) {
-					sources.push_back(u);
-				}
-			}
-		}
-	}
-
 	void call(LearningNet &net, const ConditionMap &conditionVals)
 	{
 		// sources = actives

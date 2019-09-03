@@ -27,10 +27,6 @@ bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *>
 	return result;
 }
 
-bool streq(const std::string &str1, const std::string &str2)
-{
-	return str1.compare(str2) == 0;
-}
 
 std::vector<int> toIntVector(const Value &oldArr)
 {
@@ -85,11 +81,11 @@ int main(int argc, char *argv[])
 		std::string action = d["action"].GetString();
 
 		// Check for correct parameters.
-		if ((streq(action, "check")   && !hasCorrectArgs(d, {"network"}))
-		 || (streq(action, "create")  && !hasCorrectArgs(d, {"sections"}))
-		 || (streq(action, "active")  && !hasCorrectArgs(d, {"network","sections","conditions"}))
-		 || (streq(action, "recnext") && !hasCorrectArgs(d, {"network","costs"}))
-		 || (streq(action, "recpath") && !hasCorrectArgs(d, {"network","costs"}))) {
+		if ((action == "check"   && !hasCorrectArgs(d, {"network"}))
+		 || (action == "create"  && !hasCorrectArgs(d, {"sections"}))
+		 || (action == "active"  && !hasCorrectArgs(d, {"network","sections","conditions"}))
+		 || (action == "recnext" && !hasCorrectArgs(d, {"network","costs"}))
+		 || (action == "recpath" && !hasCorrectArgs(d, {"network","costs"}))) {
 			std::cout << "Not all necessary parameters for the given action found." << std::endl;
 			return EXIT_FAILURE;
 		}
@@ -97,24 +93,24 @@ int main(int argc, char *argv[])
 		// TODO type checks for arrays/objects
 
 		// Execute action.
-		if (streq(action, "check")) {
+		if (action == "check") {
 			LearningNet net(d["network"].GetString());
 			NetworkChecker checker(net);
 			return checker.handleFailure();
-		} else if (streq(action, "create")) {
+		} else if (action == "create") {
 			LearningNet *net = LearningNet::create(toIntVector(d["sections"]));
 			net->write();
 			delete net;
 			return EXIT_SUCCESS;
-		} else if (streq(action, "active")) {
+		} else if (action == "active") {
 			LearningNet net(d["network"].GetString());
 			ActivitySetter act(net, toIntVector(d["sections"]), toMap(d["conditions"]));
 			net.write();
 			return act.handleFailure();
-		} else if (streq(action, "recnext")) {
+		} else if (action == "recnext") {
 			// TODO just set one item type to 3 (=recommended)
 			return EXIT_FAILURE;
-		} else if (streq(action, "recpath")) {
+		} else if (action == "recpath") {
 			return EXIT_FAILURE;
 		} else {
 			std::cout << "No known action given." << std::endl;
