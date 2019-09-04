@@ -12,6 +12,19 @@ using namespace lemon;
 class NetworkChecker : public Module
 {
 private:
+	template<typename ArcItType>
+	bool hasAtMostOneArc(const LearningNet &net,
+			const lemon::ListDigraph::Node &v)
+	{
+		int count = 0;
+		for (ArcItType a(net, v); a != lemon::INVALID; ++a) {
+			if (++count > 1) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 
 	bool targetReachableByTopSort(LearningNet &net,
 			const std::map<int, std::string> &branchCombination)
@@ -171,7 +184,8 @@ public:
 			// Check number of in-/out-arcs for each node-type.
 			if (net.isUnit(v)) {
 				int section = net.getSection(v);
-				if (countInArcs(net, v) > 1 || countOutArcs(net, v) > 1) {
+				if (!hasAtMostOneArc<lemon::ListDigraph::OutArcIt>(net, v) ||
+				    !hasAtMostOneArc<lemon::ListDigraph::InArcIt>(net, v)) {
 					failWithError("Unit node of section " + std::to_string(section)
 						+ " has more than one in-arc or out-arc.");
 				}
@@ -184,7 +198,7 @@ public:
 				sectionExists[section] = true;
 
 			} else if (net.isJoin(v)) {
-				if (countOutArcs(net, v) > 1) {
+				if (!hasAtMostOneArc<lemon::ListDigraph::OutArcIt>(net, v)) {
 					failWithError("Join node has more than one out-arc.");
 				}
 
@@ -199,13 +213,13 @@ public:
 				}
 
 			} else if (net.isSplit(v)) {
-				if (countInArcs(net, v) > 1) {
+				if (!hasAtMostOneArc<lemon::ListDigraph::InArcIt>(net, v)) {
 					failWithError("Split node has more than one in-arc.");
 				}
 
 			} else if (net.isCondition(v)) {
 				conditionCount++;
-				if (countInArcs(net, v) > 1) {
+				if (!hasAtMostOneArc<lemon::ListDigraph::InArcIt>(net, v)) {
 					failWithError("Condition node has more than one in-arc.");
 				}
 
@@ -231,7 +245,7 @@ public:
 				}
 
 			} else if (net.isTest(v)) {
-				if (countInArcs(net, v) > 1) {
+				if (!hasAtMostOneArc<lemon::ListDigraph::InArcIt>(net, v)) {
 					failWithError("Test node has more than one in-arc.");
 				}
 			}
