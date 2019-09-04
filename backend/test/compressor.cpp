@@ -5,7 +5,9 @@ using namespace learningnet;
 
 TEST_CASE("Compressor","[compressor]") {
 	SECTION("base cases") {
+		/* LearningNet net{netstring}; */
 		Compressor comp;
-		CHECK(1 == 1);
+		/* comp.compress{net}; */
+		/* CHECK(exprectednetstring == net.write()); */
 	}
 }

@@ -22,7 +22,12 @@ private:
 			}
 
 			// Transfer target property if needed, then contract w into v.
-			if (net.isTarget(w)) {
+			// Conditions may only get the target property from their successor
+			// if they are combined with a join. Otherwise they may have
+			// branches leading to other successors which would not reach the
+			// target.
+			// TODO what if conditions only have one edge left?
+			if (net.isTarget(w) && (!net.isCondition(v) || net.isJoin(w))) {
 				net.setTarget(v);
 			}
 			net.contract(v, w);
@@ -44,7 +49,7 @@ private:
 		/**
 		 * If the entry does exist, increment it, else set it to 1.
 		 */
-		void nodeMapIncrement(std::map<lemon::ListDigraph::Node, int> m,
+		void nodeMapIncrement(std::map<lemon::ListDigraph::Node, int> &m,
 				lemon::ListDigraph::Node &v)
 		{
 			if (m.find(v) == m.end()) {
@@ -134,27 +139,32 @@ public:
 						}
 					} else if ((net.isSplit(v) || net.isCondition(v))
 						&& visitedFromHowManyPreds[w] == indeg[w]) {
+						// TODO fix how conditions are combined, where do the
+						// branches end up?
 						// Combine splits/conditions with join-successors whose
 						// in-arcs all come from the respective split/condition.
 						// Only check this after all in-arcs were visited such
 						// that it is ensured that they are combined if that is
 						// possible at all.
-						std::map<lemon::ListDigraph::Node, int> joinToInArcsFromSplit;
+						bool joinInArcsFromSplit = true;
 						for (lemon::ListDigraph::InArcIt in(net, w); in != lemon::INVALID; ++in) {
-							lemon::ListDigraph::Node u = net.source(in);
-							if (net.isJoin(u)) {
-								nodeMapIncrement(joinToInArcsFromSplit, u);
+							if (net.source(in) != v) {
+								joinInArcsFromSplit = false;
+								break;
 							}
+						}
+						if (joinInArcsFromSplit) {
+							contract(net, succs, v, w);
 						}
 					}
 				}
 			}
 
-			// Remove source units / splits with only one in-arc after
+			// Remove source units / splits / conditions with only one in-arc after
 			// contracting them with joins.
 			// Even if they are targets, they can be definitely reached.
 			// If v is not a source, it'll be contracted later with its pred.
-			if (net.isUnit(v) || (net.isSplit(v) && hasAtMostNSuccs(net, v, 1))) {
+			if (indeg[v] <= 1 && hasAtMostNSuccs(net, v, 1)) {
 				if (indeg[v] == 0) {
 					net.erase(v);
 					if (net.isTarget(v)) {
