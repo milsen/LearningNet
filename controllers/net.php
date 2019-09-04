@@ -87,11 +87,10 @@ class NetController extends PluginController {
                 "user_id = ? AND name = 'visited' AND json_data = 'true'", array($userId));
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
 
-            $network = $output['message'];
             $conditionHandler = new ConditionHandler();
-            $conditionValues = $conditionHandler->getConditionValues($network, $userId);
+            $conditionValues = $conditionHandler->getConditionValues($userId);
             $output = $this->executableInterface->getActives(
-                $network, $completedIds, $conditionValues
+                $output['message'], $completedIds, $conditionValues
             );
         }
 

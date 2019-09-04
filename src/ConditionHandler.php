@@ -2,8 +2,6 @@
 
 namespace LearningNet;
 
-use LearningNet\DataExtractor;
-
 /**
  * TODO
  *
@@ -50,11 +48,10 @@ class ConditionHandler
 
     /* Get User Values for Conditions */
 
-    public function getConditionValues($network, $userId)
+    public function getConditionValues($userId)
     {
         $conditionVals = [];
-        $extractor = new DataExtractor();
-        foreach ($extractor->extractConditions($network) as $conditionId) {
+        foreach (array_keys(self::CONDITION_MAP) as $conditionId) {
             $conditionVals[$conditionId] =
                 $this->getValuesByConditionID($conditionId, $userId);
         }

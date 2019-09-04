@@ -14,7 +14,7 @@ bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *>
 		{ "action",       std::bind(&Value::IsString, std::placeholders::_1) },
 		{ "network",      std::bind(&Value::IsString, std::placeholders::_1) },
 		{ "sections",     std::bind(&Value::IsArray, std::placeholders::_1) },
-		{ "conditions",   std::bind(&Value::IsObject, std::placeholders::_1) },
+		{ "conditions",   std::bind(&Value::IsArray, std::placeholders::_1) },
 		{ "costs",        std::bind(&Value::IsObject, std::placeholders::_1) },
 		{ "useNodeCosts", std::bind(&Value::IsBool, std::placeholders::_1) }
 	};
@@ -48,11 +48,11 @@ std::vector<std::string> toStringVector(const Value &oldArr)
 	return arr;
 }
 
-ConditionMap toMap(const Value &oldObj)
+ConditionMap toConditionMap(const Value &oldArr)
 {
 	ConditionMap idToVal;
-	for (auto &m : oldObj.GetObject()) {
-		idToVal[std::stoi(m.name.GetString())] = toStringVector(m.value);
+	for (auto &v : oldArr.GetArray()) {
+		idToVal.push_back(toStringVector(v));
 	}
 
 	return idToVal;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 			return EXIT_SUCCESS;
 		} else if (action == "active") {
 			LearningNet net(d["network"].GetString());
-			ActivitySetter act(net, toIntVector(d["sections"]), toMap(d["conditions"]));
+			ActivitySetter act(net, toIntVector(d["sections"]), toConditionMap(d["conditions"]));
 			net.write();
 			return act.handleFailure();
 		} else if (action == "recnext") {

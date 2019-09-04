@@ -6,7 +6,7 @@
 
 namespace learningnet {
 
-using ConditionMap = std::map<int, std::vector<std::string>>;
+using ConditionMap = std::vector<std::vector<std::string>>;
 
 class ActivitySetter : public Module
 {
@@ -68,7 +68,7 @@ public:
 					// For a condition, only explore out-edges corresponding to set user-values.
 					if (net.isCondition(v)) {
 						// Get user values for this condition.
-						std::vector<std::string> vals = conditionVals.at(net.getConditionId(v));
+						std::vector<std::string> vals = conditionVals[net.getConditionId(v)];
 						if (vals.empty()) {
 							vals.push_back(CONDITION_ELSE_BRANCH_KEYWORD);
 						}
