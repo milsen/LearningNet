@@ -15,6 +15,7 @@ bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *>
 		{ "network",      std::bind(&Value::IsString, std::placeholders::_1) },
 		{ "sections",     std::bind(&Value::IsArray, std::placeholders::_1) },
 		{ "conditions",   std::bind(&Value::IsArray, std::placeholders::_1) },
+		{ "test_grades",  std::bind(&Value::IsObject, std::placeholders::_1) },
 		{ "costs",        std::bind(&Value::IsObject, std::placeholders::_1) },
 		{ "useNodeCosts", std::bind(&Value::IsBool, std::placeholders::_1) }
 	};
@@ -26,7 +27,6 @@ bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *>
 
 	return result;
 }
-
 
 std::vector<int> toIntVector(const Value &oldArr)
 {
@@ -58,6 +58,16 @@ ConditionMap toConditionMap(const Value &oldArr)
 	return idToVal;
 }
 
+TestMap toTestMap(const Value &oldObj)
+{
+	TestMap idToVal;
+	for (auto &m : oldObj.GetObject()) {
+		idToVal[std::stoi(m.name.GetString())] = m.value.GetInt();
+	}
+
+	return idToVal;
+}
+
 void output(const Document &d)
 {
     StringBuffer buffer;
@@ -83,7 +93,7 @@ int main(int argc, char *argv[])
 		// Check for correct parameters.
 		if ((action == "check"   && !hasCorrectArgs(d, {"network"}))
 		 || (action == "create"  && !hasCorrectArgs(d, {"sections"}))
-		 || (action == "active"  && !hasCorrectArgs(d, {"network","sections","conditions"}))
+		 || (action == "active"  && !hasCorrectArgs(d, {"network","sections","conditions","test_grades"}))
 		 || (action == "recnext" && !hasCorrectArgs(d, {"network","costs"}))
 		 || (action == "recpath" && !hasCorrectArgs(d, {"network","costs"}))) {
 			std::cout << "Not all necessary parameters for the given action found." << std::endl;
@@ -104,7 +114,11 @@ int main(int argc, char *argv[])
 			return EXIT_SUCCESS;
 		} else if (action == "active") {
 			LearningNet net(d["network"].GetString());
-			ActivitySetter act(net, toIntVector(d["sections"]), toConditionMap(d["conditions"]));
+			ActivitySetter act(net,
+				toIntVector(d["sections"]),
+				toConditionMap(d["conditions"]),
+				toTestMap(d["test_grades"])
+			);
 			net.write();
 			return act.handleFailure();
 		} else if (action == "recnext") {

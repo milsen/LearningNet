@@ -7,6 +7,7 @@
 namespace learningnet {
 
 using ConditionMap = std::vector<std::vector<std::string>>;
+using TestMap = std::map<int, int>;
 
 class ActivitySetter : public Module
 {
@@ -14,12 +15,15 @@ public:
 	ActivitySetter(
 		LearningNet &net,
 		const std::vector<int> &completed,
-		const ConditionMap &conditionVals)
+		const ConditionMap &conditionVals,
+		const TestMap &testGrades)
 	: Module() {
-		call(net, completed, conditionVals);
+		call(net, completed, conditionVals, testGrades);
 	}
 
-	void call(LearningNet &net, const ConditionMap &conditionVals)
+	void call(LearningNet &net,
+		const ConditionMap &conditionVals,
+		const TestMap &testGrades)
 	{
 		// sources = actives
 		std::vector<lemon::ListDigraph::Node> sources;
@@ -78,6 +82,25 @@ public:
 								exploreArc(a);
 							}
 						}
+					} else if (net.isTest(v)) {
+						// Get the branch with the highest grade that is still
+						// below the actual grade of the user.
+						auto gradeIt = testGrades.find(net.getTestId(v));
+						if (gradeIt != testGrades.end()) {
+							int grade = std::get<1>(*gradeIt);
+							int maxBranchGrade = -1;
+							lemon::ListDigraph::OutArcIt correctBranch;
+							for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
+								int branchGrade = stoi(net.getConditionBranch(a));
+								if (branchGrade < grade && branchGrade > maxBranchGrade) {
+									maxBranchGrade = branchGrade;
+									correctBranch = a;
+								}
+							}
+							if (maxBranchGrade > -1) {
+								exploreArc(correctBranch);
+							}
+						}
 					} else {
 						// Else explore all out-edges (for completed units: only one).
 						for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
@@ -90,7 +113,10 @@ public:
 		}
 	}
 
-	void call(LearningNet &net, const std::vector<int> &completed, const ConditionMap &conditionVals)
+	void call(LearningNet &net,
+		const std::vector<int> &completed,
+		const ConditionMap &conditionVals,
+		const TestMap &testGrades)
 	{
 		std::map<int, lemon::ListDigraph::Node> sectionNode;
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
@@ -110,7 +136,7 @@ public:
 			}
 		}
 
-		call(net, conditionVals);
+		call(net, conditionVals, testGrades);
 	}
 };
 

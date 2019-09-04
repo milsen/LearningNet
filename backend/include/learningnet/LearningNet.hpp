@@ -19,6 +19,7 @@ class NodeType {
 		static constexpr int completed = 2;
 		static constexpr int split = 10;
 		static constexpr int condition = 11;
+		static constexpr int test = 11;
 		static constexpr int join = 20;
 
 		NodeType(int v) : m_underlying(v) {}
@@ -116,7 +117,11 @@ public:
 	}
 
 	bool isCondition(const lemon::ListDigraph::Node &v) const {
-		return m_type[v] >= NodeType::condition && m_type[v] < NodeType::join;
+		return m_type[v] == NodeType::condition;
+	}
+
+	bool isTest(const lemon::ListDigraph::Node &v) const {
+		return m_type[v] >= NodeType::test && m_type[v] < NodeType::join;
 	}
 
 	bool isJoin(const lemon::ListDigraph::Node &v) const {
@@ -126,7 +131,7 @@ public:
 	bool isUnknown(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] < NodeType::inactive
 		   || (m_type[v] > NodeType::completed && m_type[v] < NodeType::split)
-		   || (m_type[v] > NodeType::condition && m_type[v] < NodeType::join);
+		   || (m_type[v] > NodeType::test && m_type[v] < NodeType::join);
 	}
 
 	int getType(const lemon::ListDigraph::Node &v) const {
@@ -165,16 +170,29 @@ public:
 	}
 
 	int getConditionId(const lemon::ListDigraph::Node &v) const {
-		return isCondition(v) ? m_ref[v] : 0;
+		return isCondition(v) ? m_ref[v] : -1;
 	}
 
 	void setConditionId(const lemon::ListDigraph::Node &v, int conditionId) {
 		if (isCondition(v)) {
 			setReference(v, conditionId);
 		} else {
-			throw "setConditionId() on node which is not a split.";
+			throw "setConditionId() on node which is not a condition.";
 		}
 	}
+
+	int getTestId(const lemon::ListDigraph::Node &v) const {
+		return isTest(v) ? m_ref[v] : -1;
+	}
+
+	void setTestId(const lemon::ListDigraph::Node &v, int testId) {
+		if (isTest(v)) {
+			setReference(v, testId);
+		} else {
+			throw "setTestId() on node which is not a test.";
+		}
+	}
+
 
 	// @}
 	// Target Getter and Setter

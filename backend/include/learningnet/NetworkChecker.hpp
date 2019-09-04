@@ -79,6 +79,7 @@ private:
 				for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
 					exploreArc(a);
 				}
+				// TODO test nodes should have highest grade lead to the target
 			}
 		}
 
@@ -216,6 +217,7 @@ public:
 					if (conditionBranch == CONDITION_ELSE_BRANCH_KEYWORD) {
 						elseBranchFound = true;
 					} else {
+						// Collect all used branch values for each condition id.
 						int conditionId = net.getConditionId(v);
 						if (conditionIdToBranches.find(conditionId) == conditionIdToBranches.end()) {
 							std::vector<std::string> branches;
@@ -228,6 +230,10 @@ public:
 					failWithError("Condition has no else branch.");
 				}
 
+			} else if (net.isTest(v)) {
+				if (countInArcs(net, v) > 1) {
+					failWithError("Test node has more than one in-arc.");
+				}
 			}
 		}
 
@@ -235,8 +241,7 @@ public:
 			failWithError("Given network is not acyclic.");
 			return false;
 		} else if (conditionCount == 0) {
-			// If there are no conditions, then the network is already valid if
-			// it's acyclic.
+			// If there are no conditions, the network is valid if it's acyclic.
 			return true;
 		}
 

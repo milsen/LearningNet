@@ -81,16 +81,26 @@ class NetController extends PluginController {
         }
 
         if ($output['succeeded'] && $getUserData) {
-            //  Get completed sections.
+            // Get completed sections.
             $userId = isset($GLOBALS['user']) ? $GLOBALS['user']->id : 'nobody';
             $completed = Mooc\DB\Field::findBySQL(
                 "user_id = ? AND name = 'visited' AND json_data = 'true'", array($userId));
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
 
+            // Get grades for test blocks.
+            $userProgress = Mooc\DB\UserProgress::findBySQL("user_id = ?", array($userId));
+            $testGrades = array();
+            foreach ($userProgress as $row) {
+                $testGrades[$row['block_id']] = $row['grade'];
+            }
+
+            // Get values of user for each condition.
             $conditionHandler = new ConditionHandler();
             $conditionValues = $conditionHandler->getConditionValues($userId);
+
+            // Set active nodes in network.
             $output = $this->executableInterface->getActives(
-                $output['message'], $completedIds, $conditionValues
+                $output['message'], $completedIds, $conditionValues, $testGrades
             );
         }
 
@@ -118,7 +128,15 @@ class NetController extends PluginController {
             $sectionTitles[$section['id']] = $section['title'];
         }
 
-        // Get condition names.
+        // Get test titles.
+        $testTitles = array();
+        $tests = Mooc\DB\Block::findBySQL(
+            "type = 'TestBlock' AND seminar_id = ?", array($courseId));
+        foreach ($tests as $test) {
+            $testTitles[$test['id']] = $test['title'];
+        }
+
+        // Get condition titles.
         $conditionHandler = new ConditionHandler();
         $conditionTitles = $conditionHandler->getConditionTitles();
 
@@ -128,6 +146,7 @@ class NetController extends PluginController {
 
         $this->render_json([
             'section_titles' => $sectionTitles,
+            'test_titles' => $testTitles,
             'condition_titles' => $conditionTitles,
             'condition_branches' => $conditionBranches
         ]);

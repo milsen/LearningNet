@@ -24,6 +24,7 @@ svg {
 
 .node.split,
 .node.condition,
+.node.test,
 .node.join {
     fill: #3c454e;
 }

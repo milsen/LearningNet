@@ -19,12 +19,17 @@ function typeToClass(type) {
         return "split";
     } else if (type === 11) {
         return "condition";
+    } else if (type === 12) {
+        return "test";
     } else if (type >= 20) {
         return "join";
     }
 }
 
-function createNodeLabel(section, name) {
+function createNodeLabel(node, name) {
+    node.labelType = 'svg';
+    let section = node.ref;
+
     // Build label of node: link to courseware section.
     let url = window.STUDIP.ABSOLUTE_URI_STUDIP +
         'plugins.php/courseware/courseware' +
@@ -115,6 +120,7 @@ export function drawNetwork(data) {
     // Set styles of nodes: CSS classes, labels etc.
     withLabels(conditionBranchesByID, function(labels) {
         let sectionTitles = labels['section_titles'];
+        let testTitles = labels['test_titles'];
         let conditionTitles = labels['condition_titles'];
         let conditionBranches = labels['condition_branches'];
 
@@ -137,6 +143,13 @@ export function drawNetwork(data) {
                         conditionBranches[node.ref][edge.condition] :
                         "";
                 });
+            } else if (node.class === "test") {
+                node.label = createNodeLabel(node, testTitles[node.ref]);
+                node.shape = "diamond";
+                g.outEdges(v).forEach(function(e) {
+                    let edge = g.edge(e);
+                    edge.label = "> " + edge.condition + "p";
+                });
             } else if (node.class === "join") {
                 // Show how many predecessors have to be completed for the join.
                 let activatedInArcs = (parseInt(node.type) - 20).toString();
@@ -144,8 +157,7 @@ export function drawNetwork(data) {
                 node.shape = "diamond";
             } else {
                 // Label with link.
-                node.labelType = 'svg';
-                node.label = createNodeLabel(node.ref, sectionTitles[node.ref]);
+                node.label = createNodeLabel(node, sectionTitles[node.ref]);
             }
         });
 

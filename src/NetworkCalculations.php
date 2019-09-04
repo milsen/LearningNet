@@ -44,13 +44,15 @@ class NetworkCalculations
         ));
     }
 
-    public function getActives($networkLGF, $completedSections, $conditionValues)
+    public function getActives($networkLGF,
+        $completedSections, $conditionValues, $testGrades)
     {
         return $this->runCommand(array(
             'action' => 'active',
             'network' => $networkLGF,
             'sections' => $completedSections,
-            'conditions' => $conditionValues
+            'conditions' => $conditionValues,
+            'test_grades' => $testGrades
         ));
     }
 

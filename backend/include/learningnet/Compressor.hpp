@@ -121,9 +121,9 @@ public:
 				// If a node is a unit, just combine it with its predecessor.
 				if (net.isUnit(w)) {
 					contract(net, succs, v, w);
-				} else if (net.isSplit(w)) {
+				} else if (net.isSplit(w) || net.isTest(w)) {
 					// Combine adjacent splits.
-					if (net.isSplit(v)) {
+					if (net.isSplit(v) || net.isTest(w)) {
 						contract(net, succs, v, w);
 					}
 				} else if (net.isJoin(w)) {
@@ -137,7 +137,7 @@ public:
 						 || (necArcsV == indeg[v] && necArcsSucc == indeg[w])) {
 							contract(net, succs, v, w);
 						}
-					} else if ((net.isSplit(v) || net.isCondition(v))
+					} else if ((net.isSplit(v) || net.isCondition(v) || net.isTest(v))
 						&& visitedFromHowManyPreds[w] == indeg[w]) {
 						// TODO fix how conditions are combined, where do the
 						// branches end up?
@@ -160,8 +160,8 @@ public:
 				}
 			}
 
-			// Remove source units / splits / conditions with only one in-arc after
-			// contracting them with joins.
+			// Remove source units / splits / conditions / test with only one
+			// in-arc after contracting them with joins.
 			// Even if they are targets, they can be definitely reached.
 			// If v is not a source, it'll be contracted later with its pred.
 			if (indeg[v] <= 1 && hasAtMostNSuccs(net, v, 1)) {
