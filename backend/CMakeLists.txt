@@ -2,8 +2,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 # Name of project, learningnet library and executable:
 SET(PROJECT_NAME "LEARNINGNET")
-set(LEARNINGNET_LIBRARIES "LN")
-set(EXECUTABLE "learningnet-pathfinder")
+SET(LEARNINGNET_LIBRARIES "LN")
+SET(EXECUTABLE "learningnet-pathfinder")
+option(LN_TESTS "Whether to compile tests as well." ON)
 
 PROJECT(${PROJECT_NAME} CXX)
 
@@ -112,6 +113,42 @@ ADD_EXECUTABLE(${EXECUTABLE} main.cpp)
 TARGET_LINK_LIBRARIES(${EXECUTABLE} ${LEMON_LIBRARIES})
 TARGET_LINK_LIBRARIES(${EXECUTABLE} ${LEARNINGNET_LIBRARIES})
 TARGET_LINK_LIBRARIES(${EXECUTABLE} ${RAPIDJSON_LIBRARIES})
+
+
+### TESTS VIA CATCH
+IF(LN_TESTS)
+    # Prepare "Catch" library for other executables.
+    SET(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/catch)
+    ADD_LIBRARY(Catch INTERFACE)
+    TARGET_INCLUDE_DIRECTORIES(Catch INTERFACE ${CATCH_INCLUDE_DIR})
+
+    # Make main test with CMAKE_CONFIG_MAIN-define executable.
+    ADD_LIBRARY(test-main ${CMAKE_CURRENT_SOURCE_DIR}/test-main.cpp)
+    TARGET_LINK_LIBRARIES(test-main Catch)
+
+    # This is the list of source files, specified explicitly by name.
+    # If files were specified via globbing, adding new source-files would not update
+    # the build!
+    SET(APP_SOURCES)
+    LIST(APPEND APP_SOURCES "compressor.cpp")
+
+    # Put tests binaries into separate test dir.
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "test")
+
+    # For each file in ${APP_SOURCES}:
+    FOREACH(sourcefile ${APP_SOURCES})
+        # Cut off the file extension to get ${output}.
+        GET_FILENAME_COMPONENT(output ${sourcefile} NAME_WE)
+        # Compile the file to a binary with name ${output}.
+        ADD_EXECUTABLE(${output} "test/${sourcefile}")
+
+        # Link ${output} to required libraries.
+        TARGET_LINK_LIBRARIES(${output} lemon)
+        TARGET_LINK_LIBRARIES(${output} LN)
+        TARGET_LINK_LIBRARIES(${output} Catch)
+        TARGET_LINK_LIBRARIES(${output} test-main)
+    ENDFOREACH(sourcefile ${APP_SOURCES})
+ENDIF()
 
 
 # This tells cmake to install the binary to $PREFIX/bin when 'make install'
