@@ -21,15 +21,19 @@ class ConditionHandler
             'table' => 'user_studiengang',
             'key' => 'fach_id',
             'translation_table' => 'fach',
-            'translation_key' => 'name',
+            'translation_key' => 'name'
         ],
         2 => [
             'table' => 'user_studiengang',
-            'key' => 'abschluss_id'
+            'key' => 'abschluss_id',
+            'translation_table' => 'abschluss',
+            'translation_key' => 'name'
         ],
         3 => [
             'table' => 'user_inst',
-            'key' => 'Institut_id'
+            'key' => 'Institut_id',
+            'translation_table' => 'Institute',
+            'translation_key' => 'Name'
         ]
     ];
 
