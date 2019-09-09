@@ -165,7 +165,6 @@ export function drawNetwork(data) {
         let tgtNode = g.node(g.graph().target);
         if (tgtNode) {
             tgtNode.class += " target";
-            tgtNode.shape = "circle";
         }
 
         // Set margin if not present already.

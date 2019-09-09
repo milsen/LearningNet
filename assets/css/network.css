@@ -30,6 +30,12 @@ svg {
 }
 
 .node.target {
+    font-style: italic;
+    text-decoration: underline;
+}
+
+.node.target .label-container {
+    stroke-dasharray: 5;
 }
 
 .cluster rect {
