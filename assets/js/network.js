@@ -6,6 +6,7 @@ import * as d3 from 'd3';
 
 const NETWORK_ROUTE = 'network';
 const LABELS_ROUTE = 'labels';
+const CONDITION_BRANCH_ELSE_KEYWORD = 'SONST';
 
 function typeToClass(type) {
     type = parseInt(type);
@@ -112,7 +113,10 @@ export function drawNetwork(data) {
             }
 
             g.outEdges(v).forEach(function(e) {
-                conditionBranchesByID[conditionId].push(g.edge(e).condition);
+                let branch = g.edge(e).condition;
+                if (branch != CONDITION_BRANCH_ELSE_KEYWORD) {
+                    conditionBranchesByID[conditionId].push(branch);
+                }
             });
         }
     });
@@ -137,11 +141,15 @@ export function drawNetwork(data) {
                 node.shape = "diamond";
                 g.outEdges(v).forEach(function(e) {
                     let edge = g.edge(e);
-                    edge.label = conditionBranches &&
-                        conditionBranches[node.ref] &&
-                        conditionBranches[node.ref][edge.condition] ?
-                        conditionBranches[node.ref][edge.condition] :
-                        "";
+                    if (edge.condition == CONDITION_BRANCH_ELSE_KEYWORD) {
+                        edge.label = CONDITION_BRANCH_ELSE_KEYWORD;
+                    } else {
+                        edge.label = conditionBranches &&
+                            conditionBranches[node.ref] &&
+                            conditionBranches[node.ref][edge.condition] ?
+                            conditionBranches[node.ref][edge.condition] :
+                            "";
+                    }
                 });
             } else if (node.class === "test") {
                 node.label = createNodeLabel(node, testTitles[node.ref]);
