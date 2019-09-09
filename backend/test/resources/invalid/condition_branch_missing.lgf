@@ -11,7 +11,7 @@ label type ref
 8 11 1
 9 0 35
 10 0 36
-11  20    1
+11 20 1
 12 0 37
 @arcs
     condition
@@ -27,7 +27,6 @@ label type ref
 8 9 "6b9ac09535885ca55e29dd011e377c0a"
 8 10 "SONST"
 10 11 ""
-9 11 ""
 11 12 ""
 @attributes
 target 12

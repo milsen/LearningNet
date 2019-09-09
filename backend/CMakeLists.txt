@@ -7,6 +7,9 @@ SET(EXECUTABLE "learningnet-pathfinder")
 option(LN_TESTS "Whether to compile tests as well." ON)
 
 PROJECT(${PROJECT_NAME} CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -130,7 +133,8 @@ IF(LN_TESTS)
     # If files were specified via globbing, adding new source-files would not update
     # the build!
     SET(APP_SOURCES)
-    LIST(APPEND APP_SOURCES "compressor.cpp")
+    LIST(APPEND APP_SOURCES "check_test.cpp")
+    LIST(APPEND APP_SOURCES "compress_test.cpp")
 
     # Put tests binaries into separate test dir.
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "test")
