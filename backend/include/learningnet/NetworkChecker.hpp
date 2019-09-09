@@ -104,19 +104,23 @@ private:
 	{
 		// Start with first branch for every condition.
 		// conditionId -> (iterator in conditionIdToBranches->second)
-		std::map<int, std::vector<std::string>::iterator> branchIterators;
+		std::map<int, std::vector<std::string>::size_type> branchIndices;
 		for (auto branches : conditionIdToBranches) {
-			branchIterators[std::get<0>(branches)] =
-				std::get<1>(branches).begin();
+			branchIndices[std::get<0>(branches)] = 0;
 		}
-		auto conditionIt = conditionIdToBranches.begin();
 
-		while (conditionIt != conditionIdToBranches.end()) {
-			// dereference iterators to get strings
+		// Get first and last condition id in map.
+		int firstId = std::get<0>(*(conditionIdToBranches.cbegin()));
+		int lastId = std::get<0>(*(conditionIdToBranches.crbegin()));
+
+		while (branchIndices[lastId] < conditionIdToBranches[lastId].size()) {
 			std::map<int, std::string> branchCombination;
+			// For each condition id: Dereference branch iterator to get string.
 			for (auto branches : conditionIdToBranches) {
 				int conditionId = std::get<0>(branches);
-				branchCombination[conditionId] = *branchIterators[conditionId];
+				int branchId = branchIndices[conditionId];
+				branchCombination[conditionId] =
+					conditionIdToBranches[conditionId][branchId];
 			}
 
 			if (!targetReachableByTopSort(net, branchCombination)) {
@@ -129,39 +133,25 @@ private:
 				return false;
 			}
 
-			// TODO really combination
 			// Get next combination of condition branches:
 			// Increment the branch of the current condition.
-			//
-			//
-			/* while (it[0] != v[0].end()) { */
-				// process the pointed-to elements
+			branchIndices[firstId]++;
 
-				// the following increments the "odometer" by 1
-				/* ++it[K-1]; */
-				/* for (int i = K-1; (i > 0) && (it[i] == v[i].end()); --i) { */
-				/* 	it[i] = v[i].begin(); */
-				/* 	++it[i-1]; */
-				/* } */
-			/* } */
-
-			//
-			//
-			auto &branchIt = branchIterators[std::get<0>(*conditionIt)];
-			auto branches = std::get<1>(*conditionIt);
-			branchIt++;
-			// If the iterator reach the end of the branches for this condition,
-			// reset branches for all conditions until the current one,
-			// increment branch for next condition.
-			if (branchIt == branches.end()) {
-				conditionIt++;
-				auto prevConditionIt = conditionIdToBranches.begin();
-				while (std::get<0>(*prevConditionIt) != std::get<0>(*conditionIt)) {
-					branchIterators[std::get<0>(*prevConditionIt)] =
-						std::get<1>(*prevConditionIt).begin();
-					prevConditionIt++;
-				}
-				branchIterators[std::get<0>(*conditionIt)]++;
+			// Work similar to an odometer:
+			// If the iterator reaches the end of the branches for this
+			// condition, reset them and increment the branches for next one.
+			// Repeat this process until one iterator does not reach the end for
+			// the respective condition anymore.
+			auto id = conditionIdToBranches.begin();
+			int currentId = std::get<0>(*id);
+			while (
+				currentId != lastId &&
+				branchIndices[currentId] == conditionIdToBranches[currentId].size())
+			{
+				branchIndices[currentId] = 0;
+				id++;
+				currentId = std::get<0>(*id);
+				branchIndices[currentId]++;
 			}
 		}
 
@@ -249,6 +239,13 @@ public:
 					failWithError("Test node has more than one in-arc.");
 				}
 			}
+		}
+
+		// Push "else"-branch for each condition:
+		// This "else"-branch represents that none of the possible branches for
+		// the given condition id is applicable for the user.
+		for (auto idToBranches : conditionIdToBranches) {
+			conditionIdToBranches[std::get<0>(idToBranches)].push_back(CONDITION_ELSE_BRANCH_KEYWORD);
 		}
 
 		if (!dag(net)) {
