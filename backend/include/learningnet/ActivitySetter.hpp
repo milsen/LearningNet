@@ -92,7 +92,7 @@ public:
 							lemon::ListDigraph::OutArcIt correctBranch;
 							for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
 								int branchGrade = stoi(net.getConditionBranch(a));
-								if (branchGrade < grade && branchGrade > maxBranchGrade) {
+								if (branchGrade <= grade && branchGrade > maxBranchGrade) {
 									maxBranchGrade = branchGrade;
 									correctBranch = a;
 								}

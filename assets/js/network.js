@@ -156,7 +156,7 @@ export function drawNetwork(data) {
                 node.shape = "diamond";
                 g.outEdges(v).forEach(function(e) {
                     let edge = g.edge(e);
-                    edge.label = "> " + edge.condition + "p";
+                    edge.label = "≥ " + edge.condition + "p";
                 });
             } else if (node.class === "join") {
                 // Show how many predecessors have to be completed for the join.
