@@ -241,6 +241,11 @@ public:
 			}
 		}
 
+		// If something went wrong already, return.
+		if (!succeeded()) {
+			return false;
+		}
+
 		// Push "else"-branch for each condition:
 		// This "else"-branch represents that none of the possible branches for
 		// the given condition id is applicable for the user.
