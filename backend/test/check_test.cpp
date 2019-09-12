@@ -7,23 +7,28 @@
 using namespace learningnet;
 
 void testFile(const std::string &filename,
-		const std::function<void(LearningNet&)> &func) {
+		const std::function<void(LearningNet&)> &func,
+		bool faultyNetwork = false) {
 	SECTION(filename) {
 		std::ifstream f(filename);
 		CHECK(f);
 
 		std::ostringstream netss;
 		netss << f.rdbuf();
-		LearningNet net{netss.str()};
-		func(net);
+		if (faultyNetwork) {
+			CHECK_THROWS([&netss](){ LearningNet net{netss.str()}; }());
+		} else {
+			LearningNet net{netss.str()};
+			func(net);
+		}
 	}
 }
 
-void testFile(const std::string &filename, bool valid) {
+void testFile(const std::string &filename, bool valid, bool faultyNetwork = false) {
 	testFile(filename, [&valid](LearningNet &net) {
 		NetworkChecker checker(net);
 		CHECK(checker.succeeded() == valid);
-	});
+	}, faultyNetwork);
 }
 
 TEST_CASE("NetworkChecker","[check]") {
@@ -36,6 +41,10 @@ TEST_CASE("NetworkChecker","[check]") {
 
 		for (const auto &entry : std::filesystem::directory_iterator(resourcePath + "invalid/")) {
 			testFile(entry.path(), false);
+		}
+
+		for (const auto &entry : std::filesystem::directory_iterator(resourcePath + "exception/")) {
+			testFile(entry.path(), false, true);
 		}
 	}
 }
