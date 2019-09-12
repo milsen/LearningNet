@@ -1,50 +1,26 @@
 #include <catch.hpp>
+#include "resources.hpp"
 #include <learningnet/NetworkChecker.hpp>
-#include <iostream>
-#include <fstream>
-#include <filesystem>
 
 using namespace learningnet;
 
-void testFile(const std::string &filename,
-		const std::function<void(LearningNet&)> &func,
-		bool faultyNetwork = false) {
-	SECTION(filename) {
-		std::ifstream f(filename);
-		CHECK(f);
-
-		std::ostringstream netss;
-		netss << f.rdbuf();
-		if (faultyNetwork) {
-			CHECK_THROWS([&netss](){ LearningNet net{netss.str()}; }());
-		} else {
-			LearningNet net{netss.str()};
-			func(net);
-		}
-	}
-}
-
-void testFile(const std::string &filename, bool valid, bool faultyNetwork = false) {
-	testFile(filename, [&valid](LearningNet &net) {
-		NetworkChecker checker(net);
-		CHECK(checker.succeeded() == valid);
-	}, faultyNetwork);
+void checkNet(LearningNet &net, bool valid) {
+	NetworkChecker checker(net);
+	CHECK(checker.succeeded() == valid);
 }
 
 TEST_CASE("NetworkChecker","[check]") {
-    const std::string resourcePath = "../test/resources/";
-
 	SECTION("Example Files") {
-		for (const auto &entry : std::filesystem::directory_iterator(resourcePath + "valid/")) {
-			testFile(entry.path(), true);
-		}
+		for_each_file("valid", [](LearningNet &net) {
+			checkNet(net, true);
+		});
 
-		for (const auto &entry : std::filesystem::directory_iterator(resourcePath + "invalid/")) {
-			testFile(entry.path(), false);
-		}
+		for_each_file("invalid", [](LearningNet &net) {
+			checkNet(net, false);
+		});
 
-		for (const auto &entry : std::filesystem::directory_iterator(resourcePath + "exception/")) {
-			testFile(entry.path(), false, true);
-		}
+		for_each_file("exception", [](LearningNet &net) {
+			checkNet(net, false);
+		}, true);
 	}
 }
