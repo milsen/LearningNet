@@ -8,6 +8,8 @@
 
 using namespace learningnet;
 
+const std::string resourcePath = "../test/resources/";
+
 void testFile(const std::string &filename,
 		const std::function<void(LearningNet&)> &func,
 		bool faultyNetwork = false)
@@ -31,8 +33,14 @@ void for_each_file(const std::string &subdir,
 		const std::function<void(LearningNet&)> &func,
 		bool faultyNetwork = false)
 {
-    const std::string resourcePath = "../test/resources/";
 	for (const auto &entry : std::filesystem::directory_iterator(resourcePath + subdir)) {
 		testFile(entry.path(), func, faultyNetwork);
 	}
+}
+
+void for_file(const std::string &subdir, const std::string &filename,
+		const std::function<void(LearningNet&)> &func,
+		bool faultyNetwork = false)
+{
+	testFile(resourcePath + subdir + "/" + filename + ".lgf", func, faultyNetwork);
 }
