@@ -4,23 +4,29 @@
 
 using namespace learningnet;
 
-void checkNet(LearningNet &net, bool valid) {
-	NetworkChecker checker(net);
-	CHECK(checker.succeeded() == valid);
+void checkNet(LearningNet &net, bool valid, bool useCompression) {
+	NetworkChecker checker(net, useCompression);
+	CHECKED_ELSE(checker.succeeded() == valid) {
+		net.write();
+	}
 }
 
 TEST_CASE("NetworkChecker","[check]") {
-	SECTION("Example Files") {
-		for_each_file("valid", [](LearningNet &net) {
-			checkNet(net, true);
-		});
+	for (bool useCompression : {false, true}) {
+		std::string compressionStr = useCompression ? "with" : "without";
 
-		for_each_file("invalid", [](LearningNet &net) {
-			checkNet(net, false);
-		});
+		SECTION(compressionStr + " compression") {
+			for_each_file("valid", [&](LearningNet &net) {
+				checkNet(net, true, useCompression);
+			});
 
-		for_each_file("exception", [](LearningNet &net) {
-			checkNet(net, false);
-		}, true);
+			for_each_file("invalid", [&](LearningNet &net) {
+				checkNet(net, false, useCompression);
+			});
+
+			for_each_file("exception", [&](LearningNet &net) {
+				checkNet(net, false, useCompression);
+			}, true);
+		}
 	}
 }
