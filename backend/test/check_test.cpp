@@ -7,6 +7,7 @@ using namespace learningnet;
 void checkNet(LearningNet &net, bool valid, bool useCompression) {
 	NetworkChecker checker(net, useCompression);
 	CHECKED_ELSE(checker.succeeded() == valid) {
+		checker.handleFailure();
 		net.write();
 	}
 }

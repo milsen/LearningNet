@@ -12,6 +12,9 @@ using namespace lemon;
 class NetworkChecker : public Module
 {
 private:
+
+	bool m_useCompression;
+
 	template<typename ArcItType>
 	bool hasAtMostOneArc(const LearningNet &net,
 			const lemon::ListDigraph::Node &v)
@@ -160,7 +163,10 @@ private:
 
 
 public:
-	NetworkChecker(LearningNet &net) : Module() {
+	NetworkChecker(LearningNet &net, bool useCompression = true)
+		: Module()
+		, m_useCompression{useCompression}
+	{
 		call(net);
 	}
 
@@ -246,13 +252,6 @@ public:
 			return false;
 		}
 
-		// Push "else"-branch for each condition:
-		// This "else"-branch represents that none of the possible branches for
-		// the given condition id is applicable for the user.
-		for (auto idToBranches : conditionIdToBranches) {
-			conditionIdToBranches[std::get<0>(idToBranches)].push_back(CONDITION_ELSE_BRANCH_KEYWORD);
-		}
-
 		if (!dag(net)) {
 			failWithError("Given network is not acyclic.");
 			return false;
@@ -262,9 +261,27 @@ public:
 		}
 
 		// Conditions exist, there must exist a path to target for each branch.
-		Compressor comp;
-		return comp.compress(net)
-		    || pathsForAllConditions(net, conditionIdToBranches);
+		if (m_useCompression) {
+			Compressor comp;
+			TargetReachability afterCompression = comp.compress(net);
+			if (afterCompression == TargetReachability::Yes) {
+				return true;
+			}
+			if (afterCompression == TargetReachability::No) {
+				// TODO get more info from compressor
+				failWithError("Compression resulted in network without reachable target.");
+				return false;
+			}
+		}
+
+		// Push "else"-branch for each condition:
+		// This "else"-branch represents that none of the possible branches for
+		// the given condition id is applicable for the user.
+		for (auto idToBranches : conditionIdToBranches) {
+			conditionIdToBranches[std::get<0>(idToBranches)].push_back(CONDITION_ELSE_BRANCH_KEYWORD);
+		}
+
+		return pathsForAllConditions(net, conditionIdToBranches);
 	}
 };
 

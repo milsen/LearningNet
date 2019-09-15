@@ -19,7 +19,7 @@ class NodeType {
 		static constexpr int completed = 2;
 		static constexpr int split = 10;
 		static constexpr int condition = 11;
-		static constexpr int test = 11;
+		static constexpr int test = 12;
 		static constexpr int join = 20;
 
 		NodeType(int v) : m_underlying(v) {}
@@ -214,10 +214,15 @@ public:
 	}
 
 	// @}
-	// Condition Getter
+	// Condition Branch Getter and Setter
 	// @{
 	std::string getConditionBranch(const lemon::ListDigraph::Arc &a) const {
 		return m_condition[a];
+	}
+
+	void setConditionBranch(const lemon::ListDigraph::Arc &a,
+			const std::string &branch) {
+		m_condition[a] = branch;
 	}
 
 	// @}
