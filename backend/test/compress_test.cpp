@@ -36,5 +36,13 @@ TEST_CASE("Compressor","[compressor]") {
 		for_file("valid", "conditions_simple", [](LearningNet &net) {
 			compressNet(net, 3, 4);
 		});
+
+		for_file("valid", "pre_top_sort", [](LearningNet &net) {
+			compressNet(net, 2, 2);
+		});
+
+		for_file("valid", "pre_top_sort_2", [](LearningNet &net) {
+			compressNet(net, 10, 15);
+		});
 	}
 }
