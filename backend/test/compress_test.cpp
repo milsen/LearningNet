@@ -5,11 +5,16 @@
 
 using namespace learningnet;
 
-void compressNet(LearningNet &net, int expectedN, int expectedM) {
+void compressNet(LearningNet &net,
+	int expectedN,
+	int expectedM,
+	TargetReachability expectedResult = TargetReachability::Unknown)
+{
 	Compressor comp;
-	comp.compress(net);
+	TargetReachability result = comp.compress(net);
+	CHECK(result == expectedResult);
 	CHECK(countNodes(net) == expectedN);
-	CHECK(countArcs(net) == expectedM);
+	CHECKED_ELSE(countArcs(net) == expectedM);
 
 	// The network should still be valid.
 	NetworkChecker checker(net);
@@ -26,11 +31,15 @@ TEST_CASE("Compressor","[compressor]") {
 		});
 
 		for_file("valid", "no_condition", [](LearningNet &net) {
-			compressNet(net, 1, 0);
+			compressNet(net, 1, 0, TargetReachability::Yes);
 		});
 
 		for_file("valid", "condition", [](LearningNet &net) {
-			compressNet(net, 2, 2);
+			compressNet(net, 1, 0, TargetReachability::Yes);
+		});
+
+		for_file("valid", "condition_simple", [](LearningNet &net) {
+			compressNet(net, 1, 0, TargetReachability::Yes);
 		});
 
 		for_file("valid", "conditions_simple", [](LearningNet &net) {
@@ -38,7 +47,7 @@ TEST_CASE("Compressor","[compressor]") {
 		});
 
 		for_file("valid", "pre_top_sort", [](LearningNet &net) {
-			compressNet(net, 2, 2);
+			compressNet(net, 1, 0, TargetReachability::Yes);
 		});
 
 		for_file("valid", "pre_top_sort_2", [](LearningNet &net) {

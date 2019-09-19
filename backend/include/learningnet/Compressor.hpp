@@ -36,6 +36,34 @@ private:
 		return true;
 	}
 
+	bool hasOnlyOnePred(const LearningNet &net,
+		const lemon::ListDigraph::Node &v,
+		const lemon::ListDigraph::Node &pred)
+	{
+		bool result = true;
+		for (lemon::ListDigraph::InArcIt in(net, v); in != lemon::INVALID; ++in) {
+			if (net.source(in) != pred) {
+				result = false;
+				break;
+			}
+		}
+		return result;
+	}
+
+	bool hasOnlyOneSucc(const LearningNet &net,
+		const lemon::ListDigraph::Node &v,
+		const lemon::ListDigraph::Node &succ)
+	{
+		bool result = true;
+		for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
+			if (net.target(out) != succ) {
+				result = false;
+				break;
+			}
+		}
+		return result;
+	}
+
 	/**
 	 * If the entry does exist, increment it, else set it to 1.
 	 * @param m mapping of nodes to ints
@@ -57,7 +85,6 @@ private:
 		const lemon::ListDigraph::Node &v,
 		const lemon::ListDigraph::Node &w)
 	{
-		std::cout << "contract" << std::endl;
 		// Push succs to succs.
 		for (lemon::ListDigraph::OutArcIt out(net, w); out != lemon::INVALID; ++out) {
 			succs.push_back(net.target(out));
@@ -71,7 +98,8 @@ private:
 		if (net.isTarget(w)) {
 			// TODO Instead of hasAtMostNOutArcs use hasAtMostNSuccs (there is a
 			// difference if multiple arcs lead to the same succ).
-			if (!net.isCondition(v) || hasAtMostNOutArcs(net, v, 1)) {
+			// Is this actually guaranteed if contraction is done?
+			if (!net.isCondition(v) || hasOnlyOneSucc(net, v, w)) {
 				net.setTarget(v);
 			} else {
 				// If a target node is contracted into a condition node while
@@ -100,8 +128,11 @@ private:
 				// If v is a condition with multiple succs, then do not erase w,
 				// since w is proof that the condition v does not lead to a
 				// target for every branch.
-				if (!net.isCondition(v) || hasAtMostNOutArcs(net, v, 1)) {
+				if (!net.isCondition(v) || hasOnlyOneSucc(net, v, w)) {
 					net.erase(w);
+					if (net.isCondition(v)) {
+						net.setType(v, NodeType::split);
+					}
 				}
 			}
 		} else {
@@ -203,7 +234,6 @@ public:
 				lemon::ListDigraph::Node w = succs.back();
 				succs.pop_back();
 				TargetReachability afterContraction = TargetReachability::Unknown;
-				std::cout << net.id(v) << " -> " << net.id(w) << std::endl;
 
 				// Contract nodes depending on their type.
 				// If a node is a unit, just combine it with its predecessor.
@@ -236,15 +266,8 @@ public:
 						// Only check this after all in-arcs were visited such
 						// that it is ensured that they are combined if that is
 						// possible at all.
-						bool joinInArcsFromSplit = true;
-						for (lemon::ListDigraph::InArcIt in(net, w); in != lemon::INVALID; ++in) {
-							if (net.source(in) != v) {
-								joinInArcsFromSplit = false;
-								break;
-							}
-						}
-						if (joinInArcsFromSplit) {
-							/* contract(net, succs, v, w); */
+						if (hasOnlyOnePred(net, w, v)) {
+							contract(net, succs, v, w);
 						}
 					} else { // w is a join that cannot be contracted.
 						sources.push_back(w);
