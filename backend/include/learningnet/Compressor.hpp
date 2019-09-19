@@ -112,19 +112,22 @@ private:
 		return TargetReachability::Unknown;
 	}
 
-
-public:
-
 	/**
-	 * @return whether the compression already determined that the target can be
-	 * reached.
+	 * Preprocesses the given learning net by removing non-condition source
+	 * nodes (nodes with indegree 0) until all sources are only conditions.
+	 * The preprocessing is based on a topological sort that deletes all visited
+	 * nodes (necessary in-arcs of join nodes are adjusted as well).
+	 * Returns immediately if the target node is found.
+	 *
+	 * @param net learning net to be preprocessed
+	 * @param indeg indegree of every node after preprocessing
+	 * @param sources is assigned a list of condition nodes with indegree 0
+	 * @return whether the target was found during topological sorting
 	 */
-	TargetReachability compress(LearningNet &net)
+	bool preprocess(LearningNet &net,
+		lemon::ListDigraph::NodeMap<int> &indeg,
+		std::vector<lemon::ListDigraph::Node> &sources)
 	{
-		std::vector<lemon::ListDigraph::Node> succs;
-		std::map<lemon::ListDigraph::Node, int> visitedFromHowManyPreds; // for join nodes
-		lemon::ListDigraph::NodeMap<int> indeg{net, 0};
-
 		// Collect sources: nodes with indegree 0.
 		std::vector<lemon::ListDigraph::Node> initialSources;
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
@@ -134,15 +137,13 @@ public:
 			}
 		}
 
-		// Remove non-condition sources until all sources are only conditions.
-		std::vector<lemon::ListDigraph::Node> sources;
 		while (!initialSources.empty()) {
 			lemon::ListDigraph::Node v = initialSources.back();
 			initialSources.pop_back();
 
 			// If target can be reached, directly return.
 			if (net.isTarget(v)) {
-				return TargetReachability::Yes;
+				return true;
 			}
 
 			if (net.isCondition(v)) {
@@ -163,6 +164,28 @@ public:
 				}
 				net.erase(v);
 			}
+		}
+
+		return false;
+	}
+
+
+public:
+
+	/**
+	 * @return whether the compression already determined that the target can be
+	 * reached.
+	 */
+	TargetReachability compress(LearningNet &net)
+	{
+		std::map<lemon::ListDigraph::Node, int> visitedFromHowManyPreds; // for join nodes
+		std::vector<lemon::ListDigraph::Node> succs;
+
+		// Remove non-condition sources until all sources are only conditions.
+		lemon::ListDigraph::NodeMap<int> indeg{net, 0};
+		std::vector<lemon::ListDigraph::Node> sources;
+		if (preprocess(net, indeg, sources)) {
+			return TargetReachability::Yes;
 		}
 
 		// For each source v:
