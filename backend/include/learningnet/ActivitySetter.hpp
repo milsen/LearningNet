@@ -58,13 +58,19 @@ public:
 					// Function to push an arc's target to sources.
 					auto exploreArc = [&](const lemon::ListDigraph::OutArcIt &a) {
 						lemon::ListDigraph::Node u = net.target(a);
+
 						// Push join nodes only if all necessary in-edges are
 						// activated. All other nodes only have one in-edge and
 						// can be pushed directly when explored.
 						if (net.isJoin(u)) {
 							net.incrementActivatedInArcs(u);
 						}
-						if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
+
+						// Once the activated in-arcs of a join reach the number
+						// of its necessary in-arcs, push them. Do not push them
+						// again if the join is visited another time.
+						if (!net.isJoin(u) ||
+							net.getActivatedInArcs(u) == net.getNecessaryInArcs(u)) {
 							sources.push_back(u);
 						}
 					};
