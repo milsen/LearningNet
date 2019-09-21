@@ -1,6 +1,7 @@
 <?php
 
 use Mooc\DB\Block;
+use Mooc\DB\Field;
 use LearningNet\NetworkCalculations;
 use LearningNet\ConditionHandler;
 use LearningNet\DB\Networks;
@@ -128,12 +129,22 @@ class NetController extends PluginController {
             $sectionTitles[$section['id']] = $section['title'];
         }
 
-        // Get test titles.
+        // Get test titles, i.e. titles of assignments used in TestBlocks.
+        // Normally this could be with a join of mooc_blocks and vips_test, but
+        // json_data wraps the assignment_id in double quotes.
         $testTitles = array();
         $tests = Mooc\DB\Block::findBySQL(
             "type = 'TestBlock' AND seminar_id = ?", array($courseId));
-        foreach ($tests as $test) {
-            $testTitles[$test['id']] = $test['title'];
+        $assignmentRows = Mooc\DB\Field::findBySQL("name = 'assignment_id'");
+
+        $db = \DBManager::get();
+        foreach ($assignmentRows as $assignmentRow) {
+            $assignmentId = json_decode($assignmentRow['json_data']);
+            $stmt = $db->prepare("SELECT title FROM vips_test WHERE id = :id");
+            $stmt->bindParam(':id', $assignmentId);
+            $stmt->execute();
+            $row = $stmt->fetch(\PDO::FETCH_NUM, \PDO::FETCH_ORI_NEXT);
+            $testTitles[$assignmentRow['block_id']] = $row[0];
         }
 
         // Get condition titles.
