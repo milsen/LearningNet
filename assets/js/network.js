@@ -46,7 +46,7 @@ function createNodeLabel(node, name) {
     tspan.setAttribute('x', '1');
     let link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
     link.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', url);
-    link.setAttribute('target', '_blank')
+    link.setAttribute('target', '_self');
     link.textContent = name;
     tspan.appendChild(link);
     svg_label.appendChild(tspan);
