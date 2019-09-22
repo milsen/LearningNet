@@ -2,6 +2,7 @@
 
 use Mooc\DB\Block;
 use Mooc\DB\Field;
+use Mooc\DB\UserProgress;
 use LearningNet\NetworkCalculations;
 use LearningNet\ConditionHandler;
 use LearningNet\CostFunctionHandler;
@@ -100,9 +101,13 @@ class NetController extends PluginController {
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
 
             // Get grades for test blocks.
-            $userProgress = Mooc\DB\UserProgress::findBySQL("user_id = ?", [$userId]);
             $testGrades = [];
-            foreach ($userProgress as $row) {
+            $rows = Mooc\DB\UserProgress::findBySQL("INNER JOIN mooc_blocks
+                ON mooc_userprogress.block_id = mooc_blocks.id
+                WHERE user_id = :user_id
+                AND seminar_id = :course_id
+            ", ['course_id' => $courseId, 'user_id' => $userId]);
+            foreach ($rows as $row) {
                 $testGrades[$row['block_id']] = $row['grade'];
             }
             if (empty($testGrades)) {
@@ -147,21 +152,25 @@ class NetController extends PluginController {
         }
 
         // Get test titles, i.e. titles of assignments used in TestBlocks.
-        // Normally this could be with a join of mooc_blocks and vips_test, but
-        // json_data wraps the assignment_id in double quotes.
-        $testTitles = array();
-        $tests = Mooc\DB\Block::findBySQL(
-            "type = 'TestBlock' AND seminar_id = ?", array($courseId));
-        $assignmentRows = Mooc\DB\Field::findBySQL("name = 'assignment_id'");
+        $testTitles = [];
+        $testRows = Mooc\DB\Field::findBySQL("INNER JOIN mooc_blocks
+            ON mooc_fields.block_id = mooc_blocks.id
+            WHERE type = 'TestBlock'
+            AND name = 'assignment_id'
+            AND seminar_id = :course_id
+        ", ['course_id' => $courseId]);
 
+        // Normally this could be with a join of mooc_blocks and vips_test, but
+        // json_data wraps the assignment_id in double quotes...
+        $assignmentToBlockIds = [];
+        foreach ($testRows as $testRow) {
+            $assignmentToBlockIds[json_decode($testRow['json_data'])] = $testRow['block_id'];
+        }
         $db = \DBManager::get();
-        foreach ($assignmentRows as $assignmentRow) {
-            $assignmentId = json_decode($assignmentRow['json_data']);
-            $stmt = $db->prepare("SELECT title FROM vips_test WHERE id = :id");
-            $stmt->bindParam(':id', $assignmentId);
-            $stmt->execute();
-            $row = $stmt->fetch(\PDO::FETCH_NUM, \PDO::FETCH_ORI_NEXT);
-            $testTitles[$assignmentRow['block_id']] = $row[0];
+        $stmt = $db->prepare("SELECT * FROM vips_test WHERE id IN (:ids)");
+        $stmt->execute(["ids" => array_keys($assignmentToBlockIds)]);
+        foreach ($stmt->fetchAll() as $row) {
+            $testTitles[$assignmentToBlockIds[$row['id']]] = $row['title'];
         }
 
         // Get condition titles.
