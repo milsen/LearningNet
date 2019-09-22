@@ -62,7 +62,7 @@ TestMap toTestMap(const Value &oldObj)
 {
 	TestMap idToVal;
 	for (auto &m : oldObj.GetObject()) {
-		idToVal[std::stoi(m.name.GetString())] = m.value.GetInt();
+		idToVal[std::stoi(m.name.GetString())] = std::stoi(m.value.GetString());
 	}
 
 	return idToVal;
