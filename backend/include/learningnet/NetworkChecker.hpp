@@ -54,7 +54,8 @@ private:
 				net.incrementActivatedInArcs(u);
 			}
 
-			if (!net.isJoin(u) || net.isUnlockedJoin(u)) {
+			if (!net.isJoin(u) ||
+				net.getActivatedInArcs(u) == net.getNecessaryInArcs(u)) {
 				// Push conditions to front, they'll be used after other
 				// nodes such that those nodes are visited less often.
 				if (net.isCondition(u)) {
