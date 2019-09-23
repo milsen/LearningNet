@@ -90,9 +90,14 @@ class NetController extends PluginController {
 
             // Get grades for test blocks.
             $userProgress = Mooc\DB\UserProgress::findBySQL("user_id = ?", array($userId));
-            $testGrades = array();
+            $testGrades = [];
             foreach ($userProgress as $row) {
                 $testGrades[$row['block_id']] = $row['grade'];
+            }
+            if (empty($testGrades)) {
+                // The backend expects an object, so json_encode should output
+                // an object even if $testGrades is empty.
+                $testGrades = new stdClass();
             }
 
             // Get values of user for each condition.
