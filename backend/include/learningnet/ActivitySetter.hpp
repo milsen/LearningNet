@@ -34,7 +34,7 @@ public:
 				net.resetActivatedInArcs(v);
 			}
 
-			if (countInArcs(net, v) == 0) {
+			if (net.isSource(v) || net.isCompletedJoin(v)) {
 				sources.push_back(v);
 			}
 		}

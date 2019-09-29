@@ -163,7 +163,7 @@ private:
 		std::vector<lemon::ListDigraph::Node> initialSources;
 		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
 			indeg[v] = countInArcs(net, v);
-			if (indeg[v] == 0) {
+			if (indeg[v] == 0 || net.isCompletedJoin(v)) {
 				initialSources.push_back(v);
 			}
 		}

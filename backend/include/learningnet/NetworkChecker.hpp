@@ -41,7 +41,7 @@ private:
 				net.resetActivatedInArcs(v);
 			}
 
-			if (net.isSource(v)) {
+			if (net.isSource(v) || net.isCompletedJoin(v)) {
 				sources.push_back(v);
 			}
 		}

@@ -252,7 +252,7 @@ public:
 		}
 	}
 
-	bool isUnlockedJoin(const lemon::ListDigraph::Node &v) const {
+	bool isCompletedJoin(const lemon::ListDigraph::Node &v) const {
 		return isJoin(v) && getActivatedInArcs(v) >= getNecessaryInArcs(v);
 	}
 
