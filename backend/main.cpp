@@ -2,7 +2,6 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 #include <learningnet/NetworkChecker.hpp>
-#include <learningnet/ActivitySetter.hpp>
 #include <learningnet/Recommender.hpp>
 
 using namespace learningnet;
@@ -11,15 +10,14 @@ using namespace rapidjson;
 bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *> &args)
 {
 	std::map<std::string, std::function<bool(const Value&)>> typeFunc = {
-		{ "action",       std::bind(&Value::IsString, std::placeholders::_1) },
-		{ "network",      std::bind(&Value::IsString, std::placeholders::_1) },
-		{ "recTypes",     std::bind(&Value::IsArray, std::placeholders::_1) },
-		{ "sections",     std::bind(&Value::IsArray, std::placeholders::_1) },
-		{ "conditions",   std::bind(&Value::IsArray, std::placeholders::_1) },
-		{ "test_grades",  std::bind(&Value::IsObject, std::placeholders::_1) },
-		{ "nodeCosts",    std::bind(&Value::IsObject, std::placeholders::_1) },
-		{ "edgeCosts",    std::bind(&Value::IsObject, std::placeholders::_1) },
-		{ "useNodeCosts", std::bind(&Value::IsBool, std::placeholders::_1) }
+		{ "action",        std::bind(&Value::IsString, std::placeholders::_1) },
+		{ "network",       std::bind(&Value::IsString, std::placeholders::_1) },
+		{ "recTypes",      std::bind(&Value::IsArray, std::placeholders::_1) },
+		{ "sections",      std::bind(&Value::IsArray, std::placeholders::_1) },
+		{ "conditions",    std::bind(&Value::IsArray, std::placeholders::_1) },
+		{ "testGrades",    std::bind(&Value::IsObject, std::placeholders::_1) },
+		{ "nodeCosts",     std::bind(&Value::IsObject, std::placeholders::_1) },
+		{ "nodePairCosts", std::bind(&Value::IsObject, std::placeholders::_1) }
 	};
 
 	bool result = true;
@@ -70,23 +68,85 @@ TestMap toTestMap(const Value &oldObj)
 	return idToVal;
 }
 
-lemon::ListDigraph::NodeMap toNodeMap(const Value &oldObj)
+NodeCosts toNodeCosts(const LearningNet &net,
+	const Value &nodeCostArr)
 {
-	lemon::ListDigraph::NodeMap nodeMap;
-	for (auto &m : oldObj.GetObject()) {
-		nodeMap[std::stoi(m.name.GetString())] = m.value.GetInt();
+	NodeCosts nodeCosts;
+
+	// Get weight sum.
+	double weightSum = 0.0;
+	for (auto &val : nodeCostArr.GetArray()) {
+		// TODO test whether object and both weight and cost exist
+		weightSum += val.GetObject()["weight"].GetDouble();
 	}
 
-	return idToVal;
+	for (auto v : net.nodes()) {
+		const char *vSection = std::to_string(net.getSection(v)).c_str();
+		nodeCosts[v] = 0.0;
+
+		for (auto &val : nodeCostArr.GetArray()) {
+			double weight = val.GetObject()["weight"].GetDouble();
+			auto &costDict = val.GetObject()["costs"];
+			auto itr = costDict.FindMember(vSection);
+			if (itr != costDict.MemberEnd()) {
+				nodeCosts[v] += (itr->value.GetDouble() * weight) / weightSum;
+			}
+		}
+	}
+
+	return nodeCosts;
 }
 
-void output(const Document &d)
+NodePairCosts toNodePairCosts(const LearningNet &net,
+	const Value &nodeCostArr,
+	const Value &nodePairCostArr)
 {
-    StringBuffer buffer;
-    Writer<StringBuffer> writer(buffer);
-    d.Accept(writer);
+	NodePairCosts nodePairCosts;
 
-    std::cout << buffer.GetString() << std::endl;
+	// Get weight sum.
+	double weightSum = 0.0;
+	for (auto &val : nodeCostArr.GetArray()) {
+		// TODO test whether object and both weight and cost exist
+		weightSum += val.GetObject()["weight"].GetDouble();
+	}
+	for (auto &val : nodePairCostArr.GetArray()) {
+		// TODO test whether object and both weight and cost exist
+		weightSum += val.GetObject()["weight"].GetDouble();
+	}
+
+	// Get weighted costs for each node pair.
+	for (auto &v : net.nodes()) {
+		const char *srcSection = std::to_string(net.getSection(v)).c_str();
+		for (auto &w : net.nodes()) {
+			const char *tgtSection = std::to_string(net.getSection(w)).c_str();
+			nodePairCosts[v][w] = 0.0;
+
+			for (auto &val : nodeCostArr.GetArray()) {
+				double weight = val.GetObject()["weight"].GetDouble();
+				auto &costDict = val.GetObject()["costs"];
+				auto itr = costDict.FindMember(tgtSection);
+				if (itr != costDict.MemberEnd()) {
+					nodePairCosts[v][w] +=
+						(itr->value.GetDouble() * weight) / weightSum;
+				}
+			}
+
+			for (auto &val : nodePairCostArr.GetArray()) {
+				double weight = val.GetObject()["weight"].GetDouble();
+				auto &costDict = val.GetObject()["costs"];
+				auto itr = costDict.FindMember(srcSection);
+				if (itr != costDict.MemberEnd()) {
+					auto itr2 = itr->value.FindMember(tgtSection);
+					if (itr2 != itr->value.MemberEnd()) {
+						nodePairCosts[v][w] +=
+							(itr2->value.GetDouble() * weight) / weightSum;
+					}
+				}
+			}
+		}
+	}
+
+	return nodePairCosts;
 }
 
 int main(int argc, char *argv[])
@@ -100,13 +160,13 @@ int main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 
-		std::string action = d["action"].GetString();
-
 		// Check for correct parameters.
+		std::string action = d["action"].GetString();
 		if ((action == "check"     && !hasCorrectArgs(d, {"network"}))
 		 || (action == "create"    && !hasCorrectArgs(d, {"sections"}))
-		 || (action == "recommend" && !hasCorrectArgs(d, {"recTypes","network","sections","conditions","test_grades"}))
+		 || (action == "recommend" && !hasCorrectArgs(d, {"recTypes","network","sections","conditions","testGrades"}))
 		 ) {
+			// TODO more info
 			std::cout << "Not all necessary parameters for the given action found." << std::endl;
 			return EXIT_FAILURE;
 		}
@@ -131,16 +191,20 @@ int main(int argc, char *argv[])
 			bool hasActive = isRecType("active");
 			bool hasNext   = isRecType("next");
 			bool hasPath   = isRecType("path");
+			bool hasNextOrPath = hasNext || hasPath;
 
-			if (!hasActive && !hasNext && !hasPath) {
+			if (!hasActive && !hasNextOrPath) {
 				std::cout << "No valid recommendation type (\"active\", "
 					      << "\"next\" or \"path\") given even though "
 				          << "the action is \"recommend\"." << std::endl;
 				return EXIT_FAILURE;
 			}
 
-			if ((hasNext || hasPath) && !hasCorrectArgs(d, {"nodeCosts"})
-			 && !hasCorrectArgs(d, {"edgeCosts"})) {
+			bool hasNodePairCosts = hasCorrectArgs(d, {"nodePairCosts"}) && !d["nodePairCosts"].Empty();
+			bool hasNodeCosts = hasCorrectArgs(d, {"nodeCosts"}) && !d["nodeCosts"].Empty();
+			bool hasOnlyNodeCosts = hasNodeCosts && !hasNodePairCosts;
+
+			if (hasNextOrPath && !hasNodeCosts && !hasNodeCosts) {
 				std::cout << "Not node or edge costs given even though the "
 				          << "recommendation types require it." << std::endl;
 				return EXIT_FAILURE;
@@ -148,33 +212,39 @@ int main(int argc, char *argv[])
 
 			// Activity must be found out even if it is not output (i.e. the
 			// recType active is not given).
+			// TODO what if recType active is not given?
 			LearningNet net(d["network"].GetString());
-			ActivitySetter act(net,
-				toIntVector(d["sections"]),
+			net.setCompleted(toIntVector(d["sections"]));
+			Recommender rec(net,
 				toConditionMap(d["conditions"]),
-				toTestMap(d["test_grades"])
+				toTestMap(d["testGrades"])
 			);
-			// TODO
 
-			if (hasNext || hasPath) {
-				Recommender rec{net}; //with set activity
-				if (hasNext) {
-					lemon::ListDigraph::Node recNode =
-						rec.recNext(nodeCosts, edgeCosts);
+			// Set path with heuristically lowest costs as path attribute.
+			if (hasPath) {
+				std::vector<lemon::ListDigraph::Node> recPath = hasOnlyNodeCosts ?
+					rec.recPath(toNodeCosts(net, d["nodeCosts"])) :
+					rec.recPath(toNodePairCosts(net, d["nodeCosts"], d["nodePairCosts"]));
 
-					// TODO just set one item type to 3 (=recommended)
-				}
-				if (hasPath) {
-					std::vector<lemon::ListDigraph::Node> recPath =
-						rec.recPath(nodeCosts, edgeCosts);
-					// TODO output path somehow using output()?
+				net.setPath(recPath);
+			}
+
+			// Set node with lowest costs as recommended.
+			// TODO if hasPath was set, simply use the first node of path
+			if (hasNext) {
+				lemon::ListDigraph::Node recNode = hasOnlyNodeCosts ?
+					rec.recNext(toNodeCosts(net, d["nodeCosts"])) :
+					rec.recNext(toNodePairCosts(net, d["nodeCosts"], d["nodePairCosts"]));
+
+				// Set recommended node at end of calculations so it does
+				// not mess with the recommendation computations.
+				if (recNode != lemon::INVALID) {
+					net.setType(recNode, NodeType::recommended);
 				}
 			}
 
-			if (hasActive) {
-				net.write();
-			}
-			return act.handleFailure();
+			net.write();
+			return rec.handleFailure();
 		} else {
 			std::cout << "No known action given." << std::endl;
 			return EXIT_FAILURE;

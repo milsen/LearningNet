@@ -3,6 +3,7 @@
 #include <lemon/list_graph.h>
 #include <lemon/concepts/digraph.h>
 #include <lemon/lgf_reader.h>
+#include <sstream>
 
 namespace learningnet {
 
@@ -16,7 +17,9 @@ class NodeType {
 	public:
 		static constexpr int inactive = 0;
 		static constexpr int active = 1;
+		// TODO switch completed and recommended nr everywhere
 		static constexpr int completed = 2;
+		static constexpr int recommended = 3;
 		static constexpr int split = 10;
 		static constexpr int condition = 11;
 		static constexpr int test = 12;
@@ -30,7 +33,6 @@ class NodeType {
 };
 
 
-// TODO management of unit types, join units
 class LearningNet : public lemon::ListDigraph
 {
 private:
@@ -38,9 +40,25 @@ private:
 	lemon::ListDigraph::NodeMap<int> m_ref;
 	lemon::ListDigraph::ArcMap<std::string> m_condition;
 	lemon::ListDigraph::Node m_target;
+	std::vector<lemon::ListDigraph::Node> m_path;
 
 	void setReference(const lemon::ListDigraph::Node &v, int ref) {
 		m_ref[v] = ref;
+	}
+
+	std::string stringify(const std::vector<lemon::ListDigraph::Node> &vs)
+	{
+		std::ostringstream oss;
+		bool first = true;
+		for (auto v : vs) {
+			if (first) {
+				first = false;
+				oss << id(v);
+			} else {
+				oss << " " << id(v);
+			}
+		}
+		return oss.str();
 	}
 
 public:
@@ -50,6 +68,8 @@ public:
 		, m_type{*this}
 		, m_ref{*this}
 		, m_condition{*this}
+		, m_target{lemon::INVALID}
+		, m_path{std::vector<lemon::ListDigraph::Node>()}
 		{}
 
 	/**
@@ -64,6 +84,7 @@ public:
 			.nodeMap("ref", m_ref)
 			.arcMap("condition", m_condition)
 			.node("target", m_target)
+			/* TODO .attribute("path", stringify(m_path)) */
 			.run();
 	};
 
@@ -214,6 +235,17 @@ public:
 	}
 
 	// @}
+	// Recommended Learning Path Getter and Setter
+	// @{
+	std::vector<lemon::ListDigraph::Node> getPath() const {
+		return m_path;
+	}
+
+	void setPath(const std::vector<lemon::ListDigraph::Node> &path) {
+		m_path = path;
+	}
+
+	// @}
 	// Condition Branch Getter and Setter
 	// @{
 	std::string getConditionBranch(const lemon::ListDigraph::Arc &a) const {
@@ -264,7 +296,36 @@ public:
 			.nodeMap("ref", m_ref)
 			.arcMap("condition", m_condition)
 			.node("target", m_target)
+			.attribute("path", stringify(m_path))
 			.run();
+	}
+
+	/**
+	* Set the type of the unit nodes given by \p completed to completed.
+	* TODO not part of recommender
+	* @param completed section numbers of completed unit nodes
+	*/
+	void setCompleted(const std::vector<int> &completed)
+	{
+		// Get map: sectionId -> node.
+		std::map<int, lemon::ListDigraph::Node> sectionNode;
+		for (auto v : nodes()) {
+			if (isUnit(v)) {
+				sectionNode[getSection(v)] = v;
+			}
+		}
+
+		// Set type of completed units.
+		for (int completedSection : completed) {
+			auto completedNode = sectionNode.find(completedSection);
+			if (completedNode != sectionNode.end()) {
+				// Only set it for units, not for connectives!
+				setType(completedNode->second, NodeType::completed);
+			} else {
+				/* appendError("Setting completed units: Could not find section " + */
+				/* 	std::to_string(completedSection) + "."); */
+			}
+		}
 	}
 
 };

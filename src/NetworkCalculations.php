@@ -53,7 +53,7 @@ class NetworkCalculations
             'network' => $networkLGF,
             'sections' => $completedSections,
             'conditions' => $conditionValues,
-            'test_grades' => $testGrades
+            'testGrades' => $testGrades
         ));
     }
 
@@ -66,7 +66,7 @@ class NetworkCalculations
             'network' => $networkLGF,
             'sections' => $completedSections,
             'conditions' => $conditionValues,
-            'test_grades' => $testGrades
+            'testGrades' => $testGrades
         ));
     }
 
