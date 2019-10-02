@@ -58,7 +58,8 @@ class NetworkCalculations
     }
 
     public function getRecommended($networkLGF,
-        $completedSections, $conditionValues, $testGrades)
+        $completedSections, $conditionValues, $testGrades,
+        $nodeCosts, $nodePairCosts)
     {
         return $this->runCommand(array(
             'action' => 'recommend',
@@ -66,7 +67,9 @@ class NetworkCalculations
             'network' => $networkLGF,
             'sections' => $completedSections,
             'conditions' => $conditionValues,
-            'testGrades' => $testGrades
+            'testGrades' => $testGrades,
+            'nodeCosts' => $nodeCosts,
+            'nodePairCosts' => $nodePairCosts
         ));
     }
 

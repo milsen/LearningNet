@@ -119,8 +119,9 @@ class NetController extends PluginController {
             $conditionValues = $conditionHandler->getConditionValues($userId);
 
             // Set active nodes in network.
-            $output = $this->executableInterface->getActives(
-                $output['message'], $completedIds, $conditionValues, $testGrades
+            $output = $this->executableInterface->getRecommended(
+                $output['message'], $completedIds, $conditionValues, $testGrades,
+                $nodeCosts, $nodePairCosts // TODO
             );
         }
 
