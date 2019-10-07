@@ -20,12 +20,14 @@ class NodeCosts extends Costs
     }
 
     /**
+     * @param $nameAsIndex boolean whether the returned array should be indexed
+     * by cost functions names instead of integers
      * @return an array of the form
      * [ { 'weight' => "weight", 'costs' => { "block_id" => "cost" } ]
      */
-    public function costs($courseId) {
+    static public function costs($courseId, $nameAsIndex = false) {
         return parent::costs($courseId, function(&$currentCosts, $row) {
             $currentCosts[$row['block_id']] = $row['cost'];
-        });
+        }, $nameAsIndex);
     }
 }

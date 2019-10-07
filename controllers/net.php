@@ -4,7 +4,11 @@ use Mooc\DB\Block;
 use Mooc\DB\Field;
 use LearningNet\NetworkCalculations;
 use LearningNet\ConditionHandler;
+use LearningNet\CostFunctionHandler;
 use LearningNet\DB\Networks;
+use LearningNet\DB\CostFunctions;
+use LearningNet\DB\NodeCosts;
+use LearningNet\DB\NodePairCosts;
 
 class NetController extends PluginController {
 
@@ -44,20 +48,28 @@ class NetController extends PluginController {
     public function settings_action()
     {
         $this->setupPage('settings');
-        // TODO replace example by DB call for cost functions activated in this course
-        // found in db: active
-        // not found in db but avaiable: inactive (set weight to 0)
-        $this->costFunctions = [
-            "Schwierigkeit" => 0.5,
-            "Kontinuität" => 0.25
-        ];
-        $inactiveCostFunctions = [
-            "Lernstil"
-        ];
 
-        foreach ($inactiveCostFunctions as $func) {
-            $this->costFunctions[$func] = 0.0;
+        // Collect node & node pair costs in $this->costs, remember their type.
+        $nodeCosts = NodeCosts::costs($courseId, true);
+        foreach ($nodeCosts as $nodeCost) {
+            $nodeCost['type'] = 'node';
         }
+        $nodePairCosts = NodePairCosts::costs($courseId, true);
+        foreach ($nodePairCosts as $nodePairCost) {
+            $nodePairCost['type'] = 'node_pair';
+        }
+        $this->costs = array_merge($nodeCosts, $nodePairCosts);
+
+        // Set weight of each active cost function that was not found to 0.
+        $activeCostFunctions = (new CostFunctionHandler)->getCostFunctions();
+        foreach ($activeCostFunctions as $costFunc => $type) {
+            if (!array_key_exists($costFunc)) {
+                $this->costs[$costFunc]['type'] = $type;
+                $this->costs[$costFunc]['weight'] = 0.0;
+                /* $this->costs[$costFunc]['costs'] = 0.0; */
+            }
+        }
+        // TODO storing of cost functions
     }
 
     /**
@@ -74,7 +86,7 @@ class NetController extends PluginController {
 
         $courseId = \Request::get('cid');
         $getUserData = \Request::get('getUserData') === 'true';
-        $graphRep = LearningNet\DB\Networks::find($courseId);
+        $graphRep = Networks::find($courseId);
 
         if ($graphRep === null) {
             // Create new network with one isolated node for each section.
@@ -85,7 +97,7 @@ class NetController extends PluginController {
 
             // Store new network in database.
             if ($output['succeeded']) {
-                $graphRep = new LearningNet\DB\Networks();
+                $graphRep = new Networks();
                 $graphRep->seminar_id = $courseId;
                 $graphRep->network = $output['message'];
                 $graphRep->store();
@@ -99,11 +111,11 @@ class NetController extends PluginController {
             // Get completed sections.
             $userId = isset($GLOBALS['user']) ? $GLOBALS['user']->id : 'nobody';
             $completed = Mooc\DB\Field::findBySQL(
-                "user_id = ? AND name = 'visited' AND json_data = 'true'", array($userId));
+                "user_id = ? AND name = 'visited' AND json_data = 'true'", [$userId]);
             $completedIds = array_map(function ($sec) { return $sec['block_id']; }, $completed);
 
             // Get grades for test blocks.
-            $userProgress = Mooc\DB\UserProgress::findBySQL("user_id = ?", array($userId));
+            $userProgress = Mooc\DB\UserProgress::findBySQL("user_id = ?", [$userId]);
             $testGrades = [];
             foreach ($userProgress as $row) {
                 $testGrades[$row['block_id']] = $row['grade'];
@@ -114,14 +126,14 @@ class NetController extends PluginController {
                 $testGrades = new stdClass();
             }
 
-            // Get values of user for each condition.
-            $conditionHandler = new ConditionHandler();
-            $conditionValues = $conditionHandler->getConditionValues($userId);
-
             // Set active nodes in network.
             $output = $this->executableInterface->getRecommended(
-                $output['message'], $completedIds, $conditionValues, $testGrades,
-                $nodeCosts, $nodePairCosts // TODO
+                $output['message'],
+                $completedIds,
+                (new ConditionHandler())->getConditionValues($userId),
+                $testGrades,
+                NodeCosts::costs($courseId),
+                NodePairCosts::costs($courseId)
             );
         }
 
@@ -194,7 +206,7 @@ class NetController extends PluginController {
         $checkObj = $this->executableInterface->checkNetwork($network);
 
         if ($checkObj['succeeded']) {
-            $graphRep = LearningNet\DB\Networks::find($courseId);
+            $graphRep = Networks::find($courseId);
             $graphRep->network = $network;
             $graphRep->store();
 
