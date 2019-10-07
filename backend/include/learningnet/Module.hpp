@@ -13,7 +13,7 @@ private:
 	std::string m_error;
 
 protected:
-	Module() : m_failed{EXIT_SUCCESS}, m_error{""} { }
+	Module() : m_failed{false}, m_error{""} { }
 
 	inline void appendError(const std::string &error) {
 		if (!m_error.empty()) {
@@ -32,19 +32,19 @@ protected:
 	}
 
 	inline void fail() {
-		m_failed = EXIT_FAILURE;
+		m_failed = true;
 	}
 
 public:
 	inline bool succeeded() const {
-		return m_failed == EXIT_SUCCESS;
+		return !m_failed;
 	}
 
 	inline bool handleFailure(std::ostream &out = std::cout) const {
-		if (m_failed == EXIT_FAILURE) {
+		if (m_failed) {
 			out << m_error;
 		}
-		return m_failed;
+		return m_failed ? EXIT_FAILURE : EXIT_SUCCESS;
 	}
 };
 
