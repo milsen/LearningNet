@@ -48,6 +48,68 @@ class NetController extends PluginController {
     public function settings_action()
     {
         $this->setupPage('settings');
+        $courseId = \Request::get('cid');
+
+        // TODO storing of cost functions
+        if (\Request::submitted('save_settings')) {
+            $weightInput = \Request::getArray('weightinput');
+            $costInput = \Request::getArray('costinput');
+
+            foreach ($weightInput as $costFunc => $weight) {
+                $costFuncRep = CostFunctions::find([$courseId, $costFunc]);
+                if ($costFuncRep === null) {
+                    if ($weight != 0) {
+                        $costFuncRep = new CostFunctions();
+                        $costFuncRep->seminar_id = $courseId;
+                        $costFuncRep->cost_func = $costFunc;
+                        $costFuncRep->weight = $weight;
+                        $costFuncRep->store();
+                    }
+                } else {
+                    if ($weight == 0) {
+                        $costFuncRep->delete();
+                    } else {
+                        $costFuncRep->weight = $weight;
+                        $costFuncRep->store();
+                    }
+                }
+            }
+
+            foreach ($costInput as $costFunc => $costs) {
+                foreach ($costs as $blockId => $costValue) {
+                    if (is_array($costValue)) {
+                        foreach ($costValue as $blockIdTo => $costVal) {
+                            $nodeCostRep = NodePairCosts::find([$courseId, $costFunc, $blockId, $blockIdTo]);
+                            if ($nodeCostRep === null) {
+                                $nodeCostRep = new NodePairCosts();
+                                $nodeCostRep->seminar_id = $courseId;
+                                $nodeCostRep->cost_func = $costFunc;
+                                $nodeCostRep->block_id_from = $blockId;
+                                $nodeCostRep->block_id_to = $blockIdTo;
+                                $nodeCostRep->cost = $costVal;
+                                $nodeCostRep->store();
+                            } else {
+                                $nodeCostRep->cost = $costVal;
+                                $nodeCostRep->store();
+                            }
+                        }
+                    } else {
+                        $nodeCostRep = NodeCosts::find([$courseId, $costFunc, $blockId]);
+                        if ($nodeCostRep === null) {
+                            $nodeCostRep = new NodeCosts();
+                            $nodeCostRep->seminar_id = $courseId;
+                            $nodeCostRep->cost_func = $costFunc;
+                            $nodeCostRep->block_id = $blockId;
+                            $nodeCostRep->cost = $costValue;
+                            $nodeCostRep->store();
+                        } else {
+                            $nodeCostRep->cost = $costValue;
+                            $nodeCostRep->store();
+                        }
+                    }
+                }
+            }
+        }
 
         // Collect node & node pair costs in $this->costs, remember their type.
         $nodeCosts = NodeCosts::costs($courseId, true);
@@ -59,17 +121,32 @@ class NetController extends PluginController {
             $nodePairCost['type'] = 'node_pair';
         }
         $this->costs = array_merge($nodeCosts, $nodePairCosts);
+        // TODO weight may not be returned because not in join
 
         // Set weight of each active cost function that was not found to 0.
+        $sectionIds = $this->sectionIds($courseId);
         $activeCostFunctions = (new CostFunctionHandler)->getCostFunctions();
         foreach ($activeCostFunctions as $costFunc => $type) {
-            if (!array_key_exists($costFunc)) {
+            if (!array_key_exists($this->costs, $costFunc)) {
                 $this->costs[$costFunc]['type'] = $type;
                 $this->costs[$costFunc]['weight'] = 0.0;
-                /* $this->costs[$costFunc]['costs'] = 0.0; */
+                $costs = [];
+                if ($type == 'node') {
+                    foreach ($sectionIds as $sectionId) {
+                        $costs[$sectionId] = 0.0;
+                    }
+                } else if ($type == 'node_pair') {
+                    foreach ($sectionIds as $sectionFrom) {
+                        foreach ($sectionIds as $sectionTo) {
+                            if ($sectionFrom != $sectionTo) {
+                                $costs[$sectionFrom][$sectionTo] = 0.0;
+                            }
+                        }
+                    }
+                }
+                $this->costs[$costFunc]['costs'] = $costs;
             }
         }
-        // TODO storing of cost functions
     }
 
     /**
@@ -90,10 +167,9 @@ class NetController extends PluginController {
 
         if ($graphRep === null) {
             // Create new network with one isolated node for each section.
-            $sections = Mooc\DB\Block::findBySQL(
-                "type = 'Section' AND seminar_id = ?", array($courseId));
-            $sectionIds = array_map(function ($sec) { return $sec['id']; }, $sections);
-            $output = $this->executableInterface->createNetwork($sectionIds);
+            $output = $this->executableInterface->createNetwork(
+                $this->sectionIds($courseId)
+            );
 
             // Store new network in database.
             if ($output['succeeded']) {
@@ -272,5 +348,16 @@ class NetController extends PluginController {
     {
         $this->response->add_header('Content-Type', 'text/html;charset=utf-8');
         $this->render_text($html);
+    }
+
+    /**
+     * TODO move to Mooc\DB\Block
+     * @return array of Courseware section ids for course with id $courseId
+     */
+    private function sectionIds($courseId)
+    {
+        $sections = Mooc\DB\Block::findBySQL(
+            "type = 'Section' AND seminar_id = ?", [$courseId]);
+        return array_map(function ($sec) { return $sec['id']; }, $sections);
     }
 }

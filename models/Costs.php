@@ -9,6 +9,10 @@ namespace LearningNet\DB;
  */
 class Costs extends \SimpleORMap
 {
+    static protected function configure($config = array()) {
+        parent::configure($config);
+    }
+
     /**
      * @param $courseId string id of the course for which the costs should be found
      * @param $func function adding to cost array using database row
@@ -20,7 +24,7 @@ class Costs extends \SimpleORMap
      */
     static protected function costs($courseId, $func, $nameAsIndex = false) {
         $dbTable = self::config('db_table');
-        $rows = static::findBySQL('INNER JOIN learningnet_cost_functions
+        $rows = static::findBySQL('FULL JOIN learningnet_cost_functions
             ON (' . $dbTable . '.seminar_id = learningnet_cost_functions.seminar_id
             AND ' . $dbTable . '.cost_func  = learningnet_cost_functions.cost_func )
             WHERE (' . $dbTable . '.seminar_id = ?) GROUP BY cost_func', [$courseId]);

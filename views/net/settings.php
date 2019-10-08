@@ -1,45 +1,45 @@
-<form>
-    <?php print_r($costs)?>
-    <?php foreach ($costs as $name => $costFunc) { ?>
-        <?php $weight = $costFunc['weight']; ?>
-        <?php $type = $costFunc['type']; ?>
-        <?php $costValues = $costFunc['cost']; ?>
+<form method="post" name="cost_form" >
+    <?php foreach ($costs as $name => $costFunc) {
+        $weight = $costFunc['weight'];
+        $type = $costFunc['type'];
+        $costValues = $costFunc['costs']; ?>
         <h2><?=$name ?>:</h2>
-        <input type="range" id="<?=$name ?>_weight_range"
-            name="<?=$name ?>_weight_range"
-            class="weight_range"
+        <input type="range"
+            name="weightrange[<?=$name ?>]"
+            class="weightrange"
             min="0" max="1" step="0.01"
             value="<?=$weight ?>"
-            oninput="this.form.<?=$name ?>_weight_input.value=this.value"
+            oninput="this.form['weightinput[<?=$name ?>]'].value=this.value"
             />
         <input type="number"
-            name="<?=$name ?>_weight_input"
-            class="weight_input"
+            name="weightinput[<?=$name ?>]"
+            class="weightinput"
             min="0" max="1" step="0.01"
             value="<?=$weight ?>"
-            oninput="this.form.<?=$name ?>_weight_range.value=this.value"
+            oninput="this.form['weightrange[<?=$name ?>]'].value=this.value"
             />
         <br/>
-        <?php if ($type == 'node') { ?>
-            <?php foreach ($costValues as $section => $cost) { ?>
+        <?php if ($type == 'node') {
+            foreach ($costValues as $section => $cost) { ?>
                 <input type="number"
-                    name="<?=$name ?>_<?=$section ?>_cost_input"
-                    class="cost_input"
+                    name="costinput[<?=$name ?>][<?=$section ?>]"
+                    class="costinput"
                     min="0" max="100" step="1"
                     value="<?=$cost ?>"
                     />
-            <?php } ?>
-        <?php } else if ($type == 'node_pair') { ?>
-            <?php foreach ($costValues as $sectionFrom => $sectionToCost) { ?>
-                <?php foreach ($sectionToCost as $sectionTo => $cost) { ?>
+            <?php }
+        } else if ($type == 'node_pair') {
+            foreach ($costValues as $sectionFrom => $sectionToCost) {
+                foreach ($sectionToCost as $sectionTo => $cost) { ?>
                     <input type="number"
-                        name="<?=$name ?>_<?=$sectionFrom ?>-<?=$sectionTo ?>_cost_input"
-                        class="cost_input"
+                        name="costinput[<?=$name ?>][<?=$sectionFrom ?>][<?=$sectionTo ?>]"
+                        class="costinput"
                         min="0" max="100" step="1"
                         value="<?=$cost ?>"
                         />
-                <?php } ?>
-            <?php } ?>
-        <?php } ?>
-    <?php } ?>
+                <?php }
+            }
+        }
+    } ?>
+    <button type="submit" name="save_settings" value="1">Einstellungen speichern</button>
 </form>
