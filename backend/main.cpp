@@ -16,8 +16,8 @@ bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *>
 		{ "sections",      std::bind(&Value::IsArray, std::placeholders::_1) },
 		{ "conditions",    std::bind(&Value::IsArray, std::placeholders::_1) },
 		{ "testGrades",    std::bind(&Value::IsObject, std::placeholders::_1) },
-		{ "nodeCosts",     std::bind(&Value::IsObject, std::placeholders::_1) },
-		{ "nodePairCosts", std::bind(&Value::IsObject, std::placeholders::_1) }
+		{ "nodeCosts",     std::bind(&Value::IsArray, std::placeholders::_1) },
+		{ "nodePairCosts", std::bind(&Value::IsArray, std::placeholders::_1) }
 	};
 
 	bool result = true;
@@ -211,8 +211,8 @@ int main(int argc, char *argv[])
 			bool hasNodeCosts = hasCorrectArgs(d, {"nodeCosts"}) && !d["nodeCosts"].Empty();
 			bool hasOnlyNodeCosts = hasNodeCosts && !hasNodePairCosts;
 
-			if (hasNextOrPath && !hasNodeCosts && !hasNodeCosts) {
-				std::cout << "Not node or edge costs given even though the "
+			if (hasNextOrPath && !hasNodeCosts && !hasNodePairCosts) {
+				std::cout << "Not node or node pair costs given even though the "
 				          << "recommendation types require it." << std::endl;
 				return EXIT_FAILURE;
 			}
