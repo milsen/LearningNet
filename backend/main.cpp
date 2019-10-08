@@ -81,15 +81,17 @@ NodeCosts toNodeCosts(const LearningNet &net,
 	}
 
 	for (auto v : net.nodes()) {
-		const char *vSection = std::to_string(net.getSection(v)).c_str();
-		nodeCosts[v] = 0.0;
+		if (net.isUnit(v)) {
+			const char *vSection = std::to_string(net.getSection(v)).c_str();
+			nodeCosts[v] = 0.0;
 
-		for (auto &val : nodeCostArr.GetArray()) {
-			double weight = val.GetObject()["weight"].GetDouble();
-			auto &costDict = val.GetObject()["costs"];
-			auto itr = costDict.FindMember(vSection);
-			if (itr != costDict.MemberEnd()) {
-				nodeCosts[v] += (itr->value.GetDouble() * weight) / weightSum;
+			for (auto &val : nodeCostArr.GetArray()) {
+				double weight = val.GetObject()["weight"].GetDouble();
+				auto &costDict = val.GetObject()["costs"];
+				auto itr = costDict.FindMember(vSection);
+				if (itr != costDict.MemberEnd()) {
+					nodeCosts[v] += (itr->value.GetDouble() * weight) / weightSum;
+				}
 			}
 		}
 	}
@@ -116,30 +118,35 @@ NodePairCosts toNodePairCosts(const LearningNet &net,
 
 	// Get weighted costs for each node pair.
 	for (auto &v : net.nodes()) {
-		const char *srcSection = std::to_string(net.getSection(v)).c_str();
-		for (auto &w : net.nodes()) {
-			const char *tgtSection = std::to_string(net.getSection(w)).c_str();
-			nodePairCosts[v][w] = 0.0;
+		if (net.isUnit(v)) {
+			const char *srcSection = std::to_string(net.getSection(v)).c_str();
 
-			for (auto &val : nodeCostArr.GetArray()) {
-				double weight = val.GetObject()["weight"].GetDouble();
-				auto &costDict = val.GetObject()["costs"];
-				auto itr = costDict.FindMember(tgtSection);
-				if (itr != costDict.MemberEnd()) {
-					nodePairCosts[v][w] +=
-						(itr->value.GetDouble() * weight) / weightSum;
-				}
-			}
+			for (auto &w : net.nodes()) {
+				if (net.isUnit(w)) {
+					const char *tgtSection = std::to_string(net.getSection(w)).c_str();
+					nodePairCosts[v][w] = 0.0;
 
-			for (auto &val : nodePairCostArr.GetArray()) {
-				double weight = val.GetObject()["weight"].GetDouble();
-				auto &costDict = val.GetObject()["costs"];
-				auto itr = costDict.FindMember(srcSection);
-				if (itr != costDict.MemberEnd()) {
-					auto itr2 = itr->value.FindMember(tgtSection);
-					if (itr2 != itr->value.MemberEnd()) {
-						nodePairCosts[v][w] +=
-							(itr2->value.GetDouble() * weight) / weightSum;
+					for (auto &val : nodeCostArr.GetArray()) {
+						double weight = val.GetObject()["weight"].GetDouble();
+						auto &costDict = val.GetObject()["costs"];
+						auto itr = costDict.FindMember(tgtSection);
+						if (itr != costDict.MemberEnd()) {
+							nodePairCosts[v][w] +=
+								(itr->value.GetDouble() * weight) / weightSum;
+						}
+					}
+
+					for (auto &val : nodePairCostArr.GetArray()) {
+						double weight = val.GetObject()["weight"].GetDouble();
+						auto &costDict = val.GetObject()["costs"];
+						auto itr = costDict.FindMember(srcSection);
+						if (itr != costDict.MemberEnd()) {
+							auto itr2 = itr->value.FindMember(tgtSection);
+							if (itr2 != itr->value.MemberEnd()) {
+								nodePairCosts[v][w] +=
+									(itr2->value.GetDouble() * weight) / weightSum;
+							}
+						}
 					}
 				}
 			}
