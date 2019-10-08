@@ -308,7 +308,7 @@ public:
 				recNext(nodePairCosts, actives, prevBestActive);
 			// TODO improve performance, e.g. by giving back iterator and
 			// deleting directly
-			auto position = std::find(actives.begin(), actives.end(), prevBestActive);
+			auto position = std::find(actives.begin(), actives.end(), bestActive);
 			if (position != actives.end()) {
 				actives.erase(position);
 			}
