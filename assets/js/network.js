@@ -16,6 +16,8 @@ function typeToClass(type) {
         return "active";
     } else if (type === 2) {
         return "completed";
+    } else if (type === 3) {
+        return "recommended";
     } else if (type === 10) {
         return "split";
     } else if (type === 11) {
@@ -47,7 +49,7 @@ function createNodeLabel(node, name) {
     let link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
     link.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', url);
     link.setAttribute('target', '_self');
-    link.textContent = name;
+    link.textContent = node.pathIndex ? node.pathIndex + ": " + name : name;
     tspan.appendChild(link);
     svg_label.appendChild(tspan);
     return svg_label;
@@ -167,7 +169,12 @@ export function drawNetwork(data) {
                 // Label with link.
                 node.label = createNodeLabel(node, sectionTitles[node.ref]);
             }
-        });
+
+            // Mark nodes that are part of the learning path.
+            if (node.pathIndex) {
+                node.class += " learningpath";
+            }
+       });
 
         // Set style of target node.
         let tgtNode = g.node(g.graph().target);

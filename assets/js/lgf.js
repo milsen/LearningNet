@@ -14,7 +14,7 @@ function assign(elem, columns, headers) {
 
 function parseRow(row) {
     // Split at white space unless you're in a quoted string.
-    let columns = row.match(/[^\s]+|"(?:\\."|[^"])*"/g);
+    let columns = row.match(/"(?:\\."|[^"])*"|[^\s]+/g);
     // Remove outer quotes of string values.
     columns.forEach(function(val, index, arr) {
         if (val[0] === "\"" && val.slice(-1) === "\"") {
@@ -83,8 +83,17 @@ export function read(lgfInput) {
                 case '@attributes':
                     if (columns[0] === 'target') {
                         g.graph().target = columns[1];
+                    } else if (columns[0] === 'path') {
+                        // Extract learning path, set pathIndex for each node.
+                        let learningPath = columns[1].split(" ");
+                        g.graph().path = learningPath;
+                        let index = 1;
+                        learningPath.forEach(function(id) {
+                            g.node(id).pathIndex = index;
+                            index++;
+                        });
                     }
-                    // Ignore attributes other than target.
+                    // Ignore attributes other than target and path.
                     break;
                 case '':
                     console.log('read(lgfInput): Found data outside of section.');
