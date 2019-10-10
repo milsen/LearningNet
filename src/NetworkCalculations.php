@@ -49,7 +49,7 @@ class NetworkCalculations
     {
         return $this->runCommand(array(
             'action' => 'recommend',
-            'recTypes' => ['active'],
+            'recType' => 'active',
             'network' => $networkLGF,
             'sections' => $completedSections,
             'conditions' => $conditionValues,
@@ -63,7 +63,7 @@ class NetworkCalculations
     {
         return $this->runCommand(array(
             'action' => 'recommend',
-            'recTypes' => ['active','next','path'],
+            'recType' => 'path',
             'network' => $networkLGF,
             'sections' => $completedSections,
             'conditions' => $conditionValues,

@@ -17,9 +17,7 @@ class NodeType {
 	public:
 		static constexpr int inactive = 0;
 		static constexpr int active = 1;
-		// TODO switch completed and recommended nr everywhere
 		static constexpr int completed = 2;
-		static constexpr int recommended = 3;
 		static constexpr int split = 10;
 		static constexpr int condition = 11;
 		static constexpr int test = 12;

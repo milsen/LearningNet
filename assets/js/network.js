@@ -16,8 +16,6 @@ function typeToClass(type) {
         return "active";
     } else if (type === 2) {
         return "completed";
-    } else if (type === 3) {
-        return "recommended";
     } else if (type === 10) {
         return "split";
     } else if (type === 11) {

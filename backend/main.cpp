@@ -12,7 +12,7 @@ bool hasCorrectArgs(const Document &d, const std::initializer_list<const char *>
 	std::map<std::string, std::function<bool(const Value&)>> typeFunc = {
 		{ "action",        std::bind(&Value::IsString, std::placeholders::_1) },
 		{ "network",       std::bind(&Value::IsString, std::placeholders::_1) },
-		{ "recTypes",      std::bind(&Value::IsArray, std::placeholders::_1) },
+		{ "recType",       std::bind(&Value::IsString, std::placeholders::_1) },
 		{ "sections",      std::bind(&Value::IsArray, std::placeholders::_1) },
 		{ "conditions",    std::bind(&Value::IsArray, std::placeholders::_1) },
 		{ "testGrades",    std::bind(&Value::IsObject, std::placeholders::_1) },
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 		std::string action = d["action"].GetString();
 		if ((action == "check"     && !hasCorrectArgs(d, {"network"}))
 		 || (action == "create"    && !hasCorrectArgs(d, {"sections"}))
-		 || (action == "recommend" && !hasCorrectArgs(d, {"recTypes","network","sections","conditions","testGrades"}))
+		 || (action == "recommend" && !hasCorrectArgs(d, {"recType","network","sections","conditions","testGrades"}))
 		 ) {
 			// TODO more info
 			std::cout << "Not all necessary parameters for the given action found." << std::endl;
@@ -191,18 +191,15 @@ int main(int argc, char *argv[])
 			delete net;
 			return EXIT_SUCCESS;
 		} else if (action == "recommend") {
-			std::vector<std::string> recTypes = toStringVector(d["recTypes"]);
-			auto isRecType = [&recTypes](const std::string &s) {
-				return std::find(recTypes.begin(), recTypes.end(), s) != recTypes.end();
-			};
-			bool hasActive = isRecType("active");
-			bool hasNext   = isRecType("next");
-			bool hasPath   = isRecType("path");
+			std::string recType = d["recType"].GetString();
+			bool hasActive = recType == std::string("active");
+			bool hasNext   = recType == std::string("next");
+			bool hasPath   = recType == std::string("path");
 			bool hasNextOrPath = hasNext || hasPath;
 
 			if (!hasActive && !hasNextOrPath) {
 				std::cout << "No valid recommendation type (\"active\", "
-					      << "\"next\" or \"path\") given even though "
+				          << "\"next\" or \"path\") given even though "
 				          << "the action is \"recommend\"." << std::endl;
 				return EXIT_FAILURE;
 			}
@@ -212,14 +209,15 @@ int main(int argc, char *argv[])
 			bool hasOnlyNodeCosts = hasNodeCosts && !hasNodePairCosts;
 
 			if (hasNextOrPath && !hasNodeCosts && !hasNodePairCosts) {
-				std::cout << "Not node or node pair costs given even though the "
-				          << "recommendation types require it." << std::endl;
+				std::cout << "Not node or node pair costs given even though "
+				          << "the recommendation type \"" << recType
+				          << "\" requires it." << std::endl;
 				return EXIT_FAILURE;
 			}
 
-			// Activity must be found out even if it is not output (i.e. the
-			// recType active is not given).
-			// TODO what if recType active is not given?
+			// Create LearningNet, set given sections as completed and pass the
+			// net to the Recommender, which will set the appropriate unit nodes
+			// as active. Active nodes are set for every recommendation type.
 			LearningNet net(d["network"].GetString());
 			net.setCompleted(toIntVector(d["sections"]));
 			Recommender rec(net,
@@ -227,27 +225,20 @@ int main(int argc, char *argv[])
 				toTestMap(d["testGrades"])
 			);
 
-			// Set path with heuristically lowest costs as path attribute.
 			if (hasPath) {
+				// Set path with heuristically lowest costs as path attribute.
 				std::vector<lemon::ListDigraph::Node> recPath = hasOnlyNodeCosts ?
 					rec.recPath(toNodeCosts(net, d["nodeCosts"])) :
 					rec.recPath(toNodePairCosts(net, d["nodeCosts"], d["nodePairCosts"]));
 
 				net.setPath(recPath);
-			}
-
-			// Set node with lowest costs as recommended.
-			// TODO if hasPath was set, simply use the first node of path
-			if (hasNext) {
+			} else if (hasNext) {
+				// Set node with lowest costs as recommended path attribute.
 				lemon::ListDigraph::Node recNode = hasOnlyNodeCosts ?
 					rec.recNext(toNodeCosts(net, d["nodeCosts"])) :
 					rec.recNext(toNodePairCosts(net, d["nodeCosts"], d["nodePairCosts"]));
-
-				// Set recommended node at end of calculations so it does
-				// not mess with the recommendation computations.
-				if (recNode != lemon::INVALID) {
-					net.setType(recNode, NodeType::recommended);
-				}
+				std::vector<lemon::ListDigraph::Node> recPath = {recNode};
+				net.setPath(recPath);
 			}
 
 			net.write();
