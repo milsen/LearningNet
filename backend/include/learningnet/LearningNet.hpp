@@ -38,7 +38,7 @@ private:
 	lemon::ListDigraph::NodeMap<int> m_ref;
 	lemon::ListDigraph::ArcMap<std::string> m_condition;
 	lemon::ListDigraph::Node m_target;
-	std::vector<lemon::ListDigraph::Node> m_path;
+	std::vector<lemon::ListDigraph::Node> m_recommended;
 
 	void setReference(const lemon::ListDigraph::Node &v, int ref) {
 		m_ref[v] = ref;
@@ -67,7 +67,7 @@ public:
 		, m_ref{*this}
 		, m_condition{*this}
 		, m_target{lemon::INVALID}
-		, m_path{std::vector<lemon::ListDigraph::Node>()}
+		, m_recommended{std::vector<lemon::ListDigraph::Node>()}
 		{}
 
 	/**
@@ -82,7 +82,7 @@ public:
 			.nodeMap("ref", m_ref)
 			.arcMap("condition", m_condition)
 			.node("target", m_target)
-			/* TODO .attribute("path", stringify(m_path)) */
+			/* TODO .attribute("recommended", stringify(m_recommended)) */
 			.run();
 	};
 
@@ -235,12 +235,12 @@ public:
 	// @}
 	// Recommended Learning Path Getter and Setter
 	// @{
-	std::vector<lemon::ListDigraph::Node> getPath() const {
-		return m_path;
+	std::vector<lemon::ListDigraph::Node> getRecommended() const {
+		return m_recommended;
 	}
 
-	void setPath(const std::vector<lemon::ListDigraph::Node> &path) {
-		m_path = path;
+	void setRecommended(const std::vector<lemon::ListDigraph::Node> &rec) {
+		m_recommended = rec;
 	}
 
 	// @}
@@ -294,7 +294,7 @@ public:
 			.nodeMap("ref", m_ref)
 			.arcMap("condition", m_condition)
 			.node("target", m_target)
-			.attribute("path", stringify(m_path))
+			.attribute("recommended", stringify(m_recommended))
 			.run();
 	}
 

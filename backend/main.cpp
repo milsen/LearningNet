@@ -231,14 +231,14 @@ int main(int argc, char *argv[])
 					rec.recPath(toNodeCosts(net, d["nodeCosts"])) :
 					rec.recPath(toNodePairCosts(net, d["nodeCosts"], d["nodePairCosts"]));
 
-				net.setPath(recPath);
+				net.setRecommended(recPath);
 			} else if (hasNext) {
 				// Set node with lowest costs as recommended path attribute.
 				lemon::ListDigraph::Node recNode = hasOnlyNodeCosts ?
 					rec.recNext(toNodeCosts(net, d["nodeCosts"])) :
 					rec.recNext(toNodePairCosts(net, d["nodeCosts"], d["nodePairCosts"]));
 				std::vector<lemon::ListDigraph::Node> recPath = {recNode};
-				net.setPath(recPath);
+				net.setRecommended(recPath);
 			}
 
 			net.write();

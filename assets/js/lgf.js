@@ -83,10 +83,10 @@ export function read(lgfInput) {
                 case '@attributes':
                     if (columns[0] === 'target') {
                         g.graph().target = columns[1];
-                    } else if (columns[0] === 'path') {
+                    } else if (columns[0] === 'recommended') {
                         // Extract learning path, set pathIndex for each node.
                         let learningPath = columns[1].split(" ");
-                        g.graph().path = learningPath;
+                        g.graph().recommended = learningPath;
                         let index = 1;
                         learningPath.forEach(function(id) {
                             g.node(id).pathIndex = index;
