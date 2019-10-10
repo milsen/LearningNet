@@ -1,8 +1,5 @@
 <form method="post" name="cost_form" >
-    <?php foreach ($costs as $name => $costFunc) {
-        $weight = $costFunc['weight'];
-        $type = $costFunc['type'];
-        $costValues = $costFunc['costs']; ?>
+    <?php foreach ($costFunctions as $name => $weight) { ?>
         <h2><?=$name ?>:</h2>
         <input type="range"
             name="weightrange[<?=$name ?>]"
@@ -19,27 +16,6 @@
             oninput="this.form['weightrange[<?=$name ?>]'].value=this.value"
             />
         <br/>
-        <?php if ($type == 'node') {
-            foreach ($costValues as $section => $cost) { ?>
-                <input type="number"
-                    name="costinput[<?=$name ?>][<?=$section ?>]"
-                    class="costinput"
-                    min="0" max="100" step="1"
-                    value="<?=$cost ?>"
-                    />
-            <?php }
-        } else if ($type == 'node_pair') {
-            foreach ($costValues as $sectionFrom => $sectionToCost) {
-                foreach ($sectionToCost as $sectionTo => $cost) { ?>
-                    <input type="number"
-                        name="costinput[<?=$name ?>][<?=$sectionFrom ?>][<?=$sectionTo ?>]"
-                        class="costinput"
-                        min="0" max="100" step="1"
-                        value="<?=$cost ?>"
-                        />
-                <?php }
-            }
-        }
-    } ?>
+    <?php } ?>
     <button type="submit" name="save_settings" value="1">Einstellungen speichern</button>
 </form>

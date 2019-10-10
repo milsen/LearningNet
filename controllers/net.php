@@ -6,7 +6,6 @@ use LearningNet\NetworkCalculations;
 use LearningNet\ConditionHandler;
 use LearningNet\CostFunctionHandler;
 use LearningNet\DB\Networks;
-use LearningNet\DB\CostFunctions;
 use LearningNet\DB\NodeCosts;
 use LearningNet\DB\NodePairCosts;
 
@@ -49,104 +48,14 @@ class NetController extends PluginController {
     {
         $this->setupPage('settings');
         $courseId = \Request::get('cid');
+        $costFunctionHandler = new CostFunctionHandler();
 
-        // TODO storing of cost functions
         if (\Request::submitted('save_settings')) {
             $weightInput = \Request::getArray('weightinput');
-            $costInput = \Request::getArray('costinput');
-
-            foreach ($weightInput as $costFunc => $weight) {
-                $costFuncRep = CostFunctions::find([$courseId, $costFunc]);
-                if ($costFuncRep === null) {
-                    if ($weight != 0) {
-                        $costFuncRep = new CostFunctions();
-                        $costFuncRep->seminar_id = $courseId;
-                        $costFuncRep->cost_func = $costFunc;
-                        $costFuncRep->weight = $weight;
-                        $costFuncRep->store();
-                    }
-                } else {
-                    if ($weight == 0) {
-                        $costFuncRep->delete();
-                    } else {
-                        $costFuncRep->weight = $weight;
-                        $costFuncRep->store();
-                    }
-                }
-            }
-
-            foreach ($costInput as $costFunc => $costs) {
-                foreach ($costs as $blockId => $costValue) {
-                    if (is_array($costValue)) {
-                        foreach ($costValue as $blockIdTo => $costVal) {
-                            $nodeCostRep = NodePairCosts::find([$courseId, $costFunc, $blockId, $blockIdTo]);
-                            if ($nodeCostRep === null) {
-                                $nodeCostRep = new NodePairCosts();
-                                $nodeCostRep->seminar_id = $courseId;
-                                $nodeCostRep->cost_func = $costFunc;
-                                $nodeCostRep->block_id_from = $blockId;
-                                $nodeCostRep->block_id_to = $blockIdTo;
-                                $nodeCostRep->cost = $costVal;
-                                $nodeCostRep->store();
-                            } else {
-                                $nodeCostRep->cost = $costVal;
-                                $nodeCostRep->store();
-                            }
-                        }
-                    } else {
-                        $nodeCostRep = NodeCosts::find([$courseId, $costFunc, $blockId]);
-                        if ($nodeCostRep === null) {
-                            $nodeCostRep = new NodeCosts();
-                            $nodeCostRep->seminar_id = $courseId;
-                            $nodeCostRep->cost_func = $costFunc;
-                            $nodeCostRep->block_id = $blockId;
-                            $nodeCostRep->cost = $costValue;
-                            $nodeCostRep->store();
-                        } else {
-                            $nodeCostRep->cost = $costValue;
-                            $nodeCostRep->store();
-                        }
-                    }
-                }
-            }
+            $costFunctionHandler->setCostFunctionWeights($courseId, $weightInput);
         }
 
-        // Collect node & node pair costs in $this->costs, remember their type.
-        $nodeCosts = NodeCosts::costs($courseId, true);
-        foreach ($nodeCosts as $nodeCost) {
-            $nodeCost['type'] = 'node';
-        }
-        $nodePairCosts = NodePairCosts::costs($courseId, true);
-        foreach ($nodePairCosts as $nodePairCost) {
-            $nodePairCost['type'] = 'node_pair';
-        }
-        $this->costs = array_merge($nodeCosts, $nodePairCosts);
-        // TODO weight may not be returned because not in join
-
-        // Set weight of each active cost function that was not found to 0.
-        $sectionIds = $this->sectionIds($courseId);
-        $activeCostFunctions = (new CostFunctionHandler)->getCostFunctions();
-        foreach ($activeCostFunctions as $costFunc => $type) {
-            if (!array_key_exists($this->costs, $costFunc)) {
-                $this->costs[$costFunc]['type'] = $type;
-                $this->costs[$costFunc]['weight'] = 0.0;
-                $costs = [];
-                if ($type == 'node') {
-                    foreach ($sectionIds as $sectionId) {
-                        $costs[$sectionId] = 0.0;
-                    }
-                } else if ($type == 'node_pair') {
-                    foreach ($sectionIds as $sectionFrom) {
-                        foreach ($sectionIds as $sectionTo) {
-                            if ($sectionFrom != $sectionTo) {
-                                $costs[$sectionFrom][$sectionTo] = 0.0;
-                            }
-                        }
-                    }
-                }
-                $this->costs[$costFunc]['costs'] = $costs;
-            }
-        }
+        $this->costFunctions = $costFunctionHandler->getCostFunctionWeights($courseId);
     }
 
     /**
