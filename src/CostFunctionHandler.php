@@ -6,6 +6,11 @@ use LearningNet\DB\CostFunctions;
 
 /**
  * TODO
+ * The CostFunctionHandler has two functions:
+ * It serves as a wrapper around the CostFunctions model, removing database
+ * entries for cost functions with weight 0.
+ * Moreover, it notifies CostFunctions to recalculate cost values when the
+ * respective Courseware blocks are edited.
  *
  * @author  <milsen@uos.de>
  */
@@ -14,6 +19,8 @@ class CostFunctionHandler
 // courseware sections are added/deleted/changed
 {
     const COST_FUNCTIONS = [
+        // TODO use cost functions class names as values,
+        // e.g. 'LearningNet\\CostFunctions\\Duration'
         'Test_Knotenkosten' =>     'node',
         'Test_Knotenpaarkosten' => 'node_pair'
     ];

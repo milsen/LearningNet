@@ -14,20 +14,25 @@ class Costs extends \SimpleORMap
     }
 
     /**
-     * @param $courseId string id of the course for which the costs should be found
-     * @param $func function adding to cost array using database row
-     * @param $nameAsIndex boolean whether the returned array should be indexed
-     * by cost functions names instead of integers
-     * @return  array of the form
+     * @param string $courseId id of the course for which the costs should be found
+     * @param callable $func adding to cost array using database row
+     * @return array of the form
      * [ { 'weight' => "weight", 'costs' => { func(... "cost" ...) } ]
-     * indexed by integers or cost functions names depending on $nameAsIndex
      */
-    static protected function costs($courseId, $func, $nameAsIndex = false) {
+    static protected function costs($courseId, $func) {
         $dbTable = self::config('db_table');
-        $rows = static::findBySQL('FULL JOIN learningnet_cost_functions
+
+        // Use DBManager directly to get costs and cost function weights.
+        // findBySQL cannot be used since only values from $dbTable would be
+        // selected, but we also want to select "weight" from the joined table.
+        $db = \DBManager::get();
+        $stmt = $db->prepare('SELECT *
+            FROM ' . $dbTable . ' INNER JOIN learningnet_cost_functions
             ON (' . $dbTable . '.seminar_id = learningnet_cost_functions.seminar_id
             AND ' . $dbTable . '.cost_func  = learningnet_cost_functions.cost_func )
-            WHERE (' . $dbTable . '.seminar_id = ?) GROUP BY cost_func', [$courseId]);
+            WHERE (' . $dbTable . '.seminar_id = ?) ORDER BY learningnet_cost_functions.cost_func');
+        $stmt->execute([$courseId]);
+        $rows = $stmt->fetchAll();
         $result = [];
 
         // Collect costs in array:
@@ -41,11 +46,7 @@ class Costs extends \SimpleORMap
                 // If a new cost function is found, push cost values for
                 // previous cost function.
                 $arr = [ 'weight' => $prevWeight, 'costs' => $currentCosts ];
-                if ($nameAsIndex) {
-                    $result[$costFunc] = $arr;
-                } else {
-                    array_push($result, $arr);
-                }
+                array_push($result, $arr);
 
                 // Reset variables for new cost function.
                 $currentCosts = [];
@@ -60,11 +61,7 @@ class Costs extends \SimpleORMap
         // Push last collected costs.
         if (!empty($row)) {
             $arr = [ 'weight' => $prevWeight, 'costs' => $currentCosts ];
-            if ($nameAsIndex) {
-                $result[$costFunc] = $arr;
-            } else {
-                array_push($result, $arr);
-            }
+            array_push($result, $arr);
         }
 
         return $result;
