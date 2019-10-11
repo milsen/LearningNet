@@ -35,7 +35,7 @@ private:
 	{
 		std::vector<lemon::ListDigraph::Node> sources;
 		for (auto v : m_net.nodes()) {
-			if (m_net.isSource(v) || m_net.isCompletedJoin(v)) {
+			if (m_net.isSource(v)) {
 				sources.push_back(v);
 			}
 		}
