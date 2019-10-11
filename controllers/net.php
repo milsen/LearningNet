@@ -83,10 +83,7 @@ class NetController extends PluginController {
 
             // Store new network in database.
             if ($output['succeeded']) {
-                $graphRep = new Networks();
-                $graphRep->seminar_id = $courseId;
-                $graphRep->network = $output['message'];
-                $graphRep->store();
+                Networks::save($courseId, $output['message']);
             }
         } else {
             // Get graph from database if possible.
@@ -200,10 +197,7 @@ class NetController extends PluginController {
         $checkObj = $this->executableInterface->checkNetwork($network);
 
         if ($checkObj['succeeded']) {
-            $graphRep = Networks::find($courseId);
-            $graphRep->network = $network;
-            $graphRep->store();
-
+            Networks::save($courseId, $network);
             $this->render_html(MessageBox::success(_ln('Netzwerk gespeichert.')));
         } else {
             $this->render_html(MessageBox::error(

@@ -17,4 +17,20 @@ class Networks extends \SimpleORMap
         parent::configure($config);
     }
 
+    /**
+     * Stores network for the given course id.
+     *
+     * @param string $courseId id of the course
+     * @param string $network representation of network in LGF
+     * @return void
+     */
+    static public function save($courseId, $network) {
+        $graphRep = self::find($courseId);
+        if ($graphRep === null) {
+            $graphRep = new self;
+            $graphRep->seminar_id = $courseId;
+        }
+        $graphRep->network = $network;
+        $graphRep->store();
+    }
 }
