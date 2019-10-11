@@ -109,21 +109,24 @@ private:
 					} else if (m_net.isTest(v)) {
 						// Get the branch with the highest grade that is still
 						// below the actual grade of the user.
+						// If the user has no grade, assume that he will reach
+						// the best grade for this test.
 						auto gradeIt = m_testGrades.find(m_net.getTestId(v));
-						if (gradeIt != m_testGrades.end()) {
-							int grade = std::get<1>(*gradeIt);
-							int maxBranchGrade = -1;
-							lemon::ListDigraph::OutArcIt correctBranch;
-							for (auto a : m_net.outArcs(v)) {
-								int branchGrade = stoi(m_net.getConditionBranch(a));
-								if (branchGrade <= grade && branchGrade > maxBranchGrade) {
-									maxBranchGrade = branchGrade;
-									correctBranch = a;
-								}
+						bool hasGrade = gradeIt != m_testGrades.end();
+						int grade = hasGrade ? std::get<1>(*gradeIt) : 0;
+
+						int maxBranchGrade = -1;
+						lemon::ListDigraph::OutArcIt correctBranch;
+						for (auto a : m_net.outArcs(v)) {
+							int branchGrade = stoi(m_net.getConditionBranch(a));
+							if ((!hasGrade || branchGrade <= grade) && branchGrade > maxBranchGrade) {
+								maxBranchGrade = branchGrade;
+								correctBranch = a;
 							}
-							if (maxBranchGrade > -1) {
-								exploreArc(correctBranch);
-							}
+						}
+
+						if (maxBranchGrade > -1) {
+							exploreArc(correctBranch);
 						}
 					} else {
 						// Else explore all out-edges (for completed units: only one).
