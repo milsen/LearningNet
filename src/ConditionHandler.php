@@ -73,14 +73,10 @@ class ConditionHandler
         // packed into strings. This is only fine as long as they are hardcoded
         // above and not given by user-input!
         $db = \DBManager::get();
-        $stmt = $db->prepare("
-            SELECT
-                " . $condition['key'] . "
-            FROM
-                " . $condition['table'] . "
-            WHERE
-                user_id = :userid
-        ");
+        $stmt = $db->prepare("SELECT {$condition['key']} "
+            . "FROM {$condition['table']} "
+            . "WHERE user_id = :userid "
+        );
         $stmt->bindParam(':userid', $userId);
         $stmt->execute();
 
@@ -134,14 +130,10 @@ class ConditionHandler
         // packed into strings. This is only fine as long as they are hardcoded
         // above and not given by user-input!
         $db = \DBManager::get();
-        $stmt = $db->prepare("
-            SELECT
-                " . $condition['translation_key'] . "
-            FROM
-                " . $condition['translation_table'] . "
-            WHERE
-                " . $condition['key'] . " = :value
-        ");
+        $stmt = $db->prepare("SELECT {$condition['translation_key']} "
+            . "FROM {$condition['translation_table']} "
+            . "WHERE {$condition['key']} = :value "
+        );
         $stmt->bindParam(':value', $value);
         $stmt->execute();
 

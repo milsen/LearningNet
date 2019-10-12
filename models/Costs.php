@@ -26,11 +26,12 @@ class Costs extends \SimpleORMap
         // findBySQL cannot be used since only values from $dbTable would be
         // selected, but we also want to select "weight" from the joined table.
         $db = \DBManager::get();
-        $stmt = $db->prepare('SELECT *
-            FROM ' . $dbTable . ' INNER JOIN learningnet_cost_functions
-            ON (' . $dbTable . '.seminar_id = learningnet_cost_functions.seminar_id
-            AND ' . $dbTable . '.cost_func  = learningnet_cost_functions.cost_func )
-            WHERE (' . $dbTable . '.seminar_id = ?) ORDER BY learningnet_cost_functions.cost_func');
+        $stmt = $db->prepare("SELECT * "
+            . "FROM {$dbTable} INNER JOIN learningnet_cost_functions "
+            . "ON ({$dbTable}.seminar_id = learningnet_cost_functions.seminar_id "
+            . "AND {$dbTable}.cost_func  = learningnet_cost_functions.cost_func ) "
+            . "WHERE ({$dbTable}.seminar_id = ?) ORDER BY learningnet_cost_functions.cost_func "
+        );
         $stmt->execute([$courseId]);
         $rows = $stmt->fetchAll();
         $result = [];
