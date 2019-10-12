@@ -64,21 +64,23 @@ class CostFunctionHandler
      */
     public function setCostFunctionWeights($courseId, $weightInput) {
         foreach ($weightInput as $costFunc => $weight) {
-            $costFuncRep = CostFunctions::find([$courseId, $costFunc]);
-            if ($costFuncRep === null) {
-                if ($weight != 0) {
-                    $costFuncRep = new CostFunctions();
-                    $costFuncRep->seminar_id = $courseId;
-                    $costFuncRep->cost_func = $costFunc;
-                    $costFuncRep->weight = $weight;
-                    $costFuncRep->store();
-                }
-            } else {
-                if ($weight == 0) {
-                    $costFuncRep->delete();
+            if (array_key_exists($costFunc, self::COST_FUNCTIONS)) {
+                $costFuncRep = CostFunctions::find([$courseId, $costFunc]);
+                if ($costFuncRep === null) {
+                    if ($weight != 0) {
+                        $costFuncRep = new CostFunctions();
+                        $costFuncRep->seminar_id = $courseId;
+                        $costFuncRep->cost_func = $costFunc;
+                        $costFuncRep->weight = $weight;
+                        $costFuncRep->store();
+                    }
                 } else {
-                    $costFuncRep->weight = $weight;
-                    $costFuncRep->store();
+                    if ($weight == 0) {
+                        $costFuncRep->delete();
+                    } else {
+                        $costFuncRep->weight = $weight;
+                        $costFuncRep->store();
+                    }
                 }
             }
         }
