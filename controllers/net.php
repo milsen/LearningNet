@@ -49,11 +49,16 @@ class NetController extends PluginController {
     {
         $this->setupPage('settings');
         $courseId = \Request::get('cid');
-        $costFunctionHandler = new CostFunctionHandler();
+        $costFunctionHandler = CostFunctionHandler::getInstance();
 
         if (\Request::submitted('save_settings')) {
             $weightInput = \Request::getArray('weightinput');
             $costFunctionHandler->setCostFunctionWeights($courseId, $weightInput);
+
+            // TODO costs should only be recalculated for sections that are added or
+            // changed, not for all sections every time the settings page is opened.
+            // This should be integrated into Courseware.
+            $costFunctionHandler->recalculateCosts($courseId, $this->sectionIds($courseId));
         }
 
         $this->costFunctions = $costFunctionHandler->getCostFunctionWeights($courseId);
