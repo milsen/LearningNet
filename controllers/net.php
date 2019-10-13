@@ -119,8 +119,8 @@ class NetController extends PluginController {
                 $completedIds,
                 (new ConditionHandler())->getConditionValues($userId),
                 $testGrades,
-                NodeCosts::costs($courseId),
-                NodePairCosts::costs($courseId)
+                NodeCosts::getByCourseId($courseId),
+                NodePairCosts::getByCourseId($courseId)
             );
         }
 

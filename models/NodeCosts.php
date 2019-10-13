@@ -23,7 +23,7 @@ class NodeCosts extends Costs
      * @return array of the form
      * [ { 'weight' => "weight", 'costs' => { "block_id" => "cost" } ]
      */
-    static public function costs($courseId) {
+    static public function getByCourseId($courseId) {
         return parent::costs($courseId, function(&$currentCosts, $row) {
             $currentCosts[$row['block_id']] = $row['cost'];
         });
