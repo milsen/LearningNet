@@ -76,27 +76,6 @@ class CostFunctionHandler
     }
 
     /**
-     * To be called when Courseware sections are deleted.
-     * TODO Generally this function is not needed since the foreign key relation
-     * already ensures that these are deleted.
-     */
-    public function removeCosts($courseId, $deletedSections) {
-        NodeCosts::deleteBySQL("seminar_id = :course_id "
-            . "AND block_id in (:sections) "
-        , [
-            "course_id" => $courseId,
-            "sections" => $deletedSections
-        ]);
-        NodePairCosts::deleteBySQL("seminar_id = :course_id "
-            . "AND (block_id_from in (:sections) "
-            . "OR block_id_to in (:sections)) "
-        , [
-            "course_id" => $courseId,
-            "sections" => $deletedSections
-        ]);
-    }
-
-    /**
      * Returns all cost functions in self::COST_FUNCTIONS with their weights for
      * the given course. If a cost function is not found in the database, its
      * returned weight is 0.
