@@ -53,6 +53,16 @@ function createNodeLabel(node, name) {
     return svg_label;
 }
 
+function classListAdd(nodeOrEdge, className) {
+    nodeOrEdge.class = nodeOrEdge.class ?
+        nodeOrEdge.class + " " + className :
+        className;
+}
+
+function classListHas(nodeOrEdge, className) {
+    return nodeOrEdge.class.split(" ").includes(className);
+}
+
 export function ajaxURL(route) {
     return window.STUDIP.ABSOLUTE_URI_STUDIP + 'plugins.php/learningnet/net/' +
         route + window.location.search;
@@ -132,11 +142,11 @@ export function drawNetwork(data) {
             let node = g.node(v);
             node.rx = node.ry = 5;
 
-            node.class = typeToClass(node.type);
-            if (node.class === "split") {
+            classListAdd(node, typeToClass(node.type));
+            if (classListHas(node, "split")) {
                 node.label = "";
                 node.shape = "diamond";
-            } else if (node.class === "condition") {
+            } else if (classListHas(node, "condition")) {
                 node.label = conditionTitles[node.ref];
                 node.shape = "diamond";
                 g.outEdges(v).forEach(function(e) {
@@ -151,14 +161,14 @@ export function drawNetwork(data) {
                             "";
                     }
                 });
-            } else if (node.class === "test") {
+            } else if (classListHas(node, "test")) {
                 node.label = createNodeLabel(node, testTitles[node.ref]);
                 node.shape = "diamond";
                 g.outEdges(v).forEach(function(e) {
                     let edge = g.edge(e);
                     edge.label = "≥ " + edge.condition + "p";
                 });
-            } else if (node.class === "join") {
+            } else if (classListHas(node, "join")) {
                 // Show how many predecessors have to be completed for the join.
                 let activatedInArcs = (parseInt(node.type) - 20).toString();
                 node.label = activatedInArcs + "/" + node.ref;
@@ -170,14 +180,14 @@ export function drawNetwork(data) {
 
             // Mark nodes that are part of the learning path.
             if (node.pathIndex) {
-                node.class += " learningpath";
+                classListAdd(node, "learningpath");
             }
        });
 
         // Set style of target node.
         let tgtNode = g.node(g.graph().target);
         if (tgtNode) {
-            tgtNode.class += " target";
+            classListAdd(tgtNode, "target");
         }
 
         // Set margin if not present already.
