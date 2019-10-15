@@ -178,6 +178,14 @@ export function drawNetwork(data) {
                 node.label = createNodeLabel(node, sectionTitles[node.ref]);
             }
 
+            // Mark visited edges as such.
+            g.outEdges(v).forEach(function(e) {
+                let edge = g.edge(e);
+                if (edge.visited === "1") {
+                    classListAdd(edge, "visited");
+                }
+            });
+
             // Mark nodes that are part of the learning path.
             if (node.pathIndex) {
                 classListAdd(node, "learningpath");

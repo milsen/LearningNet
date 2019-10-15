@@ -48,5 +48,10 @@ svg {
 .edgePath path.path {
     stroke: #333;
     stroke-width: 1.5px;
+    stroke-dasharray: 5;
     fill: none;
+}
+
+.edgePath.visited path.path {
+    stroke-dasharray: 0;
 }

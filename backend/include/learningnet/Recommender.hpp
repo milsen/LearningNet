@@ -24,7 +24,10 @@ private:
 
 	std::vector<lemon::ListDigraph::Node> m_firstActives;
 
+	lemon::ListDigraph::ArcMap<bool> m_firstVisited;
+
 	lemon::ListDigraph::NodeMap<int> m_nodeTypeBackup;
+
 
 	/**
 	 * Get sources of #m_net, i.e. nodes with indegree 0 or joins with 0
@@ -44,15 +47,19 @@ private:
 	}
 
 	/**
-	 * Start a learning path search at \p sources over already completed nodes.
+	 * Start a learning path search at \p sources, skipping over already
+	 * completed nodes.
 	 * Stop at inactive nodes, collecting them and setting their type to active.
 	 * Return the found new active nodes.
 	 *
 	 * @param sources list of nodes at which the search for active nodes starts
+	 * @param visited is assigned true for each arc that is visited
+	 * (assumes that visited is initialized with false for each arc in #m_net)
 	 * @return newly found active nodes
 	 */
 	std::vector<lemon::ListDigraph::Node> getNewActives(
-		std::vector<lemon::ListDigraph::Node> &sources)
+		std::vector<lemon::ListDigraph::Node> &sources,
+		lemon::ListDigraph::ArcMap<bool> *visited = nullptr)
 	{
 		std::vector<lemon::ListDigraph::Node> actives;
 		while (!sources.empty()) {
@@ -75,6 +82,9 @@ private:
 
 					// Function to push an arc's target to sources.
 					auto exploreArc = [&](const lemon::ListDigraph::OutArcIt &a) {
+						if (visited) {
+							(*visited)[a] = true;
+						}
 						lemon::ListDigraph::Node u = m_net.target(a);
 
 						// Push join nodes only if all necessary in-edges are
@@ -160,10 +170,11 @@ public:
 	, m_net{net}
 	, m_conditionVals{conditionVals}
 	, m_testGrades{testGrades}
+	, m_firstVisited{net, false}
 	, m_nodeTypeBackup{net}
 	{
 		std::vector<lemon::ListDigraph::Node> sources = getSources();
-		m_firstActives = getNewActives(sources);
+		m_firstActives = getNewActives(sources, &m_firstVisited);
 
 		// Remember types of nodes after first getNewActives() call.
 		for (auto v : m_net.nodes()) {
@@ -172,7 +183,16 @@ public:
 	}
 
 	/**
-	 * @return active nodes as calculated in the constructor
+	 * @return #m_firstVisited, a map assigning to each arc whether it was
+	 * visited during the learning path search to find the first active nodes
+	 */
+	lemon::ListDigraph::ArcMap<bool> *getVisited()
+	{
+		return &m_firstVisited;
+	}
+
+	/**
+	 * @return first active nodes as calculated in the constructor
 	 */
 	std::vector<lemon::ListDigraph::Node> recActive()
 	{

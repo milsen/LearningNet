@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
 				net.setRecommended(recPath);
 			}
 
-			net.write();
+			net.write(std::cout, rec.getVisited());
 			return rec.handleFailure();
 		} else {
 			std::cout << "No known action given." << std::endl;

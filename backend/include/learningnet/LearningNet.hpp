@@ -44,7 +44,7 @@ private:
 		m_ref[v] = ref;
 	}
 
-	std::string stringify(const std::vector<lemon::ListDigraph::Node> &vs)
+	std::string stringify(const std::vector<lemon::ListDigraph::Node> &vs) const
 	{
 		std::ostringstream oss;
 		bool first = true;
@@ -287,15 +287,22 @@ public:
 	}
 
 	// @}
-	void write(std::ostream &out = std::cout) {
+	void write(std::ostream &out = std::cout,
+			const lemon::ListDigraph::ArcMap<bool> *visited = nullptr) const {
 		// Write lemon graph file to cout.
-		lemon::DigraphWriter<lemon::ListDigraph>(*this, out)
-			.nodeMap("type", m_type)
-			.nodeMap("ref", m_ref)
-			.arcMap("condition", m_condition)
-			.node("target", m_target)
-			.attribute("recommended", stringify(m_recommended))
-			.run();
+		lemon::DigraphWriter<lemon::ListDigraph> writer{*this, out};
+		writer.nodeMap("type", m_type)
+		      .nodeMap("ref", m_ref)
+		      .arcMap("condition", m_condition);
+
+		// Write out visited arcs if given.
+		if (visited) {
+			writer.arcMap("visited", *visited);
+		}
+
+		writer.node("target", m_target)
+		      .attribute("recommended", stringify(m_recommended))
+		      .run();
 	}
 
 	/**
