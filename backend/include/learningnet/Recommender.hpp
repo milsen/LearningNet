@@ -28,6 +28,9 @@ private:
 
 	lemon::ListDigraph::NodeMap<int> m_nodeTypeBackup;
 
+	bool m_targetFound;
+
+	bool m_targetFoundBackup;
 
 	/**
 	 * Get sources of #m_net, i.e. nodes with indegree 0 or joins with 0
@@ -103,6 +106,10 @@ private:
 						}
 					};
 
+					if (m_net.isTarget(v)) {
+						m_targetFound = true;
+					}
+
 					// For a condition, only explore out-edges corresponding to set user-values.
 					if (m_net.isCondition(v)) {
 						// Get user values for this condition.
@@ -153,16 +160,32 @@ private:
 	}
 
 	/**
-	 * Reset the types of nodes of #m_net to the state they were in after the
-	 * first call to #getNewActives().
+	 * Reset the state of this Recommender, i.e. set #m_targetFound and types of
+	 * nodes of #m_net to the state they were in after the first call to
+	 * #getNewActives().
 	 */
-	void resetNodeTypes() {
+	void reset() {
 		for (auto v : m_net.nodes()) {
 			m_net.setType(v, m_nodeTypeBackup[v]);
 		}
+		m_targetFound = m_targetFoundBackup;
 	}
 
 public:
+	/**
+	 * Constructs a Recommender and immediately starts a learning path search
+	 * resulting in active nodes.
+	 *
+	 * All other methods refer to the state after the search for the first
+	 * actives, i.e. #recActive() returns the first active, #recNext() returns
+	 * one of the first actives and #recPath() returns a learning path starting
+	 * at one of the first actives.
+	 *
+	 * @param net learning net to be used as a basis for recommendation
+	 * @param conditionVals mapping of condition ids to vectors of condition
+	 * branches (that correspond to properties of the user)
+	 * @param testGrades mapping of test ids to user grades
+	 */
 	Recommender(LearningNet &net,
 		const ConditionMap &conditionVals,
 		const TestMap &testGrades)
@@ -172,6 +195,8 @@ public:
 	, m_testGrades{testGrades}
 	, m_firstVisited{net, false}
 	, m_nodeTypeBackup{net}
+	, m_targetFound{false}
+	, m_targetFoundBackup{false}
 	{
 		std::vector<lemon::ListDigraph::Node> sources = getSources();
 		m_firstActives = getNewActives(sources, &m_firstVisited);
@@ -180,6 +205,7 @@ public:
 		for (auto v : m_net.nodes()) {
 			m_nodeTypeBackup[v] = m_net.getType(v);
 		}
+		m_targetFoundBackup = m_targetFound;
 	}
 
 	/**
@@ -291,16 +317,13 @@ public:
 			heap.push(v, nodeCosts.at(v));
 		}
 
-		bool targetFound = false;
-		while (!heap.empty() && !targetFound) {
+		while (!heap.empty() && !m_targetFound) {
 			lemon::ListDigraph::Node bestActive = heap.top();
 			heap.pop();
 
 			// Update result and whether target was found.
 			result.push_back(bestActive);
-			if (m_net.isTarget(bestActive)) {
-				targetFound = true;
-			} else {
+			if (!m_targetFound) {
 				// Search new actives on the basis of the new best active node.
 				m_net.setType(bestActive, NodeType::completed);
 				std::vector<lemon::ListDigraph::Node> newSources = {bestActive};
@@ -310,7 +333,7 @@ public:
 			}
 		}
 
-		resetNodeTypes();
+		reset();
 		return result;
 	}
 
@@ -324,9 +347,8 @@ public:
 		std::vector<lemon::ListDigraph::Node> result;
 		std::vector<lemon::ListDigraph::Node> actives = m_firstActives;
 
-		bool targetFound = false;
 		lemon::ListDigraph::Node prevBestActive = lemon::INVALID;
-		while (!actives.empty() && !targetFound) {
+		while (!actives.empty() && !m_targetFound) {
 			lemon::ListDigraph::Node bestActive =
 				recNext(nodePairCosts, actives, prevBestActive);
 			// TODO improve performance, e.g. by giving back iterator and
@@ -338,9 +360,7 @@ public:
 
 			// Update result and whether target was found.
 			result.push_back(bestActive);
-			if (m_net.isTarget(bestActive)) {
-				targetFound = true;
-			} else {
+			if (!m_targetFound) {
 				// Search new actives on the basis of the new best active node.
 				m_net.setType(bestActive, NodeType::completed);
 				std::vector<lemon::ListDigraph::Node> newSources = {bestActive};
@@ -356,7 +376,7 @@ public:
 			}
 		}
 
-		resetNodeTypes();
+		reset();
 		return result;
 	}
 };
