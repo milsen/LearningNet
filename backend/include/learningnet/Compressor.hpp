@@ -28,7 +28,8 @@ private:
 		int n)
 	{
 		int count = 0;
-		for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
+		for (auto out : net.outArcs(v)) {
+			(void) out;
 			if (++count > n) {
 				return false;
 			}
@@ -41,7 +42,7 @@ private:
 		const lemon::ListDigraph::Node &pred)
 	{
 		bool result = true;
-		for (lemon::ListDigraph::InArcIt in(net, v); in != lemon::INVALID; ++in) {
+		for (auto in : net.inArcs(v)) {
 			if (net.source(in) != pred) {
 				result = false;
 				break;
@@ -55,7 +56,7 @@ private:
 		const lemon::ListDigraph::Node &succ)
 	{
 		bool result = true;
-		for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
+		for (auto out : net.outArcs(v)) {
 			if (net.target(out) != succ) {
 				result = false;
 				break;
@@ -86,7 +87,7 @@ private:
 		const lemon::ListDigraph::Node &w)
 	{
 		// Push succs to succs.
-		for (lemon::ListDigraph::OutArcIt out(net, w); out != lemon::INVALID; ++out) {
+		for (auto out : net.outArcs(w)) {
 			succs.push_back(net.target(out));
 		}
 
@@ -161,7 +162,7 @@ private:
 	{
 		// Collect sources: nodes with indegree 0.
 		std::vector<lemon::ListDigraph::Node> initialSources;
-		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
+		for (auto v : net.nodes()) {
 			indeg[v] = countInArcs(net, v);
 			if (indeg[v] == 0 || net.isCompletedJoin(v)) {
 				initialSources.push_back(v);
@@ -180,7 +181,7 @@ private:
 			if (net.isCondition(v)) {
 				sources.push_back(v);
 			} else {
-				for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
+				for (auto out : net.outArcs(v)) {
 					lemon::ListDigraph::Node w = net.target(out);
 					indeg[w]--;
 
@@ -225,7 +226,7 @@ public:
 			sources.pop_back();
 
 			// Add unvisited successors to the stack.
-			for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
+			for (auto out : net.outArcs(v)) {
 				succs.push_back(net.target(out));
 			}
 
