@@ -91,12 +91,31 @@ private:
 				if (!explored) {
 					exploreArc(elseBranch);
 				}
+			} else if (net.isTest(v)) {
+				// For a test one of the branches with the highest grade should
+				// lead to the target.
+				std::vector<lemon::ListDigraph::OutArcIt> highestGradeBranches;
+				int maxGrade = -1;
+				for (auto a : net.outArcs(v)) {
+					int branchGrade = std::stoi(net.getConditionBranch(a));
+					if (branchGrade >= maxGrade) {
+						if (branchGrade > maxGrade) {
+							maxGrade = branchGrade;
+							highestGradeBranches.clear();
+						}
+						highestGradeBranches.push_back(a);
+					}
+				}
+
+				for (auto a : highestGradeBranches) {
+					exploreArc(a);
+				}
 			} else {
-				// Non-Condition: Push all successors (unless it is still a locked join).
+				// Non-Condition/non-test: Push all successors
+				// (unless it is a locked join).
 				for (auto a : net.outArcs(v)) {
 					exploreArc(a);
 				}
-				// TODO test nodes should have highest grade lead to the target
 			}
 		}
 
@@ -174,6 +193,7 @@ public:
 	bool call(LearningNet &net)
 	{
 		int conditionCount = 0;
+		int testCount = 0;
 
 		std::map<int, bool> sectionExists;
 		std::map<int, std::vector<std::string>> conditionIdToBranches;
@@ -242,6 +262,7 @@ public:
 				}
 
 			} else if (net.isTest(v)) {
+				testCount++;
 				if (!hasAtMostOneArc<lemon::ListDigraph::InArcIt>(net, v)) {
 					failWithError("Test node has more than one in-arc.");
 				}
@@ -254,14 +275,15 @@ public:
 		}
 
 		if (!dag(net)) {
+			// Fail if the network is not acylic.
 			failWithError("Given network is not acyclic.");
 			return false;
-		} else if (conditionCount == 0) {
-			// If there are no conditions, the network is valid if it's acyclic.
+		} else if (conditionCount == 0 && testCount == 0) {
+			// If there are no conditions/tests, the net is valid if acyclic.
 			return true;
 		}
 
-		// Conditions exist, there must exist a path to target for each branch.
+		// If compression should be used, compress the network.
 		if (m_useCompression) {
 			Compressor comp;
 			TargetReachability afterCompression = comp.compress(net);
@@ -275,6 +297,18 @@ public:
 			}
 		}
 
+		// If there are no conditions but tests, run learning path search once.
+		if (conditionCount == 0) {
+			if (targetReachableByTopSort(net, {})) {
+				return true;
+			} else {
+				failWithError("The target cannot be reached when getting the "
+					"highest grade in every test.");
+				return false;
+			}
+		}
+
+		// Conditions exist, there must exist a path to target for each branch.
 		// Push "else"-branch for each condition:
 		// This "else"-branch represents that none of the possible branches for
 		// the given condition id is applicable for the user.
