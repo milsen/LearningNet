@@ -36,7 +36,7 @@ private:
 
 		// Collect sources: nodes with indegree 0.
 		std::deque<lemon::ListDigraph::Node> sources;
-		for (lemon::ListDigraph::NodeIt v(net); v != lemon::INVALID; ++v) {
+		for (auto v : net.nodes()) {
 			if (net.isJoin(v)) {
 				net.resetActivatedInArcs(v);
 			}
@@ -78,7 +78,7 @@ private:
 				std::string branch = branchCombination.at(net.getConditionId(v));
 				bool explored = false;
 				lemon::ListDigraph::OutArcIt elseBranch;
-				for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
+				for (auto a : net.outArcs(v)) {
 					if (net.getConditionBranch(a) == branch) {
 						explored = true;
 						exploreArc(a);
@@ -93,7 +93,7 @@ private:
 				}
 			} else {
 				// Non-Condition: Push all successors (unless it is still a locked join).
-				for (lemon::ListDigraph::OutArcIt a(net, v); a != lemon::INVALID; ++a) {
+				for (auto a : net.outArcs(v)) {
 					exploreArc(a);
 				}
 				// TODO test nodes should have highest grade lead to the target
@@ -177,7 +177,7 @@ public:
 
 		std::map<int, bool> sectionExists;
 		std::map<int, std::vector<std::string>> conditionIdToBranches;
-		for (ListDigraph::NodeIt v(net); v != INVALID; ++v) {
+		for (auto v : net.nodes()) {
 			// Check number of in-/out-arcs for each node-type.
 			if (net.isUnit(v)) {
 				int section = net.getSection(v);
@@ -223,7 +223,7 @@ public:
 				// Check that each condition has an else-branch (otherwise it
 				// might not always be possible to reach the target).
 				bool elseBranchFound = false;
-				for (lemon::ListDigraph::OutArcIt out(net, v); out != lemon::INVALID; ++out) {
+				for (auto out : net.outArcs(v)) {
 					std::string conditionBranch = net.getConditionBranch(out);
 					if (conditionBranch == CONDITION_ELSE_BRANCH_KEYWORD) {
 						elseBranchFound = true;
