@@ -25,7 +25,7 @@ private:
 	 */
 	bool hasAtMostNOutArcs(const LearningNet &net,
 		const lemon::ListDigraph::Node &v,
-		int n)
+		int n) const
 	{
 		int count = 0;
 		for (auto out : net.outArcs(v)) {
@@ -39,7 +39,7 @@ private:
 
 	bool hasOnlyOnePred(const LearningNet &net,
 		const lemon::ListDigraph::Node &v,
-		const lemon::ListDigraph::Node &pred)
+		const lemon::ListDigraph::Node &pred) const
 	{
 		bool result = true;
 		for (auto in : net.inArcs(v)) {
@@ -53,7 +53,7 @@ private:
 
 	bool hasOnlyOneSucc(const LearningNet &net,
 		const lemon::ListDigraph::Node &v,
-		const lemon::ListDigraph::Node &succ)
+		const lemon::ListDigraph::Node &succ) const
 	{
 		bool result = true;
 		for (auto out : net.outArcs(v)) {
@@ -71,7 +71,7 @@ private:
 	 * @param v node that is used as an entry of \p m
 	 */
 	void nodeMapIncrement(std::map<lemon::ListDigraph::Node, int> &m,
-			lemon::ListDigraph::Node &v)
+			const lemon::ListDigraph::Node &v) const
 	{
 		if (m.find(v) == m.end()) {
 			m[v] = 1;
