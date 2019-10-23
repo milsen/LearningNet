@@ -33,8 +33,9 @@ private:
 	bool m_targetFoundBackup;
 
 	/**
-	 * Get sources of #m_net, i.e. nodes with indegree 0 or joins with 0
-	 * necessary in-arcs.
+	 * Get sources of #m_net, i.e. nodes with indegree 0.
+	 * Side-effect: The activated in-arcs of each join node are reset.
+	 *
 	 * @return sources of #m_net
 	 */
 	std::vector<lemon::ListDigraph::Node> getSources()
@@ -43,6 +44,10 @@ private:
 		for (auto v : m_net.nodes()) {
 			if (m_net.isSource(v)) {
 				sources.push_back(v);
+			}
+
+			if (m_net.isJoin(v)) {
+				m_net.resetActivatedInArcs(v);
 			}
 		}
 

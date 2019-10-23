@@ -113,7 +113,7 @@ public:
 	 */
 	bool isSource(const lemon::ListDigraph::Node &v) const {
 		lemon::ListDigraph::InArcIt a(*this, v);
-		return a == lemon::INVALID || isCompletedJoin(v);
+		return a == lemon::INVALID;
 	}
 
 	/**

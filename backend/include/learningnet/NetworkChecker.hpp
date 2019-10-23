@@ -215,6 +215,9 @@ public:
 				sectionExists[section] = true;
 
 			} else if (net.isJoin(v)) {
+				if (net.isSource(v)) {
+					failWithError("Join node has no in-arc.");
+				}
 				if (!hasAtMostOneArc<lemon::ListDigraph::OutArcIt>(net, v)) {
 					failWithError("Join node has more than one out-arc.");
 				}
@@ -222,11 +225,13 @@ public:
 				// Necessary inarcs of a join are less than actual InArcs.
 				int necessaryInArcs = net.getNecessaryInArcs(v);
 				int actualInArcs = countInArcs(net, v);
+				if (necessaryInArcs == 0) {
+					failWithError("Join node has necessary in-arcs set to 0.");
+				}
 				if (necessaryInArcs > actualInArcs) {
 					failWithError("Join node has " + std::to_string(necessaryInArcs) +
 						" necessary in-arcs but only " + std::to_string(actualInArcs) +
 						" actual in-arcs.");
-					return false;
 				}
 
 			} else if (net.isSplit(v)) {
