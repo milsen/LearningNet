@@ -271,6 +271,8 @@ public:
 				if (!hasAtMostOneArc<lemon::ListDigraph::InArcIt>(net, v)) {
 					failWithError("Test node has more than one in-arc.");
 				}
+			} else {
+				failWithError("Node of unknown type detected.");
 			}
 		}
 
