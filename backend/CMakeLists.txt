@@ -11,42 +11,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Instructions for finding installed dependencies are in ./cmake
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
-# Set install directories
-IF(UNIX)
-  SET(INSTALL_BIN_DIR "bin" CACHE STRING
-    "Subdir for installing the binaries")
-  SET(INSTALL_DOC_DIR "share/doc/${PROJECT_NAME}"
-    CACHE STRING
-    "Subdir for installing the doc")
-  SET(INSTALL_DATA_DIR "share/data/${PROJECT_NAME}"
-    CACHE STRING
-    "Subdir for installing the map data")
-  SET(INSTALL_EXAMPLES_DIR "share/doc/${PROJECT_NAME}/examples"
-    CACHE STRING
-    "Subdir for installing the examples")
-ELSE(UNIX)
-  SET(INSTALL_BIN_DIR "." CACHE STRING
-                  "Subdir for installing the binaries")
-  SET(INSTALL_DOC_DIR "doc" CACHE STRING
-                  "Subdir for installing the doc")
-  SET(INSTALL_DATA_DIR "data" CACHE STRING
-                  "Subdir for installing the map data")
-  SET(INSTALL_EXAMPLES_DIR "examples" CACHE STRING
-                       "Subdir for installing the examples")
-ENDIF(UNIX)
 
 
 ## LEMON
-# First, it tries to use LEMON as a CMAKE subproject by looking for
-# it in the 'lemon' or 'deps/lemon' subdirectories or in directory
-# given by the LEMON_SOURCE_ROOT_DIR variable.
-# If LEMON isn't there, then CMAKE will try to find an installed
-# version of LEMON. If it is installed at some non-standard place,
-# then you must tell its location in the LEMON_ROOT_DIR CMAKE config
-# variable. (Do not hard code it into your config! Others may keep
-# LEMON at different places.)
+# Try to use LEMON as a CMAKE subproject by looking for it in the 'lemon' or
+# 'deps/lemon' subdirectories or in the directory given by the
+# LEMON_SOURCE_ROOT_DIR variable.
+# If LEMON is not there, try to find an installed version of LEMON.
 
 FIND_PATH(LEMON_SOURCE_ROOT_DIR CMakeLists.txt
   PATHS ${CMAKE_SOURCE_DIR}/lemon ${CMAKE_SOURCE_DIR}/deps/lemon
@@ -74,6 +47,7 @@ INCLUDE_DIRECTORIES(${LEMON_INCLUDE_DIRS})
 
 ## RapidJSON
 # Search for RapidJSON under rapidjson and deps/rapidjson.
+# If it is not there, search for an installed version.
 # If found, add it as a header-only library.
 FIND_PATH(RAPIDJSON_SOURCE_ROOT_DIR CMakeLists.txt
   PATHS ${CMAKE_SOURCE_DIR}/rapidjson ${CMAKE_SOURCE_DIR}/deps/rapidjson
@@ -95,10 +69,6 @@ ELSE()
   FIND_PACKAGE(RAPIDJSON QUIET NO_MODULE)
   FIND_PACKAGE(RAPIDJSON REQUIRED)
 ENDIF()
-
-
-## Doxygen
-FIND_PACKAGE(Doxygen)
 
 
 ## LEARNINGNET_LIBRARIES
@@ -156,109 +126,47 @@ IF(LN_TESTS)
 ENDIF()
 
 
-# This tells cmake to install the binary to $PREFIX/bin when 'make install'
-# is executed. You can give more targets separated by whitespaces.
+## Documentation
+# Create new target 'make doc' to create doxygen documentation in ./doc/html/
+FIND_PACKAGE(Doxygen)
+IF(DOXYGEN_FOUND)
+    SET(DOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/doc")
+    ADD_CUSTOM_TARGET(doc ${DOXYGEN_EXECUTABLE} "${DOC_DIR}/doxygen.cfg"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+ELSE()
+    MESSAGE(WARNING "Doxygen not found. Documentation cannot be built.")
+ENDIF()
+
+
+## Installation
+# Not tested!
+# Create new target 'make install' to install the binary to $PREFIX/bin.
+# Set install directories:
+IF(UNIX)
+  SET(INSTALL_BIN_DIR "bin" CACHE STRING
+    "Subdirectory for installing the binaries")
+  SET(INSTALL_DOC_DIR "share/doc/${PROJECT_NAME}" CACHE STRING
+    "Subdirectory for installing the doc")
+  SET(INSTALL_DATA_DIR "share/data/${PROJECT_NAME}" CACHE STRING
+    "Subdirectory for installing the map data")
+  SET(INSTALL_EXAMPLES_DIR "share/doc/${PROJECT_NAME}/examples" CACHE STRING
+    "Subdirectory for installing the examples")
+ELSE()
+  SET(INSTALL_BIN_DIR "." CACHE STRING "Subdir for installing the binaries")
+  SET(INSTALL_DOC_DIR "doc" CACHE STRING "Subdir for installing the doc")
+  SET(INSTALL_DATA_DIR "data" CACHE STRING "Subdir for installing the map data")
+  SET(INSTALL_EXAMPLES_DIR "examples" CACHE STRING "Subdir for installing the examples")
+ENDIF()
+
 INSTALL(
   TARGETS learningnet-pathfinder
   RUNTIME DESTINATION ${INSTALL_BIN_DIR}
   COMPONENT bin
 )
 
+
 # Set warning flags
 IF(CMAKE_COMPILER_IS_GNUCXX)
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-
-# Sometimes MSVC overwhelms you with compiler warnings which are impossible to
-# avoid. Then comment out these sections. Normally you won't need it as the
-# LEMON include headers suppress these warnings anyway.
-
-#IF(MSVC)
-#  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}
-#      /wd4250 /wd4355 /wd4503 /wd4800 /wd4996")
-# # Suppressed warnings:
-# # C4250: 'class1' : inherits 'class2::member' via dominance
-# # C4355: 'this' : used in base member initializer list
-# # C4503: 'function' : decorated name length exceeded, name was truncated
-# # C4800: 'type' : forcing value to bool 'true' or 'false'
-# #        (performance warning)
-# # C4996: 'function': was declared deprecated
-# ENDIF(MSVC)
-
-ENABLE_TESTING()
-
-## The auxiliary doxygen files (.dox) should be placed in the 'doc'
-## subdirectory. The next line includes the CMAKE config of that directory.
-
-ADD_SUBDIRECTORY(doc)
-
-#######################################################################
-## CPACK configuration
-##
-## It is used to configure the .exe installer created by CPACK.
-## Consider editing these values:
-##
-## - CPACK_PACKAGE_VENDOR
-## - CPACK_PACKAGE_DESCRIPTION_SUMMARY
-## - CPACK_NSIS_HELP_LINK
-## - CPACK_NSIS_URL_INFO_ABOUT
-## - CPACK_NSIS_CONTACT
-##
-## Additionally, you may want to change the icons/images used by the
-## NSIS installer, i.e. these variables:
-##
-## - CPACK_NSIS_MUI_ICON
-## - CPACK_PACKAGE_ICON
-## - CPACK_NSIS_INSTALLED_ICON_NAME
-##
-## and/or the files they point to.
-#######################################################################
-
-IF(${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR})
-  SET(CPACK_PACKAGE_NAME ${PROJECT_NAME})
-  SET(CPACK_PACKAGE_VENDOR "EGRES")
-  SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY
-      "LEMON PROJECT TEMPLATE - A Template Build Environment for LEMON")
-  SET(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
-
-  SET(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-
-  SET(CPACK_PACKAGE_INSTALL_DIRECTORY
-      "${PROJECT_NAME}")
-  SET(CPACK_PACKAGE_INSTALL_REGISTRY_KEY
-      "${PROJECT_NAME} ${PROJECT_VERSION}")
-
-  SET(CPACK_COMPONENTS_ALL bin doc)
-
-  SET(CPACK_COMPONENT_BIN_DISPLAY_NAME "Executables")
-  SET(CPACK_COMPONENT_BIN_DESCRIPTION
-      "Command line utilities")
-  SET(CPACK_COMPONENT_BIN_REQUIRED TRUE)
-
-  SET(CPACK_COMPONENT_DOC_DISPLAY_NAME "Documentation")
-  SET(CPACK_COMPONENT_DOC_DESCRIPTION
-      "Documentation generated by Doxygen.")
-
-
-  SET(CPACK_GENERATOR "NSIS")
-
-  SET(CPACK_NSIS_MUI_ICON "${PROJECT_SOURCE_DIR}/cmake/nsis/lemon-project.ico")
-  SET(CPACK_NSIS_MUI_UNIICON "${PROJECT_SOURCE_DIR}/cmake/nsis/uninstall.ico")
-  SET(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/cmake/nsis\\\\installer.bmp")
-  SET(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\lemon-project.ico")
-
-  SET(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} ${PROJECT_NAME}")
-  SET(CPACK_NSIS_HELP_LINK "http:\\\\\\\\lemon.cs.elte.hu")
-  SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\lemon.cs.elte.hu")
-  SET(CPACK_NSIS_CONTACT "lemon-user@lemon.cs.elte.hu")
-  SET(CPACK_NSIS_CREATE_ICONS_EXTRA "
-      CreateShortCut \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Documentation.lnk\\\" \\\"$INSTDIR\\\\share\\\\doc\\\\index.html\\\"
-      ")
-  SET(CPACK_NSIS_DELETE_ICONS_EXTRA "
-      !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
-      Delete \\\"$SMPROGRAMS\\\\$MUI_TEMP\\\\Documentation.lnk\\\"
-      ")
-
-  INCLUDE(CPack)
-ENDIF(${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR})
+ENDIF()

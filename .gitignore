@@ -10,3 +10,6 @@ build
 
 # c++ dependencies
 deps
+
+# doxygen documentation
+html
