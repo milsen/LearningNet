@@ -82,7 +82,8 @@ public:
 			.nodeMap("ref", m_ref)
 			.arcMap("condition", m_condition)
 			.node("target", m_target)
-			/* TODO .attribute("recommended", stringify(m_recommended)) */
+			// Do not read attribute "recommended".
+			// It may be set by the Recommender, the old value is not relevant.
 			.run();
 	};
 
@@ -306,11 +307,12 @@ public:
 	}
 
 	/**
-	* Set the type of the unit nodes given by \p completed to completed.
-	* TODO not part of recommender
-	* @param completed section numbers of completed unit nodes
-	*/
-	void setCompleted(const std::vector<int> &completed)
+	 * Set the type of the unit nodes given by \p completed to completed.
+	 * @param completed section numbers of completed unit nodes
+	 * @return section numbers of completed units for which no unit node could
+	 * be found
+	 */
+	std::vector<int> setCompleted(const std::vector<int> &completed)
 	{
 		// Get map: sectionId -> node.
 		std::map<int, lemon::ListDigraph::Node> sectionNode;
@@ -321,16 +323,18 @@ public:
 		}
 
 		// Set type of completed units.
+		std::vector<int> couldNotBeSet;
 		for (int completedSection : completed) {
 			auto completedNode = sectionNode.find(completedSection);
 			if (completedNode != sectionNode.end()) {
 				// Only set it for units, not for connectives!
 				setType(completedNode->second, NodeType::completed);
 			} else {
-				/* appendError("Setting completed units: Could not find section " + */
-				/* 	std::to_string(completedSection) + "."); */
+				couldNotBeSet.push_back(completedSection);
 			}
 		}
+
+		return couldNotBeSet;
 	}
 
 };
