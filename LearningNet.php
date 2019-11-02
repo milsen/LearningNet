@@ -14,7 +14,8 @@ function _ln($message)
 
 
 /**
- * TODO
+ * Main class of the LearningNet plugin.
+ * Sets up the plugin title and tab navigation.
  *
  * @author  <milsen@uos.de>
  */
@@ -66,14 +67,14 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
         $navigation->setActiveImage(Icon::create('group3', 'info'));
 
         // Add subnavigation.
-        // TODO edit/settings should be turned off for students
-        // if ($perm->have_perm('admin')) {
         // TODO disable complete plugin without courseware
         $this->addSubnavigation($navigation, _cw('LearningNet'), 'index');
-        $this->addSubnavigation($navigation, _cw('Stuktur bearbeiten'), 'edit');
-        $this->addSubnavigation($navigation, _cw('Einstellungen'), 'settings');
-        /* $this->addSubnavigation($navigation, _cw('Export'), 'export'); */
-        /* $this->addSubnavigation($navigation, _cw('Import'), 'import'); */
+        if ($GLOBALS['perm']->have_studip_perm('tutor', $courseId, $GLOBALS['user_id'])) {
+            $this->addSubnavigation($navigation, _cw('Stuktur bearbeiten'), 'edit');
+            $this->addSubnavigation($navigation, _cw('Einstellungen'), 'settings');
+            /* $this->addSubnavigation($navigation, _cw('Export'), 'export'); */
+            /* $this->addSubnavigation($navigation, _cw('Import'), 'import'); */
+        }
 
         $tabs = array();
         $tabs['learningnet'] = $navigation;
