@@ -9,7 +9,7 @@ namespace LearningNet\DB;
  */
 class Costs extends \SimpleORMap
 {
-    static protected function configure($config = array()) {
+    static protected function configure($config = []) {
         parent::configure($config);
     }
 

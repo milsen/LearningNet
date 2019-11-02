@@ -76,7 +76,7 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
             /* $this->addSubnavigation($navigation, _cw('Import'), 'import'); */
         }
 
-        $tabs = array();
+        $tabs = [];
         $tabs['learningnet'] = $navigation;
         return $tabs;
     }
@@ -118,7 +118,7 @@ class LearningNet extends StudIPPlugin implements StandardPlugin
     public function getMetadata()
     {
         // Metadata to be rendered on the course summary page. Not needed.
-        return array();
+        return [];
     }
 
 }

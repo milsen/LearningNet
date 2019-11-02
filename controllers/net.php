@@ -71,10 +71,10 @@ class NetController extends PluginController {
      */
     public function network_action()
     {
-        $output = array(
+        $output = [
             'succeeded' => true,
             'message' => '' // if succeeded: network, else: html with error
-        );
+        ];
 
         $courseId = \Request::get('cid');
         $getUserData = \Request::get('getUserData') === 'true';
@@ -146,9 +146,9 @@ class NetController extends PluginController {
         $conditionBranchesByID = \Request::getInstance()['conditionBranchesByID'];
 
         // Get section titles.
-        $sectionTitles = array();
+        $sectionTitles = [];
         $sections = Mooc\DB\Block::findBySQL(
-            "type = 'Section' AND seminar_id = ?", array($courseId));
+            "type = 'Section' AND seminar_id = ?", [$courseId]);
         foreach ($sections as $section) {
             $sectionTitles[$section['id']] = $section['title'];
         }

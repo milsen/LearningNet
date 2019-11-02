@@ -80,7 +80,7 @@ class ConditionHandler
         $stmt->bindParam(':userid', $userId);
         $stmt->execute();
 
-        $values = array();
+        $values = [];
         while ($row = $stmt->fetch(\PDO::FETCH_NUM, \PDO::FETCH_ORI_NEXT)) {
             array_push($values, $row[0]);
         }
@@ -137,7 +137,7 @@ class ConditionHandler
         $stmt->bindParam(':value', $value);
         $stmt->execute();
 
-        $values = array();
+        $values = [];
         while ($row = $stmt->fetch(\PDO::FETCH_NUM, \PDO::FETCH_ORI_NEXT)) {
             array_push($values, $row[0]);
         }

@@ -14,7 +14,7 @@ namespace LearningNet\DB;
  */
 class NodeCosts extends Costs
 {
-    static protected function configure($config = array()) {
+    static protected function configure($config = []) {
         $config['db_table'] = 'learningnet_node_costs';
         parent::configure($config);
     }

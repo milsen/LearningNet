@@ -12,7 +12,7 @@ namespace LearningNet\DB;
  */
 class Networks extends \SimpleORMap
 {
-    static protected function configure($config = array()) {
+    static protected function configure($config = []) {
         $config['db_table'] = 'learningnet_networks';
         parent::configure($config);
     }

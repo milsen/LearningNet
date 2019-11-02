@@ -25,43 +25,43 @@ class NetworkCalculations
 
     private function runCommand($arg)
     {
-        $output = array();
+        $output = [];
         $returnVar = 0;
 
         exec($this->buildCommand($arg), $output, $returnVar);
 
-        return array(
+        return [
             'message' => join("\n", $output),
             'succeeded' => $returnVar === 0
-        );
+        ];
     }
 
     public function checkNetwork($networkLGF)
     {
-        return $this->runCommand(array(
+        return $this->runCommand([
             'action' => 'check',
             'network' => $networkLGF
-        ));
+        ]);
     }
 
     public function getActives($networkLGF,
         $completedSections, $conditionValues, $testGrades)
     {
-        return $this->runCommand(array(
+        return $this->runCommand([
             'action' => 'recommend',
             'recType' => 'active',
             'network' => $networkLGF,
             'sections' => $completedSections,
             'conditions' => $conditionValues,
             'testGrades' => $testGrades
-        ));
+        ]);
     }
 
     public function getRecommended($networkLGF,
         $completedSections, $conditionValues, $testGrades,
         $nodeCosts, $nodePairCosts)
     {
-        return $this->runCommand(array(
+        return $this->runCommand([
             'action' => 'recommend',
             'recType' => 'path',
             'network' => $networkLGF,
@@ -70,14 +70,14 @@ class NetworkCalculations
             'testGrades' => $testGrades,
             'nodeCosts' => $nodeCosts,
             'nodePairCosts' => $nodePairCosts
-        ));
+        ]);
     }
 
     public function createNetwork($sectionIds)
     {
-        return $this->runCommand(array(
+        return $this->runCommand([
             'action' => 'create',
             'sections' => $sectionIds
-        ));
+        ]);
     }
 }
