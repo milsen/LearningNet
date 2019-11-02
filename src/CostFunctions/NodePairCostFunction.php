@@ -6,14 +6,25 @@ use Mooc\DB\Block;
 use LearningNet\DB\NodePairCosts;
 
 /**
- * TODO
+ * Base class for node pair cost functions, i.e. cost functions that calculate a
+ * value for every pair of sections (rather than just any section).
  *
  * @author  <milsen@uos.de>
  */
 abstract class NodePairCostFunction extends CostFunction
 {
+    /**
+     * Calculates a cost function values for a given pair of sections.
+     *
+     * @param int $sectionFrom id of the first section
+     * @param int $sectionTo id of the second section
+     * @return float|int cost function value
+     */
     abstract protected function calculate($sectionFrom, $sectionTo);
 
+    /**
+     * @inheritdoc
+     */
     public function recalculateValues($courseId, $changedSections) {
         // TODO as part of Mooc\DB\Block
         $secs = Block::findBySQL(

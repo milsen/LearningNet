@@ -3,14 +3,21 @@
 namespace LearningNet\CostFunctions;
 
 /**
- * TODO
+ * Abstract base class for classes implementing cost functions.
+ * Values of these cost functions determine which learning path will be
+ * recommended to a student.
  *
  * @author  <milsen@uos.de>
  */
 abstract class CostFunction
 {
-    public function __construct() { }
-
+    /**
+     * Recalculate and store cost function values for the given sections of the
+     * given course.
+     *
+     * @param string $courseId id of the course
+     * @param int[] $changedSections sections for which to recalculate costs
+     */
     abstract protected function recalculateValues($courseId, $changedSections);
 
     /**

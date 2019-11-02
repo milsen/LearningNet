@@ -9,30 +9,26 @@ use LearningNet\CostFunctions\DurationCostFunction;
 use LearningNet\CostFunctions\DummyNodePairCostFunction;
 
 /**
- * TODO
  * The CostFunctionHandler has two functions:
  * It serves as a wrapper around the CostFunctions model, removing database
  * entries for cost functions with weight 0.
- * Moreover, it notifies CostFunctions to recalculate cost values when the
- * respective Courseware blocks are edited.
+ * Moreover, it notifies CostFunction classes to recalculate cost values when
+ * the respective Courseware blocks are edited.
  *
  * @author  <milsen@uos.de>
  */
 class CostFunctionHandler
 {
+
     const COST_FUNCTIONS = [
         'DurationCostFunction',
         'DummyNodePairCostFunction'
     ];
 
-    /**
-     * @var CostFunctionHandler instance
-     */
+    /** @var CostFunctionHandler instance */
     protected static $instance = null;
 
-    /**
-     * @return CostFunctionHandler
-     */
+    /** @return CostFunctionHandler */
     public static function getInstance() {
         if (self::$instance === null) {
             self::$instance = new self;
@@ -46,7 +42,7 @@ class CostFunctionHandler
     protected function __clone() {}
 
     /**
-     * Prohibit external instantiation of Singleton.
+     * Prohibits external instantiation of Singleton.
      */
     protected function __construct() {
         /* NotificationCenter::addObserver($this, 'updateCW', 'recalculateCosts'); */
@@ -68,6 +64,9 @@ class CostFunctionHandler
      * sections of course given by id.
      *
      * To be called when a sections are added or changed.
+     *
+     * @param string $courseId id of the course
+     * @param int[] $changedSections sections for which to recalculate costs
      */
     public function recalculateCosts($courseId, $changedSections) {
         $activatedCostFuncs = CostFunctions::getActivated($courseId,
