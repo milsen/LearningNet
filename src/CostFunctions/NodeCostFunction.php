@@ -15,7 +15,7 @@ abstract class NodeCostFunction extends CostFunction
 
     public function recalculateValues($courseId, $changedSections) {
         foreach ($changedSections as $section) {
-            NodeCosts::save($courseId, $this->costFuncName, $section,
+            NodeCosts::save($courseId, $this->getClassName($this), $section,
                 $this->adjust($this->calculate($section))
             );
         }

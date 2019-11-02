@@ -23,7 +23,7 @@ abstract class NodePairCostFunction extends CostFunction
         // From changed section:
         foreach ($changedSections as $sectionFrom) {
             foreach ($sections as $sectionTo) {
-                NodePairCosts::save($courseId, $this->costFuncName,
+                NodePairCosts::save($courseId, $this->getClassName($this),
                     $sectionFrom, $sectionTo,
                     $this->adjust($this->calculate($sectionFrom, $sectionTo))
                 );
@@ -33,7 +33,7 @@ abstract class NodePairCostFunction extends CostFunction
         // To changed section:
         foreach ($sections as $sectionFrom) {
             foreach ($changedSections as $sectionTo) {
-                NodePairCosts::save($courseId, $this->costFuncName,
+                NodePairCosts::save($courseId, $this->getClassName($this),
                     $sectionFrom, $sectionTo,
                     $this->adjust($this->calculate($sectionFrom, $sectionTo))
                 );

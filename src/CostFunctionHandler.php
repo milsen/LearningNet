@@ -21,13 +21,9 @@ use LearningNet\CostFunctions\DummyNodePairCostFunction;
 class CostFunctionHandler
 {
     const COST_FUNCTIONS = [
-        'duration'        => 'LearningNet\\CostFunctions\\DurationCostFunction',
-        'dummy_node_pair' => 'LearningNet\\CostFunctions\\DummyNodePairCostFunction'
+        'DurationCostFunction',
+        'DummyNodePairCostFunction'
     ];
-
-    public function getCostFunctions() {
-        return self::COST_FUNCTIONS;
-    }
 
     /**
      * @var CostFunctionHandler instance
@@ -59,6 +55,15 @@ class CostFunctionHandler
     }
 
     /**
+     * @param string $className name of a cost function class
+     * @return string $className with a prepended namespace such that an object
+     * of the class can be created
+     */
+    private function toClass($className) {
+        return 'LearningNet\\CostFunctions\\' . $className;
+    }
+
+    /**
      * For each cost func with non-zero weight: Recalculate costs for
      * sections of course given by id.
      *
@@ -66,10 +71,10 @@ class CostFunctionHandler
      */
     public function recalculateCosts($courseId, $changedSections) {
         $activatedCostFuncs = CostFunctions::getActivated($courseId,
-            array_keys(self::COST_FUNCTIONS)
+            self::COST_FUNCTIONS
         );
         foreach ($activatedCostFuncs as $costFuncName) {
-            $costFuncClass = self::COST_FUNCTIONS[$costFuncName];
+            $costFuncClass = $this->toClass($costFuncName);
             $costFunc = new $costFuncClass($costFuncName);
             $costFunc->recalculateValues($courseId, $changedSections);
         }
@@ -92,7 +97,7 @@ class CostFunctionHandler
         }
 
         $costFunctions = [];
-        foreach (array_keys(self::COST_FUNCTIONS) as $costFunc) {
+        foreach (self::COST_FUNCTIONS as $costFunc) {
             $costFunctions[$costFunc] =
                 array_key_exists($costFunc, $funcToWeight) ?
                 $funcToWeight[$costFunc] : 0.0;
@@ -110,7 +115,7 @@ class CostFunctionHandler
      */
     public function setCostFunctionWeights($courseId, $weightInput) {
         foreach ($weightInput as $costFunc => $weight) {
-            if (array_key_exists($costFunc, self::COST_FUNCTIONS)) {
+            if (in_array($costFunc, self::COST_FUNCTIONS)) {
                 $costFuncRep = CostFunctions::find([$courseId, $costFunc]);
                 if ($costFuncRep === null) {
                     if ($weight != 0) {

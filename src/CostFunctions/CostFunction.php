@@ -9,15 +9,25 @@ namespace LearningNet\CostFunctions;
  */
 abstract class CostFunction
 {
-    /** string $name name used in database tables for this cost function **/
-    // TODO not how that works
-    public $costFuncName;
-
-    public function __construct($costFuncName) {
-        $this->costFuncName = $costFuncName;
-    }
+    public function __construct() { }
 
     abstract protected function recalculateValues($courseId, $changedSections);
+
+    /**
+     * Retrieves the class name for a cost function object, which is used as a
+     * key in the database tables.
+     *
+     * @param object $obj object for which the classname should be gotten
+     * @return string class name of $obj without the namespace
+     */
+    protected function getClassName($obj) {
+        $classname = get_class($obj);
+        $pos = strrpos($classname, '\\');
+        if ($pos !== false) {
+            return substr($classname, $pos + 1);
+        }
+        return $className;
+    }
 
     /**
      * Adjust a cost function value such that it is an int and fits into the
