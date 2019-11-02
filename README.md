@@ -74,7 +74,7 @@ The executable `learningnet-pathfinder` should now be in the directory
 It can be called manually with a JSON string as an argument.
 The following example uses the content of a test file:
 ```bash
-./learningnet-pathfinder "$(cat ../test/resources/json/valid.json)"
+./learningnet-pathfinder "$(cat ../test/resources/json/recommend_path.json)"
 ```
 
 After building, you can also run the tests:
