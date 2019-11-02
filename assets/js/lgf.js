@@ -1,15 +1,18 @@
 import graphlib from 'graphlib';
 
 function assign(elem, columns, headers) {
-    // if (columns.length !== headers.length) {
-        //TODO error?
-    // }
+    if (columns.length !== headers.length) {
+        console.log(`read(lgfInput): Column has length ${columns.length} ` +
+            ` but only ${headers.length} headers exist.`);
+        return false;
+    }
     for (var i = 0; i < columns.length; i++) {
         let attrName = headers[i];
         // LGF labels are node ids, graphlib labels are text labels.
         attrName = attrName === "label" ? "id" : attrName;
         elem[attrName] = columns[i];
     }
+    return true;
 }
 
 function parseRow(row) {
@@ -56,7 +59,9 @@ export function read(lgfInput) {
                         nodeHeaders = columns;
                     } else {
                         let obj = {};
-                        assign(obj, columns, nodeHeaders);
+                        if (!assign(obj, columns, nodeHeaders)) {
+                            return null;
+                        }
                         if (!('id' in obj)) {
                             console.log('read(lgfInput): No node label found.');
                             return null;
@@ -71,7 +76,9 @@ export function read(lgfInput) {
                         edgeHeaders = ['src', 'tgt'].concat(edgeHeaders);
                     } else {
                         let obj = {};
-                        assign(obj, columns, edgeHeaders);
+                        if (!assign(obj, columns, edgeHeaders)) {
+                            return null;
+                        }
                         if (!g.node(obj.src) || !g.node(obj.tgt)) {
                             console.log(`read(lgfInput): Nodes ${obj.src} and` +
                                 ` ${obj.tgt} not both available for edge creation.`);
