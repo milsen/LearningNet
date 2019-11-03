@@ -194,7 +194,6 @@ public:
 		int testCount = 0;
 
 		std::map<int, bool> sectionExists;
-		std::map<int, std::vector<std::string>> conditionIdToBranches;
 		for (auto v : net.nodes()) {
 			// Check number of in-/out-arcs for each node-type.
 			if (net.isUnit(v)) {
@@ -250,15 +249,7 @@ public:
 					std::string conditionBranch = net.getConditionBranch(out);
 					if (conditionBranch == CONDITION_ELSE_BRANCH_KEYWORD) {
 						elseBranchFound = true;
-					} else {
-						// Collect all used branch values for each condition id.
-						// TODO do this after compression
-						int conditionId = net.getConditionId(v);
-						if (conditionIdToBranches.find(conditionId) == conditionIdToBranches.end()) {
-							std::vector<std::string> branches;
-							conditionIdToBranches[conditionId] = branches;
-						}
-						conditionIdToBranches[conditionId].push_back(conditionBranch);
+						break;
 					}
 				}
 				if (!elseBranchFound) {
@@ -311,11 +302,33 @@ public:
 		}
 
 		// Conditions exist, there must exist a path to target for each branch.
-		// Push "else"-branch for each condition:
-		// This "else"-branch represents that none of the possible branches for
-		// the given condition id is applicable for the user.
+		// Collect all used branch values for each condition id, including
+		// "else"-branches. These represent that none of the possible branches
+		// for the given condition id is applicable for the user.
+		std::map<int, std::vector<std::string>> conditionIdToBranches;
+		for (auto v : net.nodes()) {
+			if (net.isCondition(v)) {
+				int conditionId = net.getConditionId(v);
+
+				for (auto out : net.outArcs(v)) {
+					if (conditionIdToBranches.find(conditionId) ==
+						conditionIdToBranches.end()) {
+						std::vector<std::string> branches;
+						conditionIdToBranches[conditionId] = branches;
+					}
+					conditionIdToBranches[conditionId].push_back(
+						net.getConditionBranch(out)
+					);
+				}
+			}
+		}
+
+		// Make collected condition branches unique.
 		for (auto idToBranches : conditionIdToBranches) {
-			conditionIdToBranches[std::get<0>(idToBranches)].push_back(CONDITION_ELSE_BRANCH_KEYWORD);
+			std::vector<std::string> branches = std::get<1>(idToBranches);
+			auto last = std::unique(branches.begin(), branches.end());
+			branches.erase(last, branches.end());
+			conditionIdToBranches[std::get<0>(idToBranches)] = branches;
 		}
 
 		pathsForAllConditions(net, conditionIdToBranches);
