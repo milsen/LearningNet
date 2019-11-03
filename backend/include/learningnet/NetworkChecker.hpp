@@ -122,7 +122,7 @@ private:
 		return targetReachable;
 	}
 
-	bool pathsForAllConditions(LearningNet &net,
+	void pathsForAllConditions(LearningNet &net,
 			std::map<int, std::vector<std::string>> &conditionIdToBranches)
 	{
 		// Start with first branch for every condition.
@@ -153,7 +153,7 @@ private:
 					appendError(std::to_string(conditionId) + ": " +
 							branchCombination[conditionId]);
 				}
-				return false;
+				return;
 			}
 
 			// Get next combination of condition branches:
@@ -177,8 +177,6 @@ private:
 				branchIndices[currentId]++;
 			}
 		}
-
-		return true;
 	}
 
 
@@ -190,7 +188,7 @@ public:
 		call(net);
 	}
 
-	bool call(LearningNet &net)
+	void call(LearningNet &net)
 	{
 		int conditionCount = 0;
 		int testCount = 0;
@@ -210,7 +208,7 @@ public:
 				// Each section only occurs once.
 				if (sectionExists[section]) {
 					failWithError("Section " + std::to_string(section) + " used multiple times.");
-					return false;
+					return;
 				}
 				sectionExists[section] = true;
 
@@ -279,39 +277,37 @@ public:
 
 		// If something went wrong already, return.
 		if (!succeeded()) {
-			return false;
+			return;
 		}
 
 		if (!dag(net)) {
 			// Fail if the network is not acylic.
 			failWithError("Given network is not acyclic.");
-			return false;
+			return;
 		} else if (conditionCount == 0 && testCount == 0) {
 			// If there are no conditions/tests, the net is valid if acyclic.
-			return true;
+			return;
 		}
 
 		// If compression should be used, compress the network.
 		if (m_useCompression) {
 			Compressor comp{net};
 			if (comp.getResult() == TargetReachability::Yes) {
-				return true;
+				return;
 			}
 			if (comp.getResult() == TargetReachability::No) {
 				failWithError(comp.getError());
-				return false;
+				return;
 			}
 		}
 
 		// If there are no conditions but tests, run learning path search once.
 		if (conditionCount == 0) {
-			if (targetReachableByTopSort(net, {})) {
-				return true;
-			} else {
+			if (!targetReachableByTopSort(net, {})) {
 				failWithError("The target cannot be reached when getting the "
 					"highest grade in every test.");
-				return false;
 			}
+			return;
 		}
 
 		// Conditions exist, there must exist a path to target for each branch.
@@ -322,7 +318,7 @@ public:
 			conditionIdToBranches[std::get<0>(idToBranches)].push_back(CONDITION_ELSE_BRANCH_KEYWORD);
 		}
 
-		return pathsForAllConditions(net, conditionIdToBranches);
+		pathsForAllConditions(net, conditionIdToBranches);
 	}
 };
 
