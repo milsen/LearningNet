@@ -1,0 +1,9 @@
+@nodes
+label type ref
+0 10 0
+1 20 1
+@arcs
+    condition
+0 1 ""
+@attributes
+target 1

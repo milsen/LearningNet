@@ -38,7 +38,7 @@ TEST_CASE("Compressor","[compressor]") {
 		});
 
 		for_file("valid", "condition_simple", [](LearningNet &net) {
-			compressNet(net, 1, 0, TargetReachability::Yes);
+			compressNet(net, 2, 2, TargetReachability::Yes);
 		});
 
 		for_file("valid", "conditions_simple", [](LearningNet &net) {
@@ -46,11 +46,25 @@ TEST_CASE("Compressor","[compressor]") {
 		});
 
 		for_file("valid", "pre_top_sort", [](LearningNet &net) {
-			compressNet(net, 1, 0, TargetReachability::Yes);
+			compressNet(net, 2, 2, TargetReachability::Yes);
 		});
 
 		for_file("valid", "pre_top_sort_2", [](LearningNet &net) {
 			compressNet(net, 10, 15);
+		});
+
+		for_file("valid", "split_to_join", [](LearningNet &net) {
+			compressNet(net, 2, 2, TargetReachability::Yes);
+		});
+
+		// The following nets could probably be compressed further with better
+		// algorithmic ideas.
+		for_file("valid", "split_partial_to_join", [](LearningNet &net) {
+			compressNet(net, 3, 5, TargetReachability::Unknown);
+		});
+
+		for_file("valid", "condition_partial_to_join", [](LearningNet &net) {
+			compressNet(net, 2, 3, TargetReachability::Unknown);
 		});
 	}
 }
