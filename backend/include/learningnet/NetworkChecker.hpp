@@ -249,6 +249,47 @@ private:
 		}
 	}
 
+	/**
+	 * Collect all used condition values for each condition id and return them.
+	 *
+	 * This includes "else"-branches (these represent that none of the possible
+	 * branches for the given condition id is applicable for the user).
+	 *
+	 * @param net learning net in which to collect condition branches
+	 * @return map from condition ids to arrays of strings (condition values)
+	 */
+	std::map<int, std::vector<std::string>> getConditionBranches(
+			const LearningNet &net) const
+	{
+		std::map<int, std::vector<std::string>> conditionIdToBranches;
+		for (auto v : net.nodes()) {
+			if (net.isCondition(v)) {
+				int conditionId = net.getConditionId(v);
+
+				for (auto out : net.outArcs(v)) {
+					if (conditionIdToBranches.find(conditionId) ==
+						conditionIdToBranches.end()) {
+						std::vector<std::string> branches;
+						conditionIdToBranches[conditionId] = branches;
+					}
+					conditionIdToBranches[conditionId].push_back(
+						net.getConditionBranch(out)
+					);
+				}
+			}
+		}
+
+		// Make collected condition branches unique.
+		for (auto idToBranches : conditionIdToBranches) {
+			std::vector<std::string> branches = std::get<1>(idToBranches);
+			auto last = std::unique(branches.begin(), branches.end());
+			branches.erase(last, branches.end());
+			conditionIdToBranches[std::get<0>(idToBranches)] = branches;
+		}
+
+		return conditionIdToBranches;
+	}
+
 public:
 	NetworkChecker(LearningNet &net, bool useCompression = true)
 		: Module()
@@ -324,36 +365,9 @@ public:
 		}
 
 		// Conditions exist, there must exist a path to target for each branch.
-		// Collect all used branch values for each condition id, including
-		// "else"-branches. These represent that none of the possible branches
-		// for the given condition id is applicable for the user.
-		std::map<int, std::vector<std::string>> conditionIdToBranches;
-		for (auto v : net.nodes()) {
-			if (net.isCondition(v)) {
-				int conditionId = net.getConditionId(v);
-
-				for (auto out : net.outArcs(v)) {
-					if (conditionIdToBranches.find(conditionId) ==
-						conditionIdToBranches.end()) {
-						std::vector<std::string> branches;
-						conditionIdToBranches[conditionId] = branches;
-					}
-					conditionIdToBranches[conditionId].push_back(
-						net.getConditionBranch(out)
-					);
-				}
-			}
-		}
-
-		// Make collected condition branches unique.
-		for (auto idToBranches : conditionIdToBranches) {
-			std::vector<std::string> branches = std::get<1>(idToBranches);
-			auto last = std::unique(branches.begin(), branches.end());
-			branches.erase(last, branches.end());
-			conditionIdToBranches[std::get<0>(idToBranches)] = branches;
-		}
-
-		pathsForAllConditions(net, conditionIdToBranches);
+		std::map<int, std::vector<std::string>> conditionBranches =
+			getConditionBranches(net);
+		pathsForAllConditions(net, conditionBranches);
 	}
 };
 
