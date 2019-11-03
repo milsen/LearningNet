@@ -179,19 +179,12 @@ private:
 		}
 	}
 
-
-public:
-	NetworkChecker(LearningNet &net, bool useCompression = true)
-		: Module()
-		, m_useCompression{useCompression}
+	void basicChecks(const LearningNet &net,
+			int &conditionCount,
+			int &testCount)
 	{
-		call(net);
-	}
-
-	void call(LearningNet &net)
-	{
-		int conditionCount = 0;
-		int testCount = 0;
+		conditionCount = 0;
+		testCount = 0;
 
 		std::map<int, bool> sectionExists;
 		for (auto v : net.nodes()) {
@@ -265,6 +258,21 @@ public:
 				failWithError("Node of unknown type detected.");
 			}
 		}
+	}
+
+public:
+	NetworkChecker(LearningNet &net, bool useCompression = true)
+		: Module()
+		, m_useCompression{useCompression}
+	{
+		call(net);
+	}
+
+	void call(LearningNet &net)
+	{
+		int conditionCount = 0;
+		int testCount = 0;
+		basicChecks(net, conditionCount, testCount);
 
 		// If something went wrong already, return.
 		if (!succeeded()) {
