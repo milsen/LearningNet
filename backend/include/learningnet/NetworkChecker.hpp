@@ -254,6 +254,7 @@ public:
 						elseBranchFound = true;
 					} else {
 						// Collect all used branch values for each condition id.
+						// TODO do this after compression
 						int conditionId = net.getConditionId(v);
 						if (conditionIdToBranches.find(conditionId) == conditionIdToBranches.end()) {
 							std::vector<std::string> branches;
@@ -292,12 +293,11 @@ public:
 
 		// If compression should be used, compress the network.
 		if (m_useCompression) {
-			Compressor comp;
-			TargetReachability afterCompression = comp.compress(net);
-			if (afterCompression == TargetReachability::Yes) {
+			Compressor comp{net};
+			if (comp.getResult() == TargetReachability::Yes) {
 				return true;
 			}
-			if (afterCompression == TargetReachability::No) {
+			if (comp.getResult() == TargetReachability::No) {
 				// TODO get more info from compressor
 				failWithError("Compression resulted in network without reachable target.");
 				return false;

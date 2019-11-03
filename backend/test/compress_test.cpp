@@ -10,9 +10,8 @@ void compressNet(LearningNet &net,
 	int expectedM,
 	TargetReachability expectedResult = TargetReachability::Unknown)
 {
-	Compressor comp;
-	TargetReachability result = comp.compress(net);
-	CHECK(result == expectedResult);
+	Compressor comp{net};
+	CHECK(comp.getResult() == expectedResult);
 	CHECK(countNodes(net) == expectedN);
 	CHECKED_ELSE(countArcs(net) == expectedM);
 

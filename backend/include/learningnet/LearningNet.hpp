@@ -144,6 +144,10 @@ public:
 		return m_type[v] >= NodeType::test && m_type[v] < NodeType::join;
 	}
 
+	bool isSplitLike(const lemon::ListDigraph::Node &v) const {
+		return m_type[v] >= NodeType::split && m_type[v] < NodeType::join;
+	}
+
 	bool isJoin(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] >= NodeType::join;
 	}

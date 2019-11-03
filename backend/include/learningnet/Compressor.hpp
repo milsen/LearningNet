@@ -1,34 +1,70 @@
 #pragma once
 
+#define LN_DEBUG_COMPRESSOR
+
 #include <learningnet/LearningNet.hpp>
 
 namespace learningnet {
 
+/**
+ * Conveys whether it was determined during the compression that the target is
+ * reachable by every learner.
+ */
 enum class TargetReachability {
-	Yes,
-	No,
-	Unknown
+	Yes,    //!< Target is reachable.
+	No,     //!< Target is not reachable.
+	Unknown //!< It is unknown whether the target is reachable.
 };
 
 /**
  * Compresses a LearningNet in linear time.
+ * The size of the net is decreased while making sure that a learning path can
+ * be found for the same condition values and test grades as before.
+ * If it can be determined that the target can be definitely (not) reached by
+ * every learner, the compression is stopped and this result is stored.
  */
-class Compressor
+class Compressor // TODO turn into module
 {
 private:
+	//! LearningNet that is compressed.
+	LearningNet &m_net;
+
+	//! Current sources, i.e. nodes at which the main loop is started.
+	std::vector<lemon::ListDigraph::Node> m_sources;
+
+	//! Successors of the currently looked at node.
+	std::vector<lemon::ListDigraph::Node> m_succs;
+
+	//! Indegree for each node.
+	lemon::ListDigraph::NodeMap<int> m_indeg;
+
+	//! For join nodes: From how many predecessors they were already visited.
+	std::map<lemon::ListDigraph::Node, int> m_visitedFromHowManyPreds;
+
+	//! The reachability of the target as detected during compression.
+	TargetReachability m_targetReached;
+
+	void xassert(bool asserted, const char *msg) {
+#ifdef LN_DEBUG_COMPRESSOR
+		if (!asserted) {
+			std::cout << "assertion failed: " << msg << std::endl;
+		}
+#else
+		(void) asserted;
+		(void) msg;
+		return;
+#endif
+	}
 
 	/**
-	 * @param net learning net containing node \p v.
 	 * @param v node whose successors should be counted
 	 * @param n number of successors to check for
-	 * @return Whether \p v has at most \p n successors in \p net.
+	 * @return whether \p v has at most \p n successors in #m_net
 	 */
-	bool hasAtMostNOutArcs(const LearningNet &net,
-		const lemon::ListDigraph::Node &v,
-		int n) const
+	bool hasAtMostNOutArcs(const lemon::ListDigraph::Node &v, int n) const
 	{
 		int count = 0;
-		for (auto out : net.outArcs(v)) {
+		for (auto out : m_net.outArcs(v)) {
 			(void) out;
 			if (++count > n) {
 				return false;
@@ -37,13 +73,18 @@ private:
 		return true;
 	}
 
-	bool hasOnlyOnePred(const LearningNet &net,
+	/**
+	 * @param v node with predecessor \p pred
+	 * @param pred predecessor of \p v
+	 * @return whether the only predecessor of \p v is \p pred
+	 */
+	bool hasOnlyOnePred(
 		const lemon::ListDigraph::Node &v,
 		const lemon::ListDigraph::Node &pred) const
 	{
 		bool result = true;
-		for (auto in : net.inArcs(v)) {
-			if (net.source(in) != pred) {
+		for (auto in : m_net.inArcs(v)) {
+			if (m_net.source(in) != pred) {
 				result = false;
 				break;
 			}
@@ -51,18 +92,54 @@ private:
 		return result;
 	}
 
-	bool hasOnlyOneSucc(const LearningNet &net,
+	/**
+	 * @param v node with successor \p succ
+	 * @param succ successor of \p v
+	 * @return whether the only successor of \p v is \p succ
+	 */
+	bool hasOnlyOneSucc(
 		const lemon::ListDigraph::Node &v,
 		const lemon::ListDigraph::Node &succ) const
 	{
 		bool result = true;
-		for (auto out : net.outArcs(v)) {
-			if (net.target(out) != succ) {
+		for (auto out : m_net.outArcs(v)) {
+			if (m_net.target(out) != succ) {
 				result = false;
 				break;
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * @param v node whose number of successors is checked
+	 * @return whether \p v has only one successor
+	 */
+	bool hasAtMostOneSucc(const lemon::ListDigraph::Node &v) const
+	{
+		lemon::ListDigraph::OutArcIt out(m_net, v);
+		return out == lemon::INVALID || hasOnlyOneSucc(v, m_net.target(out));
+	}
+
+	bool hasHighestGrade(
+		const lemon::ListDigraph::Node &v,
+		const lemon::ListDigraph::Node &succ) const
+	{
+		// TODO do preprocessing to easily detect highest grade
+		// e.g. set all lower ones to 0, highest one to
+		// numeric_limits<int>::max()
+		int maxGrade = -1;
+		int succGrade = -1;
+		for (auto a : m_net.outArcs(v)) {
+			int branchGrade = std::stoi(m_net.getConditionBranch(a));
+			if (branchGrade > maxGrade) {
+				maxGrade = branchGrade;
+			}
+			if (m_net.target(a) == succ) {
+				succGrade = branchGrade;
+			}
+		}
+		return maxGrade == succGrade;
 	}
 
 	/**
@@ -80,91 +157,26 @@ private:
 		}
 	}
 
-	// Contraction function.
-	TargetReachability contract(LearningNet &net,
-		std::vector<lemon::ListDigraph::Node> &succs,
-		const lemon::ListDigraph::Node &v,
-		const lemon::ListDigraph::Node &w)
-	{
-		// Push succs to succs.
-		for (auto out : net.outArcs(w)) {
-			succs.push_back(net.target(out));
-		}
-
-		// Remember condition branch in case v is a condition.
-		lemon::ListDigraph::InArcIt in(net, w);
-		std::string branch = net.getConditionBranch(in);
-
-		// Transfer target property from w to v if w is the target.
-		if (net.isTarget(w)) {
-			// TODO Instead of hasAtMostNOutArcs use hasAtMostNSuccs (there is a
-			// difference if multiple arcs lead to the same succ).
-			// Is this actually guaranteed if contraction is done?
-			if (!net.isCondition(v) || hasOnlyOneSucc(net, v, w)) {
-				net.setTarget(v);
-			} else {
-				// If a target node is contracted into a condition node while
-				// the condition node has other successors, then branches to
-				// those other successors cannot reach the target.
-				return TargetReachability::No;
-			}
-		}
-
-		// Contract w into v.
-		if (hasAtMostNOutArcs(net, w, 1)) {
-			// Just contract w into v but remember the new arc.
-			lemon::ListDigraph::OutArcIt out(net, w);
-			if (out != lemon::INVALID) {
-				lemon::ListDigraph::Node wTgt = net.target(out);
-				lemon::ListDigraph::Arc newArc = net.addArc(v, wTgt);
-
-				// Assign condition branch to new arc if needed.
-				if (net.isCondition(v)) {
-					net.setConditionBranch(newArc, branch);
-				}
-
-				net.erase(w);
-			} else {
-				// If w has no out-edge, just erase it.
-				// If v is a condition with multiple succs, then do not erase w,
-				// since w is proof that the condition v does not lead to a
-				// target for every branch.
-				if (!net.isCondition(v) || hasOnlyOneSucc(net, v, w)) {
-					net.erase(w);
-					if (net.isCondition(v)) {
-						net.setType(v, NodeType::split);
-					}
-				}
-			}
-		} else {
-			// TODO assert v is not a condition here
-			net.contract(v, w);
-		}
-
-		return TargetReachability::Unknown;
-	}
-
 	/**
-	 * Preprocesses the given learning net by removing non-condition source
-	 * nodes (nodes with indegree 0) until all sources are only conditions.
+	 * Preprocesses the learning net #m_net by removing non-condition and
+	 * non-test source nodes (with indegree 0) until all sources are only
+	 * conditions and tests with more than one out-arc.
+	 *
 	 * The preprocessing is based on a topological sort that deletes all visited
 	 * nodes (necessary in-arcs of join nodes are adjusted as well).
+	 * Assigns the nodes that are sources after preprocessing to #m_sources.
+	 * Assigns the indegree of every node after preprocessing to #m_indeg.
 	 * Returns immediately if the target node is found.
 	 *
-	 * @param net learning net to be preprocessed
-	 * @param indeg indegree of every node after preprocessing
-	 * @param sources is assigned a list of condition nodes with indegree 0
 	 * @return whether the target was found during topological sorting
 	 */
-	bool preprocess(LearningNet &net,
-		lemon::ListDigraph::NodeMap<int> &indeg,
-		std::vector<lemon::ListDigraph::Node> &sources)
+	bool preprocess()
 	{
 		// Collect sources: nodes with indegree 0.
 		std::vector<lemon::ListDigraph::Node> initialSources;
-		for (auto v : net.nodes()) {
-			indeg[v] = countInArcs(net, v);
-			if (indeg[v] == 0 || net.isCompletedJoin(v)) {
+		for (auto v : m_net.nodes()) {
+			m_indeg[v] = countInArcs(m_net, v);
+			if (m_net.isSource(v)) {
 				initialSources.push_back(v);
 			}
 		}
@@ -174,143 +186,302 @@ private:
 			initialSources.pop_back();
 
 			// If target can be reached, directly return.
-			if (net.isTarget(v)) {
+			if (m_net.isTarget(v)) {
 				return true;
 			}
 
-			if (net.isCondition(v)) {
-				sources.push_back(v);
+			if ((m_net.isCondition(v) || m_net.isTest(v)) &&
+				!hasAtMostNOutArcs(v, 1)) {
+				m_sources.push_back(v);
 			} else {
-				for (auto out : net.outArcs(v)) {
-					lemon::ListDigraph::Node w = net.target(out);
-					indeg[w]--;
+				for (auto out : m_net.outArcs(v)) {
+					lemon::ListDigraph::Node w = m_net.target(out);
+					m_indeg[w]--;
 
 					// Reduce necessary in-arcs for joins.
-					if (net.isJoin(w)) {
-						net.setNecessaryInArcs(w, std::max(net.getNecessaryInArcs(w) - 1, 0));
+					if (m_net.isJoin(w)) {
+						m_net.setNecessaryInArcs(w,
+							std::max(m_net.getNecessaryInArcs(w) - 1, 0)
+						);
 					}
 
-					if (indeg[w] == 0) {
+					if (m_indeg[w] == 0) {
 						initialSources.push_back(w);
 					}
 				}
-				net.erase(v);
+				m_net.erase(v);
 			}
 		}
 
 		return false;
 	}
 
+	/**
+	 * Contract \p v into its successor \p w and push w's succs to #m_succs.
+	 *
+	 * The target property is handed from \p w to \p v if possible.
+	 * #m_indeg and #m_visitedFromHowManyPreds are updated as well.
+	 *
+	 * @param v node with successor \p w
+	 * @param w node to contract into its predecessor \p v
+	 */
+	void contract(
+		const lemon::ListDigraph::Node &v,
+		const lemon::ListDigraph::Node &w)
+	{
+		// Push succs to succs.
+		for (auto out : m_net.outArcs(w)) {
+			m_succs.push_back(m_net.target(out));
+		}
 
-public:
+		// The target property can be transfered from v to w if
+		// w is v's only successor, v is a split or v is a test with the highest
+		// grade leading to w.
+		bool targetTransferable = hasOnlyOneSucc(v, w)
+			|| m_net.isSplit(v)
+			|| (m_net.isTest(v) && hasHighestGrade(v, w));
+
+		// Transfer target property from w to v if w is the target.
+		if (m_net.isTarget(w)) {
+			if (targetTransferable) {
+				m_net.setTarget(v);
+			} else {
+				// v is a condition node with more than w as a successor or
+				// a test node with a not-highest grade leading to w.
+				// If a target node is contracted into a condition node while
+				// the condition node has other successors, then branches to
+				// those other successors cannot reach the target.
+				// If a target node is contracted into a test node over the edge
+				// for a lower grade, the branches for the highest grade cannot
+				// reach the target.
+				m_targetReached = TargetReachability::No;
+			}
+		}
+
+		// Contract w into v.
+		if (m_indeg[w] == 1 && hasAtMostNOutArcs(w, 1)) {
+			// If w is a unit node, a join with only one in-arc or a split-like
+			// with at most one out-arc, contract w into v.
+			lemon::ListDigraph::OutArcIt out(m_net, w);
+			if (out != lemon::INVALID) {
+				// Do the contraction manually, do not use m_net.contract()
+				// directly because the condition/test branch would get lost.
+				lemon::ListDigraph::InArcIt in(m_net, w);
+				m_net.changeTarget(in, m_net.target(out));
+				m_net.erase(w);
+			} else {
+				// If w has no out-edge, just erase it, unless:
+				// If v is a condition with multiple succs, then do not erase w,
+				// since w is proof that the condition v does not lead to a
+				// target for every branch.
+				// If v is a test with the highest grade leading to w, then do
+				// not erase w, since w is proof that the highest grade does not
+				// lead to the target.
+				if (targetTransferable) {
+					m_net.erase(w);
+					if (m_net.isCondition(v)) {
+						m_net.setType(v, NodeType::split);
+					}
+				}
+			}
+		} else if (m_net.isJoin(v) && m_net.isJoin(w)) {
+			m_indeg[v] += m_indeg[w] - 1;
+			m_visitedFromHowManyPreds[v] += m_visitedFromHowManyPreds[w] - 1;
+			m_net.contract(v, w);
+		} else { // w has more than one out-arc.
+			// A condition or test node with more than one out-arc should not be
+			// contracted into its predecessor. Hence, w must be a split.
+			// Since splits with multiple out-arcs are only contracted into
+			// other split, v must also be a split.
+			xassert(m_net.isSplit(v), "contract(): v should be a split");
+			xassert(m_net.isSplit(w), "contract(): w should be a split");
+			m_net.contract(v, w);
+		}
+	}
 
 	/**
-	 * @return whether the compression already determined that the target can be
-	 * reached.
+	 * Remove split-like node \p v and its join-successor \p w,
+	 * connecting the predecessor of \p v to the successor of \p w.
+	 * If \p v has a predecessor, that predecessor will be given back to
+	 * continue the main loop with the successor of \p w in #m_succs.
+	 * If not, push the successor of \p w to #m_sources.
+	 *
+	 * @param v node with successor \p w
+	 * @param w node to contract into its predecessor \p v
+	 * @return predecessor of \p v if it exists (else an invalid dummy node)
 	 */
-	TargetReachability compress(LearningNet &net)
+	lemon::ListDigraph::Node doubleContract(
+		const lemon::ListDigraph::Node &v,
+		const lemon::ListDigraph::Node &w)
 	{
-		std::map<lemon::ListDigraph::Node, int> visitedFromHowManyPreds; // for join nodes
-		std::vector<lemon::ListDigraph::Node> succs;
+		// Return if it was the target (do not delete the target in this
+		// case such that the LearningNet is still valid).
+		xassert(m_succs.empty(), "doubleContract(): m_succs should be empty");
+		m_succs.clear();
+		if (m_indeg[v] == 0) {
+			if (m_net.isTarget(v) || m_net.isTarget(w)) {
+				m_targetReached = TargetReachability::Yes;
+			} else {
+				// Before deletion of w, decrease indegree of w's succ.
+				lemon::ListDigraph::OutArcIt out(m_net, w);
+				if (out != lemon::INVALID) {
+					lemon::ListDigraph::Node succ = m_net.target(out);
+					m_indeg[succ]--;
+					if (m_net.isTarget(succ)) {
+						m_targetReached = TargetReachability::Yes;
+					} else {
+						xassert(m_indeg[w] == 0,
+							"doubleContract(): new succ should have indegree 0"
+						);
+						m_sources.push_back(succ);
+					}
+				}
+				m_net.erase(v);
+				m_net.erase(w);
+			}
 
+			// Return dummy value: m_succs is empty, so the main loop continues.
+			return lemon::INVALID;
+		} else { // m_indeg[v] == 1
+			// Backtrack with compression, contract v into its predecessor.
+			lemon::ListDigraph::OutArcIt out(m_net, w);
+			lemon::ListDigraph::InArcIt in(m_net, v);
+			lemon::ListDigraph::Node pred = m_net.source(in);
+			if (m_net.isTarget(v) || m_net.isTarget(w)) {
+				m_net.setTarget(pred);
+			}
+			if (out != lemon::INVALID) {
+				lemon::ListDigraph::Node succ = m_net.target(out);
+				m_net.changeTarget(in, succ);
+				m_succs.push_back(succ);
+			}
+			m_net.erase(v);
+			m_net.erase(w);
+
+			return pred;
+		}
+	}
+
+	/**
+	 * Check whether it is possible to contract \p w into its predecessor \p v.
+	 * If yes, do so, else push \p w to #m_sources.
+	 *
+	 * @param v node with successor \p w
+	 * @param w node to contract into its predecessor \p v
+	 * @return new node to be used as source
+	 */
+	lemon::ListDigraph::Node tryContraction(
+			const lemon::ListDigraph::Node &v,
+			const lemon::ListDigraph::Node &w)
+	{
+		// Contract nodes depending on their type.
+		if ((m_indeg[w] == 1 && hasAtMostNOutArcs(w, 1)) ||
+		    (m_net.isSplit(w) && m_net.isSplit(v))) {
+			// If w is a unit node, a join with only one in-arc or a split-like
+			// with at most one out-arc, just contract it into its predecessor
+			// v. Also combine adjacent splits.
+			contract(v, w);
+			// TODO v conditions and tests, w splits
+		} else if (m_net.isJoin(w)) {
+			nodeMapIncrement(m_visitedFromHowManyPreds, w);
+
+			// Combine adjacent 1-joins or *-joins.
+			if (m_net.isJoin(v)) {
+				int necArcsV = m_net.getNecessaryInArcs(v);
+				int necArcsW = m_net.getNecessaryInArcs(w);
+				if (necArcsV == 1 && necArcsW == 1) {
+					contract(v, w);
+				} else if (necArcsV == m_indeg[v] && necArcsW == m_indeg[w]) {
+					contract(v, w);
+					m_net.setNecessaryInArcs(v, m_indeg[v] + m_indeg[w] - 1);
+				} else {
+					m_sources.push_back(w);
+				}
+			} else if (m_net.isSplitLike(v)) {
+				if (m_visitedFromHowManyPreds[w] == m_indeg[w]) {
+					if (hasOnlyOneSucc(v, w) && hasOnlyOnePred(w, v)) {
+						// Split-likes with join-successors whose in-arcs all
+						// come from the respective split-like can be deleted.
+						// Only check this after all in-arcs were visited in order to
+						// prevent unnecessary checks increasing the runtime.
+						return doubleContract(v, w);
+					} else {
+						m_sources.push_back(w);
+					}
+				}
+			} else { // w is a join that cannot be contracted.
+				m_sources.push_back(w);
+			}
+		} else {
+			// Push nodes that are not contracted to sources.
+			m_sources.push_back(w);
+		}
+
+		return v;
+	}
+
+	/**
+	 * Compresses #m_net and notes in #m_targetReached whether the compression
+	 * already determined that the target can be reached.
+	 */
+	void compress()
+	{
 		// Remove non-condition sources until all sources are only conditions.
-		lemon::ListDigraph::NodeMap<int> indeg{net, 0};
-		std::vector<lemon::ListDigraph::Node> sources;
-		if (preprocess(net, indeg, sources)) {
-			return TargetReachability::Yes;
+		if (preprocess()) {
+			m_targetReached = TargetReachability::Yes;
+			return;
 		}
 
 		// For each source v:
-		while (!sources.empty()) {
-			lemon::ListDigraph::Node v = sources.back();
-			sources.pop_back();
+		while (!m_sources.empty()) {
+			lemon::ListDigraph::Node v = m_sources.back();
+			m_sources.pop_back();
 
 			// Add unvisited successors to the stack.
-			for (auto out : net.outArcs(v)) {
-				succs.push_back(net.target(out));
+			for (auto out : m_net.outArcs(v)) {
+				m_succs.push_back(m_net.target(out));
 			}
 
 			// Get successor w of v. Try to contract v->w such that w is removed.
-			while (!succs.empty()) {
-				lemon::ListDigraph::Node w = succs.back();
-				succs.pop_back();
-				TargetReachability afterContraction = TargetReachability::Unknown;
+			while (!m_succs.empty()) {
+				lemon::ListDigraph::Node w = m_succs.back();
+				m_succs.pop_back();
 
-				// Contract nodes depending on their type.
-				// If a node is a unit, just combine it with its predecessor.
-				if (indeg[w] <= 1 && hasAtMostNOutArcs(net, w, 1)) {
-					afterContraction = contract(net, succs, v, w);
-				} else if (net.isSplit(w) || net.isTest(w)) {
-					// Combine adjacent splits.
-					if (net.isSplit(v) || net.isTest(w)) {
-						afterContraction = contract(net, succs, v, w);
-					}
-				} else if (net.isJoin(w)) {
-					nodeMapIncrement(visitedFromHowManyPreds, w);
-
-					// Combine adjacent 1-joins or *-joins.
-					if (net.isJoin(v)) {
-						int necArcsV = net.getNecessaryInArcs(v);
-						int necArcsSucc = net.getNecessaryInArcs(w);
-						if (necArcsV == 1 && necArcsSucc == 1) {
-							indeg[v] += indeg[w] - 1;
-							afterContraction = contract(net, succs, v, w);
-						} else if (necArcsV == indeg[v] && necArcsSucc == indeg[w]) {
-							indeg[v] += indeg[w] - 1;
-							afterContraction = contract(net, succs, v, w);
-							net.setNecessaryInArcs(v, indeg[v] + indeg[w] - 1);
-						}
-					} else if ((net.isSplit(v) || net.isCondition(v) || net.isTest(v))
-						&& visitedFromHowManyPreds[w] == indeg[w]) {
-						// Combine splits/conditions with join-successors whose
-						// in-arcs all come from the respective split/condition.
-						// Only check this after all in-arcs were visited such
-						// that it is ensured that they are combined if that is
-						// possible at all.
-						if (hasOnlyOnePred(net, w, v)) {
-							contract(net, succs, v, w);
-						}
-					} else { // w is a join that cannot be contracted.
-						sources.push_back(w);
-					}
-				} else { // w is a condition with more than one succ.
-					// TODO assert w is a condition
-					sources.push_back(w);
-				}
+				// The contraction might remove not just w but v itself.
+				// In that case, tryContraction returns the predecessor of v to
+				// be used as the new v and updates m_succs.
+				v = tryContraction(v, w);
 
 				// If we found out during contraction whether the target is
-				// reachable via all conditions, return this result.
-				if (afterContraction != TargetReachability::Unknown) {
-					return afterContraction;
-				}
-			}
-
-			// Remove splits / conditions / test nodes with only one in-arc
-			// after contracting them with joins.
-			if (indeg[v] <= 1 && hasAtMostNOutArcs(net, v, 1)) {
-				// TODO assert v is not a unit node because unit nodes would not
-				// be v at any point
-
-				// If v is a source, delete it.
-				// Return if it was the target (do not delete the target in this
-				// case such that the LearningNet is still valid).
-				if (indeg[v] == 0) {
-					if (net.isTarget(v)) {
-						return TargetReachability::Yes;
-					} else {
-						net.erase(v);
-					}
-				} else { // indeg[v] == 1
-					// Contract v into its predecessor.
-					lemon::ListDigraph::InArcIt in(net, v);
-					net.contract(net.source(in), v);
+				// reachable in all cases, return this result.
+				if (m_targetReached != TargetReachability::Unknown) {
+					return;
 				}
 			}
 		}
-
-		return TargetReachability::Unknown;
 	}
 
+public:
+	/**
+	 * Constructs a Compressor and compresses the given LearningNet.
+	 *
+	 * @param net LearningNet to be compressed
+	 */
+	Compressor(LearningNet &net)
+		: m_net{net}
+		, m_indeg{net, 0}
+		, m_targetReached{TargetReachability::Unknown}
+	{
+		compress();
+	}
+
+	/**
+	 * @return whether the compression determined that the target can be reached
+	 * by every learner
+	 */
+	TargetReachability getResult() {
+		return m_targetReached;
+	}
 };
 
 }
