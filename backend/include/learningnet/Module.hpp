@@ -22,10 +22,6 @@ protected:
 		m_error.append(error);
 	}
 
-	inline std::string getError() const {
-		return m_error;
-	}
-
 	inline void failWithError(const std::string &error) {
 		appendError(error);
 		fail();
@@ -38,6 +34,10 @@ protected:
 public:
 	inline bool succeeded() const {
 		return !m_failed;
+	}
+
+	inline std::string getError() const {
+		return m_error;
 	}
 
 	inline bool handleFailure(std::ostream &out = std::cout) const {

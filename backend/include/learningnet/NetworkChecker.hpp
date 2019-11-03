@@ -298,8 +298,7 @@ public:
 				return true;
 			}
 			if (comp.getResult() == TargetReachability::No) {
-				// TODO get more info from compressor
-				failWithError("Compression resulted in network without reachable target.");
+				failWithError(comp.getError());
 				return false;
 			}
 		}

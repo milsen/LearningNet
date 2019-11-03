@@ -3,6 +3,7 @@
 #define LN_DEBUG_COMPRESSOR
 
 #include <learningnet/LearningNet.hpp>
+#include <learningnet/Module.hpp>
 
 namespace learningnet {
 
@@ -23,7 +24,7 @@ enum class TargetReachability {
  * If it can be determined that the target can be definitely (not) reached by
  * every learner, the compression is stopped and this result is stored.
  */
-class Compressor // TODO turn into module
+class Compressor : public Module
 {
 private:
 	//! LearningNet that is compressed.
@@ -248,12 +249,30 @@ private:
 			} else {
 				// v is a condition node with more than w as a successor or
 				// a test node with a not-highest grade leading to w.
-				// If a target node is contracted into a condition node while
-				// the condition node has other successors, then branches to
-				// those other successors cannot reach the target.
-				// If a target node is contracted into a test node over the edge
-				// for a lower grade, the branches for the highest grade cannot
-				// reach the target.
+				if (m_net.isCondition(v)) {
+					// If a target node is contracted into a condition node
+					// while the condition node has other successors, then
+					// branches to those successors cannot reach the target.
+					lemon::ListDigraph::InArcIt in(m_net, w);
+					std::string thisBranch = m_net.getConditionBranch(in);
+					std::string condId = std::to_string(m_net.getConditionId(v));
+
+					failWithError("No path to target for condition branches:");
+					for (auto out : m_net.outArcs(v)) {
+						std::string thatBranch = m_net.getConditionBranch(out);
+						if (thatBranch != thisBranch) {
+							appendError(condId + ": " + thatBranch);
+						}
+					}
+				}
+				if (m_net.isTest(v)) {
+					// If a target node is contracted into a test node over the
+					// edge for a lower grade, the branches for the highest
+					// grade cannot reach the target.
+					failWithError("No path to target for the highest grade of "
+						"the test " + std::to_string(m_net.getTestId(v)));
+				}
+
 				m_targetReached = TargetReachability::No;
 			}
 		}
