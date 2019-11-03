@@ -217,9 +217,10 @@ export function drawNetwork(data) {
         render(d3.select("svg g"), g);
 
         // Center the graph.
-        // TODO fix graph size, just zoom.
         let svg = d3.select("svg");
-        svg.attr("height", g.graph().height + 5);
-        svg.attr("width", g.graph().width + 5);
+        let scaleWidth = g.graph().width + 300;
+        let scaleHeight = g.graph().height + 5;
+        svg.attr("viewBox", `0 0 ${scaleWidth} ${scaleHeight}`)
+           .attr("preserveAspectRatio", "xMidYMid meet");
     });
 }
