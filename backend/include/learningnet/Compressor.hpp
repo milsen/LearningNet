@@ -7,6 +7,9 @@
 
 namespace learningnet {
 
+//! Placeholder for highest test grades out of all out-arcs of a test node.
+const std::string MAX_GRADE{"MAX_GRADE"};
+
 /**
  * Conveys whether it was determined during the compression that the target is
  * reachable by every learner.
@@ -122,27 +125,6 @@ private:
 		return out == lemon::INVALID || hasOnlyOneSucc(v, m_net.target(out));
 	}
 
-	bool hasHighestGrade(
-		const lemon::ListDigraph::Node &v,
-		const lemon::ListDigraph::Node &succ) const
-	{
-		// TODO do preprocessing to easily detect highest grade
-		// e.g. set all lower ones to 0, highest one to
-		// numeric_limits<int>::max()
-		int maxGrade = -1;
-		int succGrade = -1;
-		for (auto a : m_net.outArcs(v)) {
-			int branchGrade = std::stoi(m_net.getConditionBranch(a));
-			if (branchGrade > maxGrade) {
-				maxGrade = branchGrade;
-			}
-			if (m_net.target(a) == succ) {
-				succGrade = branchGrade;
-			}
-		}
-		return maxGrade == succGrade;
-	}
-
 	/**
 	 * If the entry does exist, increment it, else set it to 1.
 	 * @param m mapping of nodes to ints
@@ -238,9 +220,10 @@ private:
 		// The target property can be transfered from v to w if
 		// w is v's only successor, v is a split or v is a test with the highest
 		// grade leading to w.
+		lemon::ListDigraph::InArcIt in(m_net, w);
 		bool targetTransferable = hasOnlyOneSucc(v, w)
 			|| m_net.isSplit(v)
-			|| (m_net.isTest(v) && hasHighestGrade(v, w));
+			|| (m_net.isTest(v) && m_net.getConditionBranch(in) == MAX_GRADE);
 
 		// Transfer target property from w to v if w is the target.
 		if (m_net.isTarget(w)) {

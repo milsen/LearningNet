@@ -94,21 +94,10 @@ private:
 			} else if (net.isTest(v)) {
 				// For a test one of the branches with the highest grade should
 				// lead to the target.
-				std::vector<lemon::ListDigraph::OutArcIt> highestGradeBranches;
-				int maxGrade = -1;
 				for (auto a : net.outArcs(v)) {
-					int branchGrade = std::stoi(net.getConditionBranch(a));
-					if (branchGrade >= maxGrade) {
-						if (branchGrade > maxGrade) {
-							maxGrade = branchGrade;
-							highestGradeBranches.clear();
-						}
-						highestGradeBranches.push_back(a);
+					if (net.getConditionBranch(a) == MAX_GRADE) {
+						exploreArc(a);
 					}
-				}
-
-				for (auto a : highestGradeBranches) {
-					exploreArc(a);
 				}
 			} else {
 				// Non-Condition/non-test: Push all successors
@@ -286,6 +275,31 @@ public:
 		} else if (conditionCount == 0 && testCount == 0) {
 			// If there are no conditions/tests, the net is valid if acyclic.
 			return;
+		}
+
+		// For test grades, set highest test grades to MAX_GRADE, others to 0.
+		// This later simplifies checking whether a test grade is the highest.
+		for (auto v : net.nodes()) {
+			if (net.isTest(v)) {
+				std::vector<lemon::ListDigraph::OutArcIt> highestGradeBranches;
+				int maxGrade = -1;
+				for (auto a : net.outArcs(v)) {
+					int branchGrade = std::stoi(net.getConditionBranch(a));
+					if (branchGrade >= maxGrade) {
+						if (branchGrade > maxGrade) {
+							maxGrade = branchGrade;
+							highestGradeBranches.clear();
+						}
+						highestGradeBranches.push_back(a);
+					}
+
+					net.setConditionBranch(a, "0");
+				}
+
+				for (auto a : highestGradeBranches) {
+					net.setConditionBranch(a, MAX_GRADE);
+				}
+			}
 		}
 
 		// If compression should be used, compress the network.
