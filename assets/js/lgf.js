@@ -138,3 +138,35 @@ export function read(lgfInput) {
 
     return g;
 }
+
+export function write(g) {
+    let lgfOutput = [];
+
+    // Nodes.
+    lgfOutput.push('@nodes');
+    lgfOutput.push('label type ref');
+    g.nodes().forEach(function(v) {
+        let node = g.node(v);
+        let type = node.type === undefined ? 0 : node.type;
+        let ref = node.ref === undefined ? 0 : node.ref;
+        // It should hold that v == node.id.
+        lgfOutput.push(`${v} ${type} ${ref}`);
+    });
+
+    // Edges.
+    lgfOutput.push('@edges');
+    lgfOutput.push('    condition');
+    g.outEdges(v).forEach(function(e) {
+        let edge = g.edge(e);
+        let condition = edge.condition === undefined ? "" : edge.condition;
+        condition = `"${condition}"`;
+        lgfOutput.push(`${e.v} ${e.w} ${condition}`);
+    });
+
+    // Target.
+    lgfOutput.push('@attributes');
+    lgfOutput.push('target ${g.target}');
+    // Recommended path is not exported since it is user-specific.
+
+    return lgfOutput.join('\n');
+}
