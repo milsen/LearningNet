@@ -1,33 +1,66 @@
 import css from 'CSS/edit.css';
+import * as lgf from 'JS/lgf.js';
 import * as network from 'JS/network.js';
 
-let oldInputGraphValue = "";
+let g;
 
 /**
  * Draws the network given by the text field with the id 'inputGraph' if the
  * content of that text field has changed.
+ * TODO
  */
-function tryDraw() {
-    let inputGraph = document.querySelector("#inputGraph");
-    if (oldInputGraphValue !== inputGraph.value) {
-        oldInputGraphValue = inputGraph.value;
-        network.drawNetwork(oldInputGraphValue);
-    }
+function doAndRedraw(func) {
+    func();
+    network.drawNetwork(g);
 }
 
 $(function() {
     network.setupNetwork();
 
     network.withGraphData(function(data) {
-        // Set initial input for form.
-        $('#inputGraph').val(data);
+        g = lgf.read(data);
+        if (g === null) {
+            console.log("Reading network from data failed.");
+            return;
+        }
 
         // Draw network once initially.
-        tryDraw();
+        network.drawNetwork(g);
     });
 
-    // Set drawing handler for keyup-event in input form.
-    $('#inputGraph').keyup(function() { tryDraw(); });
+    // TODO Setup event handlers for gui controls.
+    // New connective.
+    $('#newnode').click(function() {
+        let obj = {
+            'id' : ++g.maxId,
+            'type' : translate(document.form.nodetype.value),
+            'ref' : 0
+        };
+        doAndRedraw(function() {
+            g.setNode(obj.id, obj);
+        });
+    });
+
+    // Remove connective.
+    $('#delnode').click(function() {
+        doAndRedraw(function() {
+            g.removeNode(obj.id);
+        });
+    });
+
+    // New edge.
+    $('#newedge').click(function() {
+        doAndRedraw(function() {
+            g.setEdge(obj.src, obj.tgt, obj);
+        });
+    });
+
+    // Remove edge.
+    $('#deledge').click(function() {
+        doAndRedraw(function() {
+            g.removeEdge(obj.src, obj.tgt);
+        });
+    });
 
     const STORE_ROUTE = "store";
 
@@ -35,7 +68,7 @@ $(function() {
         $.ajax({
             url: network.ajaxURL(STORE_ROUTE),
             type: 'POST',
-            data: { network : inputGraph.value },
+            data: { network : lgf.write(g) },
             success: function(htmlMsg) {
                 console.log(htmlMsg)
                 $("#layout_content").prepend(htmlMsg);

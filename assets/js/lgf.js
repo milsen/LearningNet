@@ -54,7 +54,7 @@ export function read(lgfInput) {
     let g = new graphlib.Graph({
         directed: true,
         compound: false,
-        multigraph: false
+        multigraph: true
     });
 
     // Needed such that g.graph() is defined.
@@ -64,6 +64,7 @@ export function read(lgfInput) {
     let readingHeader = false;
     let nodeHeaders = [];
     let edgeHeaders = [];
+    let maxId = -1;
 
     // For each line in LGF.
     for (let str of lgfInput.split('\n')) {
@@ -89,6 +90,7 @@ export function read(lgfInput) {
                             return null;
                         }
                         g.setNode(obj.id, obj);
+                        maxId = Math.max(maxId, obj.id);
                     }
                     break;
                 case '@arcs':
@@ -135,6 +137,8 @@ export function read(lgfInput) {
             readingHeader = false;
         }
     }
+
+    g.maxId = maxId;
 
     return g;
 }

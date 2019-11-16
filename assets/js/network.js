@@ -1,5 +1,4 @@
 import css from 'CSS/network.css';
-import * as lgf from 'JS/lgf.js';
 import dagreD3 from 'dagre-d3';
 import graphlib from 'graphlib';
 import * as d3 from 'd3';
@@ -28,6 +27,27 @@ function typeToClass(type) {
         return "test";
     } else if (type >= 20) {
         return "join";
+    }
+}
+
+/**
+ * TODO
+ */
+export function classToType(className) {
+    if (className === "inactive") {
+        return 0;
+    } else if (className === "active") {
+        return 1;
+    } else if (className === "completed") {
+        return 2;
+    } else if (className === "split") {
+        return 10;
+    } else if (className === "condition") {
+        return 11;
+    } else if (className === "test") {
+        return 12;
+    } else if (className >= "join") {
+        return 20;
     }
 }
 
@@ -166,15 +186,9 @@ export function setupNetwork() {
  *
  * setupNetwork() must be called beforehand!
  *
- * @param {string} data LGF representation of a learning net
+ * @param {graphlib.Graph} learning net as a graph
  */
-export function drawNetwork(data) {
-    let g = lgf.read(data);
-    if (g === null) {
-        console.log("drawNetwork(): Reading network from data failed.");
-        return;
-    }
-
+export function drawNetwork(g) {
     // TODO Can performance be improved by doing this elsewhere?
     let conditionBranchesByID = {};
     g.nodes().forEach(function(v) {
