@@ -386,12 +386,15 @@ int main(int argc, char *argv[])
 				net->setRecommended(recPath);
 			} else if (reader.getRecType() == "next") {
 				// Set node with lowest costs as recommended path attribute.
-				lemon::ListDigraph::Node recNode =
+				std::vector<lemon::ListDigraph::Node>::const_iterator recIt =
 					reader.hasOnlyNodeCosts() ?
 					rec.recNext(reader.getNodeCosts()) :
 					rec.recNext(reader.getNodePairCosts());
 
-				std::vector<lemon::ListDigraph::Node> recPath = {recNode};
+				std::vector<lemon::ListDigraph::Node> recPath;
+				if (recIt != rec.recActive().end()) {
+					recPath.push_back(*recIt);
+				}
 				net->setRecommended(recPath);
 			}
 

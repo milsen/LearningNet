@@ -234,17 +234,18 @@ public:
 	 * Returns the active node with minimum cost.
 	 * @param nodeCosts
 	 * @param actives
-	 * @return best active node according to \p nodeCosts
+	 * @return iterator of actives at best active node according to \p nodeCosts
 	 */
-	lemon::ListDigraph::Node recNext(const NodeCosts &nodeCosts,
+	std::vector<lemon::ListDigraph::Node>::const_iterator recNext(
+		const NodeCosts &nodeCosts,
 		const std::vector<lemon::ListDigraph::Node> &actives)
 	{
 		double minCost = std::numeric_limits<double>::max();
-		lemon::ListDigraph::Node recommended = lemon::INVALID;
-		for (auto v : actives) {
-			double cost = nodeCosts.at(v);
+		std::vector<lemon::ListDigraph::Node>::const_iterator recommended = actives.end();
+		for (auto it = actives.begin(); it != actives.end(); ++it) {
+			double cost = nodeCosts.at(*it);
 			if (cost < minCost) {
-				recommended = v;
+				recommended = it;
 				minCost = cost;
 			}
 		}
@@ -254,7 +255,8 @@ public:
 	/**
 	 * Overload of recNext to work with #m_firstActives.
 	 */
-	lemon::ListDigraph::Node recNext(const NodeCosts &nodeCosts)
+	std::vector<lemon::ListDigraph::Node>::const_iterator recNext(
+			const NodeCosts &nodeCosts)
 	{
 		return recNext(nodeCosts, m_firstActives);
 	}
@@ -263,32 +265,33 @@ public:
 	 * @param nodePairCosts
 	 * @param actives
 	 * @param prev previously completed node
-	 * @return best active node according to \p nodePairCosts
+	 * @return pointer to best active node according to \p nodePairCosts
 	 */
-	lemon::ListDigraph::Node recNext(const NodePairCosts &nodePairCosts,
+	std::vector<lemon::ListDigraph::Node>::const_iterator recNext(
+		const NodePairCosts &nodePairCosts,
 		const std::vector<lemon::ListDigraph::Node> &actives,
 		const lemon::ListDigraph::Node &prev = lemon::INVALID)
 	{
-		lemon::ListDigraph::Node recommended = lemon::INVALID;
+		std::vector<lemon::ListDigraph::Node>::const_iterator recommended = actives.end();
 		double minCost = std::numeric_limits<double>::max();
 		if (prev == lemon::INVALID) {
 			// If there is no previously completed node, use the cost sum over
 			// all node pairs starting at an active node as a guideline.
-			for (auto v : actives) {
+			for (auto it = actives.begin(); it != actives.end(); ++it) {
 				double costSumForV = 0.0;
-				for (auto pair : nodePairCosts.at(v)) {
+				for (auto pair : nodePairCosts.at(*it)) {
 					costSumForV += pair.second;
 				}
 				if (costSumForV < minCost) {
-					recommended = v;
+					recommended = it;
 					minCost = costSumForV;
 				}
 			}
 		} else {
-			for (auto v : actives) {
-				double cost = (nodePairCosts.at(prev)).at(v);
+			for (auto it = actives.begin(); it != actives.end(); ++it) {
+				double cost = (nodePairCosts.at(prev)).at(*it);
 				if (cost < minCost) {
-					recommended = v;
+					recommended = it;
 					minCost = cost;
 				}
 			}
@@ -299,7 +302,8 @@ public:
 	/**
 	 * Overload of recNext to work with #m_firstActives.
 	 */
-	lemon::ListDigraph::Node recNext(const NodePairCosts &nodePairCosts,
+	std::vector<lemon::ListDigraph::Node>::const_iterator recNext(
+		const NodePairCosts &nodePairCosts,
 		const lemon::ListDigraph::Node &prev = lemon::INVALID)
 	{
 		return recNext(nodePairCosts, m_firstActives, prev);
@@ -354,13 +358,10 @@ public:
 
 		lemon::ListDigraph::Node prevBestActive = lemon::INVALID;
 		while (!actives.empty() && !m_targetFound) {
-			lemon::ListDigraph::Node bestActive =
-				recNext(nodePairCosts, actives, prevBestActive);
-			// TODO improve performance, e.g. by giving back iterator and
-			// deleting directly
-			auto position = std::find(actives.begin(), actives.end(), bestActive);
-			if (position != actives.end()) {
-				actives.erase(position);
+			auto bestIt = recNext(nodePairCosts, actives, prevBestActive);
+			lemon::ListDigraph::Node bestActive = *bestIt;
+			if (bestIt != actives.end()) {
+				actives.erase(bestIt);
 			}
 
 			// Update result and whether target was found.

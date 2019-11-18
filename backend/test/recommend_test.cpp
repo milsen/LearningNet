@@ -12,7 +12,8 @@ void checkNet(LearningNet &net,
 	const CostType &costs)
 {
 	Recommender rec(net, conditionVals, testGrades);
-	lemon::ListDigraph::Node recommended = rec.recNext(costs);
+	std::vector<lemon::ListDigraph::Node>::const_iterator recommended =
+		rec.recNext(costs);
 
 	for (auto v : rec.recActive()) {
 		CHECK(net.getType(v) == NodeType::active);
@@ -41,7 +42,7 @@ void checkNet(LearningNet &net,
 
 	// The following check only works since recPath() uses a local greedy search.
 	if (!learningPath.empty()) {
-		CHECK(learningPath.front() == recommended);
+		CHECK(learningPath.front() == *recommended);
 	}
 
 	// Check whether iterative recommendation of active nodes could lead to the
