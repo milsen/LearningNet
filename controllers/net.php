@@ -53,7 +53,9 @@ class NetController extends PluginController {
 
         if (\Request::submitted('save_settings')) {
             $weightInput = \Request::getArray('weightinput');
+            $valueInput = \Request::getArray('valueinput');
             $costFunctionHandler->setCostFunctionWeights($courseId, $weightInput);
+            $costFunctionHandler->setCostFunctionFields($courseId, $valueInput);
 
             // TODO costs should only be recalculated for sections that are added or
             // changed, not for all sections every time the settings page is opened.
@@ -62,6 +64,8 @@ class NetController extends PluginController {
         }
 
         $this->costFunctions = $costFunctionHandler->getCostFunctionWeights($courseId);
+        $this->inputFields = $costFunctionHandler->getCostFunctionFields($courseId);
+        $this->sectionTitles = $this->sectionTitles($courseId);
     }
 
     /**
@@ -146,12 +150,7 @@ class NetController extends PluginController {
         $conditionBranchesByID = \Request::getInstance()['conditionBranchesByID'];
 
         // Get section titles.
-        $sectionTitles = [];
-        $sections = Mooc\DB\Block::findBySQL(
-            "type = 'Section' AND seminar_id = ?", [$courseId]);
-        foreach ($sections as $section) {
-            $sectionTitles[$section['id']] = $section['title'];
-        }
+        $sectionTitles = $this->sectionTitles($courseId);
 
         // Get test titles, i.e. titles of assignments used in TestBlocks.
         $testTitles = [];
@@ -269,12 +268,29 @@ class NetController extends PluginController {
 
     /**
      * TODO move to Mooc\DB\Block
-     * @return array of Courseware section ids for course with id $courseId
+     * @param string $courseId id of the course
+     * @return int[] array of Courseware section ids for the given course
      */
     private function sectionIds($courseId)
     {
         $sections = Mooc\DB\Block::findBySQL(
             "type = 'Section' AND seminar_id = ?", [$courseId]);
         return array_map(function ($sec) { return $sec['id']; }, $sections);
+    }
+
+    /**
+     * TODO move to Mooc\DB\Block
+     * @param string $courseId id of the course
+     * @return array mapping from section ids to titles for the given course
+     */
+    private function sectionTitles($courseId)
+    {
+        $sectionTitles = [];
+        $sections = Mooc\DB\Block::findBySQL(
+            "type = 'Section' AND seminar_id = ?", [$courseId]);
+        foreach ($sections as $section) {
+            $sectionTitles[$section['id']] = $section['title'];
+        }
+        return $sectionTitles;
     }
 }

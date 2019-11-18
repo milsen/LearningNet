@@ -2,6 +2,8 @@
 
 namespace LearningNet\CostFunctions;
 
+use Mooc\DB\Field;
+
 /**
  * Abstract base class for classes implementing cost functions.
  * Values of these cost functions determine which learning path will be
@@ -11,6 +13,13 @@ namespace LearningNet\CostFunctions;
  */
 abstract class CostFunction
 {
+    /**
+     * @var string[] names of the entries in the mooc_fields table which are
+     * needed for the calculation of this cost function, values are set directly
+     * by the course instructor
+     **/
+    public static $instructorSetFields = [];
+
     /**
      * Recalculate and store cost function values for the given sections of the
      * given course.
@@ -51,5 +60,19 @@ abstract class CostFunction
         $value = min(100, $value);
         $value = max(0, $value);
         return $value;
+    }
+
+    /**
+     * Retrieves and decodes the json data stored in the mooc_fields database
+     * table for the given block id and field name.
+     *
+     * @param int $blockid id of the section
+     * @param string $name mooc field name
+     * @return mixed decoded json data
+     */
+    protected function getData($blockId, $name) {
+        return json_decode(
+            Field::find([$blockId, '', $name])['json_data'],
+        true);
     }
 }

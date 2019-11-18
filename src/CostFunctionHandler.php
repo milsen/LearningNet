@@ -2,11 +2,13 @@
 
 namespace LearningNet;
 
+use Mooc\DB\Field;
+use Mooc\DB\Block;
 use LearningNet\DB\CostFunctions;
 use LearningNet\DB\NodeCosts;
 use LearningNet\DB\NodePairCosts;
 use LearningNet\CostFunctions\DurationCostFunction;
-use LearningNet\CostFunctions\DummyNodePairCostFunction;
+use LearningNet\CostFunctions\DifficultyCurveCostFunction;
 
 /**
  * The CostFunctionHandler has two functions:
@@ -19,10 +21,9 @@ use LearningNet\CostFunctions\DummyNodePairCostFunction;
  */
 class CostFunctionHandler
 {
-
     const COST_FUNCTIONS = [
         'DurationCostFunction',
-        'DummyNodePairCostFunction'
+        'DifficultyCurveCostFunction'
     ];
 
     /** @var CostFunctionHandler instance */
@@ -135,4 +136,73 @@ class CostFunctionHandler
             }
         }
     }
+
+    /**
+     * Returns all section fields needed by cost functions in
+     * self::COST_FUNCTIONS with their currently stored values.
+     *
+     * @param string $courseId id of the course
+     * @return array array of the form [ fieldName => [ sectionId => value ] ]
+     */
+    public function getCostFunctionFields($courseId) {
+        // Get section ids.
+        $sections = Block::findBySQL(
+            "type = 'Section' AND seminar_id = ?", [$courseId]);
+        $sectionIds = array_map(function ($sec) {
+            return $sec['id'];
+        }, $sections);
+
+        $fields = [];
+        foreach (self::COST_FUNCTIONS as $costFuncName) {
+            $costFuncClass = $this->toClass($costFuncName);
+            if (!empty($costFuncClass::$instructorSetFields)) {
+                foreach ($costFuncClass::$instructorSetFields as $field) {
+                    // Avoid repetition if field used by multiple cost functions.
+                    if (!array_key_exists($field, $fields)) {
+                        $fields[$field] = [];
+
+                        // Get field for each section id.
+                        $rows = Field::findBySQL("user_id = '' AND name = ?",
+                            [$field]);
+                        $sectionToVal = [];
+                        foreach ($rows as $row) {
+                            $sectionToVal[$row['block_id']] = $row['json_data'];
+                        }
+
+                        foreach ($sectionIds as $sectionId) {
+                            $fields[$field][$sectionId] =
+                                $sectionToVal[$sectionId] ?
+                                $sectionToVal[$sectionId] : 0;
+                        }
+                    }
+                }
+            }
+        }
+        return $fields;
+    }
+
+    /**
+     * Sets field values for the given course.
+     *
+     * @param string $courseId id of the course
+     * @param array $valueInput field values as an array of the form
+     * [ fieldName => [ sectionId => value ] ]
+     * @return void
+     */
+    public function setCostFunctionFields($courseId, $valueInput) {
+        foreach ($valueInput as $field => $values) {
+            foreach ($values as $sectionId => $val) {
+                $fieldRep = Field::find([$sectionId, '', $field]);
+                if ($fieldRep === null) {
+                    $fieldRep = new Field();
+                    $fieldRep->block_id = $sectionId;
+                    $fieldRep->user_id = '';
+                    $fieldRep->name = $field;
+                }
+                $fieldRep->json_data = $val;
+                $fieldRep->store();
+            }
+        }
+    }
+
 }

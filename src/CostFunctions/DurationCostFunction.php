@@ -25,20 +25,6 @@ class DurationCostFunction extends NodeCostFunction
     }
 
     /**
-     * Retrieves and decodes the json data stored in the mooc_fields database
-     * table for the given block id and field name.
-     *
-     * @param int $blockid id of the section
-     * @param string $name mooc field name
-     * @return mixed decoded json data
-     */
-    private function getData($blockId, $name) {
-        return json_decode(
-            Field::find([$blockId, '', $name])['json_data'],
-        true);
-    }
-
-    /**
      * @param int $section id of the section for which to calculate its duration
      * @return float approximate time in min how long it takes to complete the
      * given section
