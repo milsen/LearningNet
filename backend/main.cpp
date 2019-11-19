@@ -55,8 +55,10 @@ private:
 					"though the action is \"recommend\".");
 			}
 
-			bool hasNodeCosts = m_d.HasMember("nodeCosts");
-			bool hasNodePairCosts = m_d.HasMember("nodePairCosts");
+			bool hasNodeCosts = m_d.HasMember("nodeCosts")
+				&& !m_d["nodeCosts"].Empty();
+			bool hasNodePairCosts = m_d.HasMember("nodePairCosts")
+				&& !m_d["nodePairCosts"].Empty();
 			if (hasNextOrPath && !hasNodeCosts && !hasNodePairCosts) {
 				failWithError("No node or node pair costs given even though "
 					"the recommendation type \"" + recType + "\" requires it.");
@@ -109,9 +111,6 @@ private:
 						"\" does not have the correct type.");
 
 			} else if (argStr == "nodeCosts" || argStr == "nodePairCosts") {
-				if (m_d[arg].Empty()) {
-					failWithError("Member \"" + argStr + "\" is empty.");
-				}
 				for (auto &val : m_d[arg].GetArray()) {
 					auto obj = val.GetObject();
 					if (!obj.HasMember("costs")) {
