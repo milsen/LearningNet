@@ -334,7 +334,8 @@ public:
 	}
 
 	bool hasOnlyNodeCosts() const {
-		return m_d.HasMember("nodeCosts") && !m_d.HasMember("nodePairCosts");
+		return m_d.HasMember("nodeCosts") &&
+			(!m_d.HasMember("nodePairCosts") || m_d["nodePairCosts"].Empty());
 	}
 };
 
