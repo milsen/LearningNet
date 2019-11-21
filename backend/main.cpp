@@ -244,7 +244,7 @@ private:
 					std::to_string(m_net->getSection(v)).c_str();
 
 				for (auto &w : m_net->nodes()) {
-					if (m_net->isUnit(w)) {
+					if (m_net->isUnit(w) && v != w) {
 						const char *tgtSection =
 							std::to_string(m_net->getSection(w)).c_str();
 						nodePairCosts[v][w] = 0.0;
