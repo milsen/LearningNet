@@ -5,6 +5,20 @@
 
 using namespace learningnet;
 
+double getCost(const NodeCosts &costs,
+		const lemon::ListDigraph::Node &prev,
+		const lemon::ListDigraph::Node &v)
+{
+	return costs.at(v);
+}
+
+double getCost(const NodePairCosts &costs,
+		const lemon::ListDigraph::Node &prev,
+		const lemon::ListDigraph::Node &v)
+{
+	return costs.at(prev).at(v);
+}
+
 template<typename CostType>
 void checkNet(LearningNet &net,
 	const ConditionMap &conditionVals,
@@ -47,11 +61,19 @@ void checkNet(LearningNet &net,
 
 	// Check whether iterative recommendation of active nodes could lead to the
 	// learning path.
+	lemon::ListDigraph::Node prev = lemon::INVALID;
 	for (auto v : learningPath) {
 		CHECK(net.isUnit(v));
 		Recommender newRec(net, conditionVals, testGrades); // active nodes are set
 		CHECK(net.getType(v) == NodeType::active);
 		net.setType(v, NodeType::completed);
+
+		// The following check only works since recPath() uses a local greedy search.
+		// Ensure that v has the lowest cost out of all active nodes.
+		for (auto activeW : newRec.recActive()) {
+			CHECK(getCost(costs, prev, v) <= getCost(costs, prev, activeW));
+		}
+		prev = v;
 	}
 }
 
