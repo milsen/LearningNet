@@ -3,15 +3,26 @@
 namespace LearningNet;
 
 /**
- * TODO
+ * Manages the database tables associated with condition ids.
+ * Can retrieve and condition values for a given user and translate these values
+ * from ids to actually meaningful titles.
  *
  * @author  <milsen@uos.de>
  */
 class ConditionHandler
 {
-    // There should not be multiple values, i.e. :key should be the single
-    // primary key, otherwise there should not be a translation_table.
-    // If CONDITION_MAP is updated, getConditionTitles should be updated, too!
+    /**
+     * Mapping from conditions ids to a dictionary containing the database table
+     * and row from which to get the corresponding condition value.
+     * translation_table and translation_key give the table and row with the
+     * human-readable title of the condition value.
+     *
+     * 'key' must be a row of 'translation_table' as well if the translation
+     * should succeed.
+     *
+     * IMPORTANT:
+     * If CONDITION_MAP is updated, getConditionTitles should be updated, too!
+     */
     const CONDITION_MAP = [
         0 => [
             'table' => 'user_info',
@@ -37,7 +48,9 @@ class ConditionHandler
         ]
     ];
 
-    // For AJAX stuff
+    /**
+     * @return array the condition property associated with each condition id
+     */
     public static function getConditionTitles()
     {
         return [
@@ -48,10 +61,18 @@ class ConditionHandler
         ];
     }
 
+    /**
+     * The condition value representing the "else" branch
+     */
     const CONDITION_ELSE_BRANCH_KEYWORD = "SONST";
 
     /* Get User Values for Conditions */
 
+    /**
+     * @param string $userId id of the user
+     * @return array from condition ids to arrays of condition values
+     * corresponding to the given user
+     */
     public function getConditionValues($userId)
     {
         $conditionVals = [];
@@ -62,6 +83,12 @@ class ConditionHandler
         return $conditionVals;
     }
 
+    /**
+     * @param string $conditionId condition id
+     * @param string $userId id of the user
+     * @return string[] condition values for the given condition id
+     * corresponding to the given user
+     */
     public function getValuesByConditionID($conditionId, $userId)
     {
         $condition = self::CONDITION_MAP[$conditionId];
@@ -92,8 +119,10 @@ class ConditionHandler
     /* Translate Condition Branches */
 
     /**
-     * @param $conditionIdToBranches [ conditionId => [branchname] ]
-     * @return [ conditionId => [branchname => translatedBranchName] ]
+     * Translate condition values into their humand-readable names.
+     *
+     * @param array $conditionIdToBranches [ conditionId => [branchname] ]
+     * @return array [ conditionId => [branchname => translatedBranchName] ]
      */
     public function getConditionBranches($conditionIdToBranches)
     {
@@ -114,7 +143,13 @@ class ConditionHandler
     }
 
     /**
-     * Translate id (e.g. fach_id) into its name
+     * Translate a condition value that is just an id (e.g. fach_id) into its
+     * humand-readable name.
+     *
+     * @param string $conditionId condition id
+     * @param string $value condition value to translate
+     * @return string translated human-readbable name of the condition value, or
+     * the empty string if no translation was possible
      */
     private function getBranchesByConditionID($conditionId, $value)
     {
