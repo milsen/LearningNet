@@ -366,21 +366,26 @@ public:
 
 	/**
 	 * @param nodePairCosts cost value for each pair of unit nodes
+	 * @param lastCompleted the last completed unit node (if one exists)
 	 * @return heuristically best learning path according to \p nodePairCosts
 	 */
 	std::vector<lemon::ListDigraph::Node> recPath(
-		const NodePairCosts &nodePairCosts)
+		const NodePairCosts &nodePairCosts,
+		const lemon::ListDigraph::Node &lastCompleted = lemon::INVALID)
 	{
 		std::vector<lemon::ListDigraph::Node> result;
 		std::vector<lemon::ListDigraph::Node> actives = m_firstActives;
 
-		lemon::ListDigraph::Node prevBestActive = lemon::INVALID;
+		lemon::ListDigraph::Node bestActive = lastCompleted;
 		while (!actives.empty() && !m_targetFound) {
-			auto bestIt = recNext(nodePairCosts, actives, prevBestActive);
-			lemon::ListDigraph::Node bestActive = *bestIt;
-			if (bestIt != actives.end()) {
-				actives.erase(bestIt);
+			auto bestIt = recNext(nodePairCosts, actives, bestActive);
+			if (bestIt == actives.end()) {
+				// This should not happen since !actives.empty() at the
+				// beginning of the while loop.
+				break;
 			}
+			bestActive = *bestIt;
+			actives.erase(bestIt);
 
 			// Update result and whether target was found.
 			result.push_back(bestActive);

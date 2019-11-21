@@ -123,6 +123,7 @@ class NetController extends PluginController {
             }
 
             // Set active nodes in network.
+            // TODO store and pass last completed node to exectuable
             $output = $this->executableInterface->getRecommended(
                 $output['message'],
                 $completedIds,
