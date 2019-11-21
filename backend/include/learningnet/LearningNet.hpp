@@ -7,43 +7,74 @@
 
 namespace learningnet {
 
-// TODO static, to LearningNet cpp file
+//! The condition value representing the "else" branch of a condition node.
 const std::string CONDITION_ELSE_BRANCH_KEYWORD{"SONST"};
 
+/**
+ * Pseudo-enum-class encapsulating the types a node in a learning net can have.
+ */
 class NodeType {
 	private:
-		int m_underlying;
+		int m_underlying; //!< this NodeType represented as an int
 
 	public:
-		static constexpr int inactive = 0;
-		static constexpr int active = 1;
-		static constexpr int completed = 2;
-		static constexpr int split = 10;
-		static constexpr int condition = 11;
-		static constexpr int test = 12;
-		static constexpr int join = 20;
+		static constexpr int inactive = 0; //!< inactive unit node
+		static constexpr int active = 1; //!< active unit node
+		static constexpr int completed = 2; //!< completed unit node
+		static constexpr int split = 10; //!< split node
+		static constexpr int condition = 11; //!< condition node
+		static constexpr int test = 12; //!< test node
+		static constexpr int join = 20; //!< join node
 
+		/**
+		 * Creates a new NodeType.
+		 *
+		 * @param v the int representation of the node type
+		 */
 		NodeType(int v) : m_underlying(v) {}
 
+		/**
+		 * @return this NodeType as an int
+		 */
 		operator int() {
 			return m_underlying;
 		}
 };
 
-
+/**
+ * Class representing a learning net.
+ */
 class LearningNet : public lemon::ListDigraph
 {
 private:
-	lemon::ListDigraph::NodeMap<int> m_type;
-	lemon::ListDigraph::NodeMap<int> m_ref;
+	lemon::ListDigraph::NodeMap<int> m_type; //!< type of each node
+
+	lemon::ListDigraph::NodeMap<int> m_ref; //!< ref value of each node
+
+	//! condition value or test grade of each edge
 	lemon::ListDigraph::ArcMap<std::string> m_condition;
-	lemon::ListDigraph::Node m_target;
+
+	lemon::ListDigraph::Node m_target; //!< target node
+
+	//! recommended learning path or unit node
 	std::vector<lemon::ListDigraph::Node> m_recommended;
 
+	/**
+	 * Sets the ref value of a node.
+	 *
+	 * @param v the node
+	 * @param ref the new ref value
+	 */
 	void setReference(const lemon::ListDigraph::Node &v, int ref) {
 		m_ref[v] = ref;
 	}
 
+	/**
+	 * Turns a vector of nodes into a space-seperated string of node ids.
+	 *
+	 * @param vs vector of nodes
+	 * @return space-separated string of node ids
+	 */
 	std::string stringify(const std::vector<lemon::ListDigraph::Node> &vs) const
 	{
 		std::ostringstream oss;
@@ -61,6 +92,9 @@ private:
 
 public:
 
+	/**
+	 * Creates a new empty LearningNet.
+	 */
 	LearningNet()
 		: lemon::ListDigraph()
 		, m_type{*this}
@@ -71,7 +105,12 @@ public:
 		{}
 
 	/**
-	 * @throws lemon ParserException
+	 * Creates a new LearningNet.
+	 *
+	 * The attribute "recommended" is not read.
+	 *
+	 * @param network this learning net represented in LGF
+	 * @throws lemon::ParserException if the reading of \p networks fails
 	 */
 	LearningNet(const std::string &network) : LearningNet()
 	{
@@ -87,6 +126,15 @@ public:
 			.run();
 	};
 
+	/**
+	 * Creates a new LearningNet with one unit node for each section id in \p
+	 * sections. The successor of each of these unit nodes is a join node with
+	 * a number of necessary in-arcs that equals the number of unit nodes. This
+	 * join node is the target of the net.
+	 *
+	 * @param sections section ids
+	 * @return newly created LearningNet
+	 */
 	static LearningNet *create(const std::vector<int> &sections) {
 		LearningNet *net = new LearningNet();
 		// Connect all units with one join.
@@ -128,40 +176,80 @@ public:
 	// Type Checkers, Getter and Setter
 	// @{
 
+	/**
+	 * @param v the node
+	 * @return whether \p v is a unit node
+	 */
 	bool isUnit(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] < NodeType::split;
 	}
 
+	/**
+	 * @param v the node
+	 * @return whether \p v is a split node
+	 */
 	bool isSplit(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] == NodeType::split;
 	}
 
+	/**
+	 * @param v the node
+	 * @return whether \p v is a condition node
+	 */
 	bool isCondition(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] == NodeType::condition;
 	}
 
+	/**
+	 * @param v the node
+	 * @return whether \p v is a test node
+	 */
 	bool isTest(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] >= NodeType::test && m_type[v] < NodeType::join;
 	}
 
+	/**
+	 * @param v the node
+	 * @return whether \p v is a split, condition or test node, i.e. a node with
+	 * possibly multiple outgoing edges
+	 */
 	bool isSplitLike(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] >= NodeType::split && m_type[v] < NodeType::join;
 	}
 
+	/**
+	 * @param v the node
+	 * @return whether \p v is a join node
+	 */
 	bool isJoin(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] >= NodeType::join;
 	}
 
+	/**
+	 * @param v the node
+	 * @return whether the type of \p v is unknown
+	 */
 	bool isUnknown(const lemon::ListDigraph::Node &v) const {
 		return m_type[v] < NodeType::inactive
 		   || (m_type[v] > NodeType::completed && m_type[v] < NodeType::split)
 		   || (m_type[v] > NodeType::test && m_type[v] < NodeType::join);
 	}
 
+	/**
+	 * @param v the node
+	 * @return the type of \p v
+	 */
 	int getType(const lemon::ListDigraph::Node &v) const {
 		return m_type[v];
 	}
 
+	/**
+	 * Sets the type of a given node.
+	 *
+	 * @param v the node
+	 * @param type the new type of \p v (preferrably given as a NodeType
+	 * implicitly casted to int)
+	 */
 	void setType(const lemon::ListDigraph::Node &v, int type) {
 		m_type[v] = type;
 	}
@@ -169,10 +257,22 @@ public:
 	// @}
 	// Reference Getters and Setters
 	// @{
+
+	/**
+	 * @param v the node
+	 * @return the section id of \p v if \p v is a unit node, -1 otherwise
+	 */
 	int getSection(const lemon::ListDigraph::Node &v) const {
 		return isUnit(v) ? m_ref[v] : -1;
 	}
 
+	/**
+	 * Sets the section id of a unit node.
+	 *
+	 * @param v the unit node
+	 * @param section the new section id
+	 * @throws exception if \p v is not a unit node
+	 */
 	void setSection(const lemon::ListDigraph::Node &v, int section) {
 		if (isUnit(v)) {
 			setReference(v, section);
@@ -181,10 +281,22 @@ public:
 		}
 	}
 
+	/**
+	 * @param v the node
+	 * @return the number of ingoing edges coming from reachable nodes in order
+	 * for \p v to be reachable if \p v is a join node, -1 otherwise
+	 */
 	int getNecessaryInArcs(const lemon::ListDigraph::Node &v) const {
-		return isJoin(v) ? m_ref[v] : countInArcs(*this, v);
+		return isJoin(v) ? m_ref[v] : -1;
 	}
 
+	/**
+	 * Sets the necessary in-arcs of a join node.
+	 *
+	 * @param v the join node
+	 * @param inArcs the new number of necessary in-arcs
+	 * @throws exception if \p v is not a join node
+	 */
 	void setNecessaryInArcs(const lemon::ListDigraph::Node &v, int inArcs) {
 		if (isJoin(v)) {
 			setReference(v, inArcs);
@@ -193,10 +305,22 @@ public:
 		}
 	}
 
+	/**
+	 * @param v the node
+	 * @return the condition id of \p v if \p v is a condition node, -1
+	 * otherwise
+	 */
 	int getConditionId(const lemon::ListDigraph::Node &v) const {
 		return isCondition(v) ? m_ref[v] : -1;
 	}
 
+	/**
+	 * Sets the condition id of a condition node.
+	 *
+	 * @param v the condition node
+	 * @param conditionId the new condition id
+	 * @throws exception if \p v is not a condition node
+	 */
 	void setConditionId(const lemon::ListDigraph::Node &v, int conditionId) {
 		if (isCondition(v)) {
 			setReference(v, conditionId);
@@ -205,10 +329,21 @@ public:
 		}
 	}
 
+	/**
+	 * @param v the node
+	 * @return the test id of \p v if \p v is a test node, -1 otherwise
+	 */
 	int getTestId(const lemon::ListDigraph::Node &v) const {
 		return isTest(v) ? m_ref[v] : -1;
 	}
 
+	/**
+	 * Sets the test id of a test node.
+	 *
+	 * @param v the test node
+	 * @param testId the new test id
+	 * @throws exception if \p v is not a test node
+	 */
 	void setTestId(const lemon::ListDigraph::Node &v, int testId) {
 		if (isTest(v)) {
 			setReference(v, testId);
@@ -221,10 +356,19 @@ public:
 	// @}
 	// Target Getter and Setter
 	// @{
+
+	/**
+	 * @return the target node of this learning net
+	 */
 	lemon::ListDigraph::Node getTarget() const {
 		return m_target;
 	}
 
+	/**
+	 * Sets the target node of this learning net.
+	 *
+	 * @param tgt the new target node of this learning net
+	 */
 	void setTarget(const lemon::ListDigraph::Node &tgt) {
 		m_target = tgt;
 	}
@@ -240,10 +384,21 @@ public:
 	// @}
 	// Recommended Learning Path Getter and Setter
 	// @{
+
+	/**
+	 * @return the recommend learning path (or node) associated with this
+	 * learning net
+	 */
 	std::vector<lemon::ListDigraph::Node> getRecommended() const {
 		return m_recommended;
 	}
 
+	/**
+	 * Sets the recommended learning path (or node) associated with this
+	 * learning net.
+	 *
+	 * @param rec the new recommende learning path (or node)
+	 */
 	void setRecommended(const std::vector<lemon::ListDigraph::Node> &rec) {
 		m_recommended = rec;
 	}
@@ -251,10 +406,21 @@ public:
 	// @}
 	// Condition Branch Getter and Setter
 	// @{
+
+	/**
+	 * @param a the edge
+	 * @return the condition value or test grade associated with \p a
+	 */
 	std::string getConditionBranch(const lemon::ListDigraph::Arc &a) const {
 		return m_condition[a];
 	}
 
+	/**
+	 * Sets the condition value or test grade of an edge.
+	 *
+	 * @param a the edge
+	 * @param branch the new condition value or test grade
+	 */
 	void setConditionBranch(const lemon::ListDigraph::Arc &a,
 			const std::string &branch) {
 		m_condition[a] = branch;
@@ -263,6 +429,13 @@ public:
 	// @}
 	// Helper Functions for Join nodes
 	// @{
+
+	/**
+	 * Resets the activated in-arcs of a join node to 0.
+	 *
+	 * @param v the join node
+	 * @throws exception if \p v is not a join node
+	 */
 	void resetActivatedInArcs(const lemon::ListDigraph::Node &v) {
 		if (isJoin(v)) {
 			m_type[v] = NodeType::join;
@@ -271,6 +444,12 @@ public:
 		}
 	}
 
+	/**
+	 * Increments the activated in-arcs of a join node by 1.
+	 *
+	 * @param v the join node
+	 * @throws exception if \p v is not a join node
+	 */
 	void incrementActivatedInArcs(const lemon::ListDigraph::Node &v) {
 		if (isJoin(v)) {
 			m_type[v]++;
@@ -279,6 +458,11 @@ public:
 		}
 	}
 
+	/**
+	 * @param v the join node
+	 * @throws exception if \p v is not a join node
+	 * @return activated in-arcs of \p v
+	 */
 	int getActivatedInArcs(const lemon::ListDigraph::Node &v) const {
 		if (isJoin(v)) {
 			return m_type[v] - NodeType::join;
@@ -287,11 +471,24 @@ public:
 		}
 	}
 
+	/**
+	 * @param v the node
+	 * @return whether \p v is join node with at least as many activated in-arcs
+	 * as necessary ones
+	 */
 	bool isCompletedJoin(const lemon::ListDigraph::Node &v) const {
 		return isJoin(v) && getActivatedInArcs(v) >= getNecessaryInArcs(v);
 	}
 
 	// @}
+
+	/**
+	 * Writes this LearningNet in LGF to the stream \p out.
+	 *
+	 * @param out the stream to which the learning net is written
+	 * @param visited optional, mapping from edges to whether that edge was
+	 * visited during a learning path search, also written to \p out if given
+	 */
 	void write(std::ostream &out = std::cout,
 			const lemon::ListDigraph::ArcMap<bool> *visited = nullptr) const {
 		// Write lemon graph file to cout.

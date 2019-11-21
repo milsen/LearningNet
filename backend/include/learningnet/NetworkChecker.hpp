@@ -9,12 +9,25 @@ namespace learningnet {
 
 using namespace lemon;
 
+/**
+ * Checks whether a given directed graph is a valid learning net, i.e. that it
+ * has the basic necessary properties, is acyclic, and offers a learning path
+ * for every learner.
+ */
 class NetworkChecker : public Module
 {
 private:
 
+	//! Whether the graph is compressed before searching learning paths.
 	bool m_useCompression;
 
+	/**
+	 * @tparam ArcItType InArcIt or OutArcIt
+	 * @param net the learning net containing \p v
+	 * @param v the node
+	 * @return whether \p v has at most one incoming or outgoing edge (depending
+	 * on ArcItType)
+	 */
 	template<typename ArcItType>
 	bool hasAtMostOneArc(const LearningNet &net,
 			const lemon::ListDigraph::Node &v)
@@ -28,7 +41,15 @@ private:
 		return true;
 	}
 
-
+	/**
+	 * Executes a learning path search in \p net for a given value for each
+	 * condition id.
+	 *
+	 * @param net the learning net
+	 * @param branchCombination mapping from condition ids to condition values
+	 * @return whether there exists a learning path in \p net for the condition
+	 * values given by \p branchCombination
+	 */
 	bool targetReachableByTopSort(LearningNet &net,
 			const std::map<int, std::string> &branchCombination)
 	{
@@ -111,6 +132,15 @@ private:
 		return targetReachable;
 	}
 
+	/**
+	 * Executes a learning path search in \p net for each combination of
+	 * condition values as given by a set of values for each condition id.
+	 *
+	 * @param net the learning net
+	 * @param conditionIdToBranches mapping from condition ids to condition values
+	 * @return whether there exists a learning path in \p net for each
+	 * combination of condition values given by \p conditionIdToBranches
+	 */
 	void pathsForAllConditions(LearningNet &net,
 			std::map<int, std::vector<std::string>> &conditionIdToBranches)
 	{
@@ -168,6 +198,15 @@ private:
 		}
 	}
 
+	/**
+	 * Verifies that the given directed graph has the basic properties of a
+	 * learning net. Otherwise this NetworkChecker fails with an appropriate
+	 * error message.
+	 *
+	 * @param net the (supposed) learning net
+	 * @param conditionCount number of condition nodes in \p net
+	 * @param testCount number of test nodes in \p net
+	 */
 	void basicChecks(const LearningNet &net,
 			int &conditionCount,
 			int &testCount)
@@ -290,14 +329,13 @@ private:
 		return conditionIdToBranches;
 	}
 
-public:
-	NetworkChecker(LearningNet &net, bool useCompression = true)
-		: Module()
-		, m_useCompression{useCompression}
-	{
-		call(net);
-	}
-
+	/**
+	 * Calls this NetworkChecker for a learning net.
+	 * If the check fails, this NetworkChecker fails with an appropriate error
+	 * message.
+	 *
+	 * @param net the learning net
+	 */
 	void call(LearningNet &net)
 	{
 		int conditionCount = 0;
@@ -368,6 +406,21 @@ public:
 		std::map<int, std::vector<std::string>> conditionBranches =
 			getConditionBranches(net);
 		pathsForAllConditions(net, conditionBranches);
+	}
+
+public:
+	/**
+	 * Creates a NetworkChecker and checks the given directed graph.
+	 *
+	 * @param net the learning net to check
+	 * @param useCompression whether the graph should be compressed before
+	 * searching learning paths
+	 */
+	NetworkChecker(LearningNet &net, bool useCompression = true)
+		: Module()
+		, m_useCompression{useCompression}
+	{
+		call(net);
 	}
 };
 

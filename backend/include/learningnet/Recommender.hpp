@@ -7,29 +7,47 @@
 
 namespace learningnet {
 
+//! Representation of costs for each unit node.
 using NodeCosts = std::map<lemon::ListDigraph::Node, double>;
+
+//! Representation of costs for each pair of unit nodes.
 using NodePairCosts = std::map<lemon::ListDigraph::Node, NodeCosts>;
+
+//! Mapping of condition ids (vector indices) to vectors of condition values.
 using ConditionMap = std::vector<std::vector<std::string>>;
+
+//! Mapping of test ids to test grades.
 using TestMap = std::map<int, int>;
 
+/**
+ * Computes active nodes and recommends learning paths (or unit nodes) for a
+ * given learning net with accompanying completed sections, condition values and
+ * test grades representing a specific learner.
+ */
 class Recommender : public Module
 {
 
 private:
-	LearningNet &m_net;
+	LearningNet &m_net; //!< learning net
 
-	const ConditionMap m_conditionVals;
+	const ConditionMap m_conditionVals; //!< condition values of this learner
 
-	const TestMap m_testGrades;
+	const TestMap m_testGrades; //!< test grades of this learner
 
+	//! active nodes as computed in constructor
 	std::vector<lemon::ListDigraph::Node> m_firstActives;
 
+	//! edges visited during first learning path search in constructor
 	lemon::ListDigraph::ArcMap<bool> m_firstVisited;
 
+	//! backup of node types after first learning path search in constructor
 	lemon::ListDigraph::NodeMap<int> m_nodeTypeBackup;
 
+	//! whether the target was found during the recommendation of a learning path
 	bool m_targetFound;
 
+	//! whether the target was already found after the first learning path
+	//! search in the constructor
 	bool m_targetFoundBackup;
 
 	/**
@@ -214,8 +232,8 @@ public:
 	}
 
 	/**
-	 * @return #m_firstVisited, a map assigning to each arc whether it was
-	 * visited during the learning path search to find the first active nodes
+	 * @return a map assigning to each arc whether it was visited during the
+	 * learning path search to find the first active nodes
 	 */
 	lemon::ListDigraph::ArcMap<bool> *getVisited()
 	{
@@ -232,8 +250,8 @@ public:
 
 	/**
 	 * Returns the active node with minimum cost.
-	 * @param nodeCosts
-	 * @param actives
+	 * @param nodeCosts cost value for each unit node
+	 * @param actives active nodes from which the recommended node is chosen
 	 * @return iterator of actives at best active node according to \p nodeCosts
 	 */
 	std::vector<lemon::ListDigraph::Node>::const_iterator recNext(
@@ -253,7 +271,7 @@ public:
 	}
 
 	/**
-	 * Overload of recNext to work with #m_firstActives.
+	 * Overload of recNext to work with the output of #recActive().
 	 */
 	std::vector<lemon::ListDigraph::Node>::const_iterator recNext(
 			const NodeCosts &nodeCosts)
@@ -262,8 +280,8 @@ public:
 	}
 
 	/**
-	 * @param nodePairCosts
-	 * @param actives
+	 * @param nodePairCosts cost value for each pair of unit nodes
+	 * @param actives active nodes from which the recommended node is chosen
 	 * @param prev previously completed node
 	 * @return pointer to best active node according to \p nodePairCosts
 	 */
@@ -300,7 +318,7 @@ public:
 	}
 
 	/**
-	 * Overload of recNext to work with #m_firstActives.
+	 * Overload of recNext to work with the output of #recActive().
 	 */
 	std::vector<lemon::ListDigraph::Node>::const_iterator recNext(
 		const NodePairCosts &nodePairCosts,
@@ -310,7 +328,7 @@ public:
 	}
 
 	/**
-	 * @param nodeCosts
+	 * @param nodeCosts cost value for each unit node
 	 * @return heuristically best learning path according to \p nodeCosts
 	 */
 	std::vector<lemon::ListDigraph::Node> recPath(const NodeCosts &nodeCosts)
@@ -347,7 +365,7 @@ public:
 	}
 
 	/**
-	 * @param nodePairCosts
+	 * @param nodePairCosts cost value for each pair of unit nodes
 	 * @return heuristically best learning path according to \p nodePairCosts
 	 */
 	std::vector<lemon::ListDigraph::Node> recPath(
