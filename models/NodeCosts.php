@@ -3,7 +3,9 @@
 namespace LearningNet\DB;
 
 /**
- * TODO.
+ * Model for the database table learningnet_node_costs.
+ * Manages access for the cost values of each Courseware section of a given
+ * course.
  *
  * @property string seminar_id database column
  * @property string cost_func database column
@@ -14,14 +16,16 @@ namespace LearningNet\DB;
  */
 class NodeCosts extends Costs
 {
+    /** @{inheritdoc} **/
     static protected function configure($config = []) {
         $config['db_table'] = 'learningnet_node_costs';
         parent::configure($config);
     }
 
     /**
-     * @return array of the form
-     * [ { 'weight' => "weight", 'costs' => { "block_id" => "cost" } ]
+     * @param string $courseId id of the course
+     * @return array values and weights for node cost functions as an array of
+     * the form [ { 'weight' => weight, 'costs' => [ block_id => cost ] ]
      */
     static public function getByCourseId($courseId) {
         return parent::costs($courseId, function(&$currentCosts, $row) {

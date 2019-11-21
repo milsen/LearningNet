@@ -3,12 +3,13 @@
 namespace LearningNet\DB;
 
 /**
- * TODO.Superclass for NodeCosts and NodePairCosts
+ * Superclass for models of cost function values.
  *
  * @author  <milsen@uos.de>
  */
 class Costs extends \SimpleORMap
 {
+    /** @{inheritdoc} **/
     static protected function configure($config = []) {
         parent::configure($config);
     }
@@ -17,7 +18,7 @@ class Costs extends \SimpleORMap
      * @param string $courseId id of the course for which the costs should be found
      * @param callable $func adding to cost array using database row
      * @return array of the form
-     * [ { 'weight' => "weight", 'costs' => { func(... "cost" ...) } ]
+     * [ [ 'weight' => weight, 'costs' => [ func(... cost ...) ] ]
      */
     static protected function costs($courseId, $func) {
         $dbTable = self::config('db_table');

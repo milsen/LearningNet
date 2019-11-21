@@ -3,7 +3,8 @@
 namespace LearningNet\DB;
 
 /**
- * TODO.
+ * Model for the database table learningnet_cost_functions.
+ * Manages access for the weights of each cost function for a given course.
  * Cost functions with weight 0 are not stored in the database.
  *
  * @property string seminar_id database column
@@ -14,6 +15,7 @@ namespace LearningNet\DB;
  */
 class CostFunctions extends \SimpleORMap
 {
+    /** @{inheritdoc} **/
     static protected function configure($config = []) {
         $config['db_table'] = 'learningnet_cost_functions';
         parent::configure($config);

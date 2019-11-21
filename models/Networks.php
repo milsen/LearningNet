@@ -3,7 +3,9 @@
 namespace LearningNet\DB;
 
 /**
- * TODO.
+ * Model for the database table learningnet_networks.
+ * Manages access for the learning net representation (in LGF) for a given
+ * course.
  *
  * @property string seminar_id database column
  * @property string network database column
@@ -12,6 +14,7 @@ namespace LearningNet\DB;
  */
 class Networks extends \SimpleORMap
 {
+    /** @{inheritdoc} **/
     static protected function configure($config = []) {
         $config['db_table'] = 'learningnet_networks';
         parent::configure($config);
