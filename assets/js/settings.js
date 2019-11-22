@@ -4,7 +4,7 @@ import css from 'CSS/settings.css';
  * Hides all value inputs belonging to the given select element except the one
  * that is selected.
  *
- * @param {jQuery} select element
+ * @param {jQuery} jquerySelect select element
  */
 function selectSectionInput(jquerySelect) {
     let field = jquerySelect.attr('id').split("_")[0];

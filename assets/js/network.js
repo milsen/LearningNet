@@ -8,6 +8,10 @@ const NETWORK_ROUTE = 'network';
 const LABELS_ROUTE = 'labels';
 const CONDITION_BRANCH_ELSE_KEYWORD = 'SONST';
 
+/**
+ * @param {number} node type represented by an int value
+ * @return {string} name of the node type, used as a css class
+ */
 function typeToClass(type) {
     type = parseInt(type);
     if (type === 0) {
@@ -27,6 +31,12 @@ function typeToClass(type) {
     }
 }
 
+/**
+ * @param {Object} node for which a label is created
+ * @param {string} name title of the node
+ * @return {Element} svg label with a hyperlink redirecting to the corresponding
+ * Courseware section
+ */
 function createNodeLabel(node, name) {
     node.labelType = 'svg';
     let section = node.ref;
@@ -53,21 +63,50 @@ function createNodeLabel(node, name) {
     return svg_label;
 }
 
+/**
+ * Adds a css class to the given node/edge.
+ *
+ * @param {Object} nodeOrEdge node or edge
+ * @param {string} className css class that should be added to the node/edge
+ */
 function classListAdd(nodeOrEdge, className) {
     nodeOrEdge.class = nodeOrEdge.class ?
         nodeOrEdge.class + " " + className :
         className;
 }
 
+/**
+ * Adds a css class to the given node/edge.
+ *
+ * @param {Object} nodeOrEdge node or edge
+ * @param {string} className css class that the node/edge might already have
+ * @return {boolean} whether the given node/edge already has the given class in
+ * its class list
+ */
 function classListHas(nodeOrEdge, className) {
     return nodeOrEdge.class.split(" ").includes(className);
 }
 
+/**
+ * @param {string} route route of learningnet/net/ for AJAX requests
+ * @return {string} full stud ip url with the given route and the current
+ * params (i.e. course id)
+ */
 export function ajaxURL(route) {
     return window.STUDIP.ABSOLUTE_URI_STUDIP + 'plugins.php/learningnet/net/' +
         route + window.location.search;
 }
 
+/**
+ * Uses AJAX to get the LGF representation of the current learning net and
+ * passes this representation to a given callback function.
+ *
+ * @param {function(string) : void} func function which is supplied with the LGF
+ * representation of the current learning net
+ * @param {boolean} getUserData whether the graph data should contain
+ * information specific to the current user such as completed and active nodes,
+ * a recommended learning path etc.
+ */
 export function withGraphData(func, getUserData = false) {
     $.ajax({
         url: ajaxURL(NETWORK_ROUTE),
@@ -84,6 +123,20 @@ export function withGraphData(func, getUserData = false) {
     });
 }
 
+/**
+ * Uses AJAX to get the information needed to add labels to the nodes and edges
+ * of the current learning net.
+ *
+ * @param {Array} conditionBranchesByID mapping from condition ids to condition
+ * values
+ * @param {function(Object) : void} func function which is supplied with the
+ * label information, i.e. an object with the entries
+ *  'section_titles': mapping from section ids to section titles
+ *  'test_titles': mapping from test ids to test titles
+ *  'condition_titles': mapping from condition ids to condition titles
+ *  'condition_branches': mapping of condition ids to (mappings of condition
+ *  values to condition value titles)
+ */
 export function withLabels(conditionBranchesByID, func) {
     $.ajax({
         url: ajaxURL(LABELS_ROUTE),
@@ -93,6 +146,9 @@ export function withLabels(conditionBranchesByID, func) {
     });
 }
 
+/**
+ * Initializes the learning net svg, adds zoom capability.
+ */
 export function setupNetwork() {
     // Set up an SVG group so that we can translate the final graph.
     let svg = d3.select("svg");
@@ -105,6 +161,13 @@ export function setupNetwork() {
     svg.call(zoom);
 }
 
+/**
+ * Draws the given learning net as an svg,
+ *
+ * setupNetwork() must be called beforehand!
+ *
+ * @param {string} data LGF representation of a learning net
+ */
 export function drawNetwork(data) {
     let g = lgf.read(data);
     if (g === null) {

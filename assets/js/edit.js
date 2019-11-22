@@ -3,7 +3,10 @@ import * as network from 'JS/network.js';
 
 let oldInputGraphValue = "";
 
-// Draw network again if #inputGraph changes.
+/**
+ * Draws the network given by the text field with the id 'inputGraph' if the
+ * content of that text field has changed.
+ */
 function tryDraw() {
     let inputGraph = document.querySelector("#inputGraph");
     if (oldInputGraphValue !== inputGraph.value) {

@@ -1,5 +1,13 @@
 import graphlib from 'graphlib';
 
+/**
+ * Assigns column values to the given elem.
+ *
+ * @param {Object} elem node or edge
+ * @param {string[]} columns column values
+ * @param {string[]} headers column headers of the currently processed columns
+ * @return {boolean} whether the assignment succeeded
+ */
 function assign(elem, columns, headers) {
     if (columns.length !== headers.length) {
         console.log(`read(lgfInput): Column has length ${columns.length} ` +
@@ -15,6 +23,12 @@ function assign(elem, columns, headers) {
     return true;
 }
 
+/**
+ * Splits a row at spaces, respecting double-quoted strings.
+ *
+ * @param {string} row row to split
+ * @return {string[]} column values of the given row
+ */
 function parseRow(row) {
     // Split at white space unless you're in a quoted string.
     let columns = row.match(/"(?:\\."|[^"])*"|[^\s]+/g);
@@ -27,6 +41,14 @@ function parseRow(row) {
     return columns;
 }
 
+
+/**
+ * Parses a learning net given in LGF representation and creates the
+ * corresponding graph.
+ *
+ * @param {string} lgfInput LGF representation of a learning net
+ * @return {graphlib.Graph} graph corresponding to the given LGF input
+ */
 export function read(lgfInput) {
     // Initialize directed simple graph.
     let g = new graphlib.Graph({
