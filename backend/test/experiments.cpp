@@ -36,7 +36,6 @@ int getMilliSeconds(
 	return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 }
 
-#if 0
 void getCosts(LearningNet &net, NodeCosts &costs) {
 	std::uniform_real_distribution<double> unif(0, 100);
 	std::default_random_engine rand;
@@ -60,7 +59,6 @@ void getCosts(LearningNet &net, NodePairCosts &costs) {
 		}
 	}
 }
-
 
 template<typename Costs>
 void prepareNet(LearningNet &net,
@@ -87,22 +85,6 @@ void prepareNet(LearningNet &net,
 	getCosts(net, costs);
 }
 
-template<typename Costs>
-void prepareNet(LearningNet &net,
-	ConditionMap &conditionVals,
-	TestMap &testGrades,
-	CostType &x)
-{
-	NodeCosts costs;
-	prepareNet(net, conditionVals, testGrades, costs);
-}
-
-{
-	NodePairCosts costs;
-	prepareNet(net, conditionVals, testGrades, costs);
-}
-#endif
-
 
 /** Specialized test functions **/
 void checkTest(std::ofstream &out, LearningNet &net, bool useCompression) {
@@ -112,7 +94,6 @@ void checkTest(std::ofstream &out, LearningNet &net, bool useCompression) {
 }
 
 
-#if 0
 template<typename Costs>
 void recTest(std::ofstream &out,
 	LearningNet &net,
@@ -137,7 +118,6 @@ void recTest(std::ofstream &out,
 		std::cout << "OH NO! Unknown recType given." << std::endl;
 	}
 }
-#endif
 
 
 /** General test function **/
@@ -188,14 +168,6 @@ void testFile(const std::filesystem::path &filePath,
 	}
 }
 
-/* void for_each_file(const std::string &subdir, */
-/* 		const std::string &algName, */
-/* 		const PrepareFunc &prepareFunc, */
-/* 		const DoFunc &func) */
-/* { */
-
-/* } */
-
 void for_each_file(const std::string &subdir,
 		const std::string &algName,
 		const std::function<void(std::ofstream &out, LearningNet&)> &func)
@@ -214,49 +186,6 @@ void for_file(const std::string &subdir, const std::string &filename,
 
 #endif
 
-#if 0
-TEST_CASE("Recommender","[rec]") {
-	// dimension costFunction: node / nodepair
-	// dimension recType: active / next / path
-	// Creates files of the form:
-	// Recommender-costFunction-recType_instance-numberconditions-numbertests
-
-	std::map<CostType, std::string> costToString = {
-		{CostType::node, "node"},
-		{CostType::nodepair, "nodepair"}
-	};
-
-	std::map<RecType, std::string> recToString = {
-		{RecType::active, "active"},
-		{RecType::next, "next"},
-		{RecType::path, "path"}
-	};
-
-
-	for (CostType costType : {CostType::node, CostType::nodepair}) {
-		std::string costStr = costToString[costType];
-		SECTION(costStr) {
-
-			for (RecType recType : {RecType::active, RecType::next, RecType::path}) {
-				std::string recTypeStr = recToString[recType];
-				SECTION(recTypeStr) {
-
-					std::string algName = "Recommender-" + costStr + "-" + recTypeStr;
-					for_each_file("instances", algName, [&](std::ofstream &out, LearningNet &net) {
-						ConditionMap conditionVals;
-						TestMap testGrades;
-						Costs costs;
-						prepareNet(net, conditionVals, testGrades, costs);
-						recTest(out, net, conditionVals, testGrades, costs, recType);
-					});
-
-				}
-			}
-
-		}
-	}
-}
-#endif
 
 TEST_CASE("NetworkChecker","[check]") {
 	// Creates files of the form:
@@ -273,4 +202,45 @@ TEST_CASE("NetworkChecker","[check]") {
 			});
 		}
 	}
+}
+
+template<typename Costs>
+void recTest(const std::string &costStr, Costs &costs)
+{
+	const std::map<RecType, std::string> recToString = {
+		{RecType::active, "active"},
+		{RecType::next, "next"},
+		{RecType::path, "path"}
+	};
+
+	SECTION(costStr) {
+		for (RecType recType : {RecType::active, RecType::next, RecType::path}) {
+			std::string recTypeStr = recToString.at(recType);
+			SECTION(recTypeStr) {
+
+				std::string algName = "Recommender-" + costStr + "-" + recTypeStr;
+				for_each_file("instances", algName, [&](std::ofstream &out, LearningNet &net) {
+					ConditionMap conditionVals;
+					TestMap testGrades;
+					Costs costs;
+					prepareNet(net, conditionVals, testGrades, costs);
+					recTest(out, net, conditionVals, testGrades, costs, recType);
+				});
+
+			}
+		}
+	}
+}
+
+TEST_CASE("Recommender","[rec]") {
+	// dimension costFunction: node / nodepair
+	// dimension recType: active / next / path
+	// Creates files of the form:
+	// Recommender-costFunction-recType_instance-numberconditions-numbertests
+
+	NodeCosts ncosts;
+	recTest("node", ncosts);
+
+	NodePairCosts npcosts;
+	recTest("nodepair", npcosts);
 }
