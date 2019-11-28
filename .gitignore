@@ -13,3 +13,6 @@ deps
 
 # doxygen documentation
 html
+
+# experimental results
+output

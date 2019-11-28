@@ -106,6 +106,7 @@ IF(LN_TESTS)
     LIST(APPEND APP_SOURCES "check_test.cpp")
     LIST(APPEND APP_SOURCES "compress_test.cpp")
     LIST(APPEND APP_SOURCES "recommend_test.cpp")
+    LIST(APPEND APP_SOURCES "experiments.cpp")
 
     # Put tests binaries into separate test dir.
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "test")
