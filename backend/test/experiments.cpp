@@ -13,8 +13,11 @@ using namespace learningnet;
 const std::string resourcePath = "../test/resources/";
 const std::string outputPath = "../test/output/";
 
-/* using PrepareFunc = std::function<void(LearningNet&, ConditionMap &conditionVals, TestMap &testGrades, CostType &costs)>; */
-/* using DoFunc = std::function<void(LearningNet&, const ConditionMap &conditionVals, const TestMap &testGrades, const CostType &costs)>; */
+using DoFunc = std::function<
+	std::chrono::time_point<std::chrono::system_clock>(
+		std::ofstream &out, LearningNet&
+	)
+>;
 
 enum class RecType {
 	active,
@@ -121,10 +124,9 @@ void recTest(std::ofstream &out,
 
 
 /** General test function **/
-/* template<typename Costs> */
 void testFile(const std::filesystem::path &filePath,
 		const std::string &algName,
-		const std::function<void(std::ofstream &out, LearningNet&)> &func)
+		const DoFunc &func)
 {
 	SECTION(filePath) {
 		std::string instanceName = filePath.filename();
@@ -133,7 +135,7 @@ void testFile(const std::filesystem::path &filePath,
 
 		// Measure time.
 		std::chrono::time_point<std::chrono::system_clock>
-			start, afterFileRead, afterNetBuilt, end;
+			start, afterFileRead, afterNetBuilt, afterPrepare, end;
 		start = std::chrono::system_clock::now();
 
 		// Read file.
@@ -147,22 +149,21 @@ void testFile(const std::filesystem::path &filePath,
 		LearningNet net{netss.str()};
 		afterNetBuilt = std::chrono::system_clock::now();
 
-		// Prepare condition/test values and costs for learning net.
-		/* prepareFunc(net, conditionVals, testGrades, costs); */
-
 		// Execute function.
-		// TODO time includes preparation of cost values and conditions/test
-		// values for Recommender
-		func(out, net);
+		// Preparation of condition/test values and costs for learning net is
+		// done by this function until the returned time point.
+		afterPrepare = func(out, net);
 		end = std::chrono::system_clock::now();
 
 		// Write times.
 		int readMs = getMilliSeconds(start, afterFileRead);
 		int buildMs = getMilliSeconds(afterFileRead, afterNetBuilt);
-		int doMs = getMilliSeconds(afterNetBuilt, end);
+		int prepareMs = getMilliSeconds(afterNetBuilt, afterPrepare);
+		int doMs = getMilliSeconds(afterPrepare, end);
 		int totalMs = getMilliSeconds(start, end);
 		out << "read time (ms)," << readMs << std::endl;
 		out << "build time (ms)," << buildMs << std::endl;
+		out << "prepare time (ms)," << prepareMs << std::endl;
 		out << "do time (ms)," << doMs << std::endl;
 		out << "total time (ms)," << totalMs << std::endl;
 	}
@@ -170,22 +171,12 @@ void testFile(const std::filesystem::path &filePath,
 
 void for_each_file(const std::string &subdir,
 		const std::string &algName,
-		const std::function<void(std::ofstream &out, LearningNet&)> &func)
+		const DoFunc &func)
 {
 	for (const auto &entry : std::filesystem::directory_iterator(resourcePath + subdir)) {
 		testFile(entry.path(), algName, func);
 	}
 }
-
-#if 0
-void for_file(const std::string &subdir, const std::string &filename,
-		const std::function<void(LearningNet&)> &func)
-{
-	testFile(resourcePath + subdir + "/" + filename + ".lgf", func);
-}
-
-#endif
-
 
 TEST_CASE("NetworkChecker","[check]") {
 	// Creates files of the form:
@@ -198,7 +189,9 @@ TEST_CASE("NetworkChecker","[check]") {
 
 		SECTION(compressionStr) {
 			for_each_file("instances", algName, [&](std::ofstream &out, LearningNet &net) {
+				auto afterPrepare = std::chrono::system_clock::now();
 				checkTest(out, net, useCompression);
+				return afterPrepare;
 			});
 		}
 	}
@@ -224,7 +217,9 @@ void recTest(const std::string &costStr, Costs &costs)
 					TestMap testGrades;
 					Costs costs;
 					prepareNet(net, conditionVals, testGrades, costs);
+					auto afterPrepare = std::chrono::system_clock::now();
 					recTest(out, net, conditionVals, testGrades, costs, recType);
+					return afterPrepare;
 				});
 
 			}
