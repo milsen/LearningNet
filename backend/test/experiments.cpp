@@ -88,12 +88,82 @@ void prepareNet(LearningNet &net,
 	getCosts(net, costs);
 }
 
+int getConditionBranches(const LearningNet &net)
+{
+	std::map<int, std::vector<std::string>> conditionIdToBranches;
+	for (auto v : net.nodes()) {
+		if (net.isCondition(v)) {
+			int conditionId = net.getConditionId(v);
+
+			for (auto out : net.outArcs(v)) {
+				if (conditionIdToBranches.find(conditionId) ==
+					conditionIdToBranches.end()) {
+					std::vector<std::string> branches;
+					conditionIdToBranches[conditionId] = branches;
+				}
+				conditionIdToBranches[conditionId].push_back(
+					net.getConditionBranch(out)
+				);
+			}
+		}
+	}
+
+	// Make collected condition branches unique.
+	for (auto idToBranches : conditionIdToBranches) {
+		std::vector<std::string> branches = std::get<1>(idToBranches);
+		auto last = std::unique(branches.begin(), branches.end());
+		branches.erase(last, branches.end());
+		conditionIdToBranches[std::get<0>(idToBranches)] = branches;
+	}
+
+	int result = 1;
+	for (auto idToBranches : conditionIdToBranches) {
+		result *= conditionIdToBranches[std::get<0>(idToBranches)].size();
+	}
+
+	return result;
+}
+
+void instanceTests(std::ofstream &out, const LearningNet &net) {
+	int unitCount = 0;
+	int joinCount = 0;
+	int splitCount = 0;
+	int conditionCount = 0;
+	int testCount = 0;
+
+	for (auto v : net.nodes()) {
+		if (net.isUnit(v)) {
+			unitCount++;
+		} else if (net.isJoin(v)) {
+			joinCount++;
+		} else if (net.isSplit(v)) {
+			splitCount++;
+		} else if (net.isCondition(v)) {
+			conditionCount++;
+		} else if (net.isTest(v)) {
+			testCount++;
+		}
+	}
+
+	out << "n," << countNodes(net) << "\n";
+	out << "m," << countArcs(net) << "\n";
+	out << "n_unit," << unitCount << "\n";
+	out << "n_join," << joinCount << "\n";
+	out << "n_split," << splitCount << "\n";
+	out << "n_condition," << conditionCount << "\n";
+	out << "n_test," << testCount << "\n";
+	out << "condition combinations," << getConditionBranches(net) << std::endl;
+}
+
+
 
 /** Specialized test functions **/
 void checkTest(std::ofstream &out, LearningNet &net, bool useCompression) {
 	NetworkChecker checker(net, useCompression);
 	out << "result," << checker.succeeded() << "\n";
-	// TODO more output during compression, amount of learning path searches etc.?
+	std::string error = checker.getError();
+	std::replace(error.begin(), error.end(), '\n', '_');
+	out << "error, " << error << "\n";
 }
 
 
@@ -109,17 +179,19 @@ void recTest(std::ofstream &out,
 
 	if (recType == RecType::active) {
 		std::vector<lemon::ListDigraph::Node> actives = rec.recActive();
-		// TODO output size of vector ?
 		out << "size," << actives.size() << "\n";
 	} else if (recType == RecType::next) {
-		std::vector<lemon::ListDigraph::Node>::const_iterator recommended = rec.recNext(costs);
-		// TODO output
+		/* std::vector<lemon::ListDigraph::Node>::const_iterator recommended = */ rec.recNext(costs);
 	} else if (recType == RecType::path) {
 		std::vector<lemon::ListDigraph::Node> learningPath = rec.recPath(costs);
-		// TODO output
+		out << "size," << learningPath.size() << "\n";
 	} else {
 		std::cout << "OH NO! Unknown recType given." << std::endl;
 	}
+	std::string error = rec.getError();
+	std::replace(error.begin(), error.end(), '\n', '_');
+	out << "error, " << error << "\n";
+	// TODO more output during path computation?
 }
 
 
@@ -189,6 +261,7 @@ TEST_CASE("NetworkChecker","[check]") {
 
 		SECTION(compressionStr) {
 			for_each_file("instances", algName, [&](std::ofstream &out, LearningNet &net) {
+				instanceTests(out, net);
 				auto afterPrepare = std::chrono::system_clock::now();
 				checkTest(out, net, useCompression);
 				return afterPrepare;
@@ -217,8 +290,16 @@ void recTest(const std::string &costStr, Costs &costs)
 					TestMap testGrades;
 					Costs costs;
 					prepareNet(net, conditionVals, testGrades, costs);
+
+					instanceTests(out, net);
+
+					NetworkChecker checker{net};
+					bool valid = checker.succeeded();
+					out << "valid," << valid << std::endl;
 					auto afterPrepare = std::chrono::system_clock::now();
-					recTest(out, net, conditionVals, testGrades, costs, recType);
+					if (valid) {
+						recTest(out, net, conditionVals, testGrades, costs, recType);
+					}
 					return afterPrepare;
 				});
 
