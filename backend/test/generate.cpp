@@ -15,7 +15,7 @@ const std::string instancePath = "../test/resources/instances/";
 static double pUnitNode = 0.7;
 static double pJoin = 0.15; // has no influence, completely depends on DAG
 static double pSplit = 0.08;
-static double pCondition = 0.01;
+static double pCondition = 0.02;
 static double pTest = 0.06;
 static double pConnective = pJoin + pSplit + pCondition + pTest;
 
@@ -30,8 +30,8 @@ enum class SplitTypes : int {
 	AllSplitLikes = 7, // do not test!
 };
 
-static int mediumVal = 8;
-static int rareVal = 8;
+static int mediumVal = 12;
+static int rareVal = 5;
 
 /**
  * Creates a random directed acyclic graph.
