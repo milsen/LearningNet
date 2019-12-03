@@ -329,13 +329,17 @@ private:
 				if (out != lemon::INVALID) {
 					lemon::ListDigraph::Node succ = m_net.target(out);
 					m_indeg[succ]--;
-					if (m_net.isTarget(succ)) {
-						m_targetReached = TargetReachability::Yes;
-					} else {
-						xassert(m_indeg[w] == 0,
-							"doubleContract(): new succ should have indegree 0"
-						);
-						m_sources.push_back(succ);
+					if (m_net.isJoin(succ)) {
+						m_net.setNecessaryInArcs(succ,
+							m_net.getNecessaryInArcs(succ) - 1);
+					}
+
+					if (m_indeg[succ] == 0) {
+						if (m_net.isTarget(succ)) {
+							m_targetReached = TargetReachability::Yes;
+						} else {
+							m_sources.push_back(succ);
+						}
 					}
 				}
 				m_net.erase(v);
@@ -345,6 +349,7 @@ private:
 			// Return dummy value: m_succs is empty, so the main loop continues.
 			return lemon::INVALID;
 		} else { // m_indeg[v] == 1
+			xassert(m_indeg[v] == 1, "doubleContract(): m_indeg[v] > 1");
 			// Backtrack with compression, contract v into its predecessor.
 			lemon::ListDigraph::OutArcIt out(m_net, w);
 			lemon::ListDigraph::InArcIt in(m_net, v);
