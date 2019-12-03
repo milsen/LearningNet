@@ -47,7 +47,7 @@ To build the backend, both cmake and make have to be installed (doxygen for docu
 The backend has two external dependencies which are expected to in the directory
 `./backend/deps/`:
 
-* [LEMON](https://lemon.cs.elte.hu/trac/lemon/wiki/Downloads) for graph algorithms
+* [LEMON](http://lemon.cs.elte.hu/hg/lemon-main) for graph algorithms
 * [RapidJSON](https://github.com/Tencent/rapidjson/) for JSON parsing
 
 After downloading and extracting these dependencies to `./backend/deps/lemon`
