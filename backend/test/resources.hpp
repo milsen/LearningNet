@@ -2,7 +2,7 @@
 
 #include <catch.hpp>
 #include <learningnet/LearningNet.hpp>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <iostream>
 #include <fstream>
 
@@ -33,7 +33,7 @@ void for_each_file(const std::string &subdir,
 		const std::function<void(LearningNet&)> &func,
 		bool faultyNetwork = false)
 {
-	for (const auto &entry : std::filesystem::directory_iterator(resourcePath + subdir)) {
+	for (const auto &entry : std::experimental::filesystem::directory_iterator(resourcePath + subdir)) {
 		testFile(entry.path(), func, faultyNetwork);
 	}
 }

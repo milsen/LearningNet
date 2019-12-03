@@ -2,7 +2,7 @@
 #include <learningnet/NetworkChecker.hpp>
 #include <learningnet/Recommender.hpp>
 #include <learningnet/LearningNet.hpp>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -196,7 +196,7 @@ void recTest(std::ofstream &out,
 
 
 /** General test function **/
-void testFile(const std::filesystem::path &filePath,
+void testFile(const std::experimental::filesystem::path &filePath,
 		const std::string &algName,
 		const DoFunc &func)
 {
@@ -245,7 +245,7 @@ void for_each_file(const std::string &subdir,
 		const std::string &algName,
 		const DoFunc &func)
 {
-	for (const auto &entry : std::filesystem::directory_iterator(resourcePath + subdir)) {
+	for (const auto &entry : std::experimental::filesystem::directory_iterator(resourcePath + subdir)) {
 		testFile(entry.path(), algName, func);
 	}
 }

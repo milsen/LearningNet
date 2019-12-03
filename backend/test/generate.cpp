@@ -3,7 +3,7 @@
 #include <sstream>
 #include <random>
 #include <algorithm>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <learningnet/LearningNet.hpp>
 
 using namespace learningnet;
@@ -251,7 +251,7 @@ TEST_CASE("Generate selfLN","[selfLN]") {
 
 TEST_CASE("Generate randomDag","[randomDag]") {
 	forAllSplitTypeConfigs([](SplitTypes splitTypes) {
-		for (const auto &entry : std::filesystem::directory_iterator(resourcePath + "random-dag-lgf")) {
+		for (const auto &entry : std::experimental::filesystem::directory_iterator(resourcePath + "random-dag-lgf")) {
 			std::ostringstream sstream;
 			sstream << instancePath << "randomDag" << "-"
 				<< entry.path().filename() << "-"

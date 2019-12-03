@@ -13,6 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Instructions for finding installed dependencies are in ./cmake
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+LINK_LIBRARIES(stdc++fs)
 
 
 ## LEMON
