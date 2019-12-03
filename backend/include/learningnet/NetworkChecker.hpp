@@ -4,6 +4,7 @@
 #include <learningnet/Module.hpp>
 #include <lemon/connectivity.h> // for dag
 #include <deque>
+#include <chrono>
 
 namespace learningnet {
 
@@ -20,6 +21,8 @@ private:
 
 	//! Whether the graph is compressed before searching learning paths.
 	bool m_useCompression;
+
+	std::chrono::time_point<std::chrono::system_clock> m_startTime;
 
 	/**
 	 * @tparam ArcItType InArcIt or OutArcIt
@@ -194,6 +197,13 @@ private:
 				id++;
 				currentId = std::get<0>(*id);
 				branchIndices[currentId]++;
+			}
+
+			auto now = std::chrono::system_clock::now();
+			int timeSoFar = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_startTime).count();
+			if (timeSoFar >= 600000) {
+				failWithError("Timeout of 10 min reached.");
+				return;
 			}
 		}
 	}
@@ -439,6 +449,7 @@ public:
 	NetworkChecker(LearningNet &net, bool useCompression = true)
 		: Module()
 		, m_useCompression{useCompression}
+		, m_startTime{std::chrono::system_clock::now()}
 	{
 		call(net);
 	}
