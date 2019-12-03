@@ -204,15 +204,15 @@ private:
 	 * error message.
 	 *
 	 * @param net the (supposed) learning net
-	 * @param conditionCount number of condition nodes in \p net
-	 * @param testCount number of test nodes in \p net
+	 * @param conditionsExist is assigned whether \p net has condition nodes
+	 * @param testsExist is assigned whether \p net has test nodes
 	 */
 	void basicChecks(const LearningNet &net,
-			int &conditionCount,
-			int &testCount)
+			bool &conditionsExist,
+			bool &testsExist)
 	{
-		conditionCount = 0;
-		testCount = 0;
+		conditionsExist = false;
+		testsExist = false;
 
 		std::map<int, bool> sectionExists;
 		for (auto v : net.nodes()) {
@@ -258,7 +258,7 @@ private:
 				}
 
 			} else if (net.isCondition(v)) {
-				conditionCount++;
+				conditionsExist = true;
 				if (!hasAtMostOneArc<lemon::ListDigraph::InArcIt>(net, v)) {
 					failWithError("Condition node has more than one in-arc.");
 				}
@@ -278,7 +278,7 @@ private:
 				}
 
 			} else if (net.isTest(v)) {
-				testCount++;
+				testsExist = true;
 				if (!hasAtMostOneArc<lemon::ListDigraph::InArcIt>(net, v)) {
 					failWithError("Test node has more than one in-arc.");
 				}
@@ -338,9 +338,9 @@ private:
 	 */
 	void call(LearningNet &net)
 	{
-		int conditionCount = 0;
-		int testCount = 0;
-		basicChecks(net, conditionCount, testCount);
+		bool conditionsExist = false;
+		bool testsExist = false;
+		basicChecks(net, conditionsExist, testsExist);
 
 		// If something went wrong already, return.
 		if (!succeeded()) {
@@ -351,7 +351,7 @@ private:
 			// Fail if the network is not acylic.
 			failWithError("Given network is not acyclic.");
 			return;
-		} else if (conditionCount == 0 && testCount == 0) {
+		} else if (!conditionsExist && !testsExist) {
 			// If there are no conditions/tests, the net is valid if acyclic.
 			return;
 		}
@@ -391,14 +391,34 @@ private:
 				failWithError(comp.getError());
 				return;
 			}
+
+			// Update whether conditions and tests exist.
+			conditionsExist = false;
+			testsExist = false;
+			for (auto v : net.nodes()) {
+				if (net.isCondition(v)) {
+					conditionsExist = true;
+				}
+				if (net.isTest(v)) {
+					testsExist = true;
+				}
+				if (conditionsExist && testsExist) {
+					break;
+				}
+			}
 		}
 
-		// If there are no conditions but tests, run learning path search once.
-		if (conditionCount == 0) {
-			if (!targetReachableByTopSort(net, {})) {
-				failWithError("The target cannot be reached when getting the "
-					"highest grade in every test.");
+		if (!conditionsExist) {
+			if (testsExist) {
+				// If there are no conditions but tests, run learning path
+				// search once.
+				if (!targetReachableByTopSort(net, {})) {
+					failWithError("The target cannot be reached when getting "
+						"the highest grade in every test.");
+				}
 			}
+			// If there are no conditions or tests after compression, the graph
+			// is a learning net. Return without failing.
 			return;
 		}
 
