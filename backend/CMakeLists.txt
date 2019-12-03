@@ -45,21 +45,21 @@ ENDIF()
 INCLUDE_DIRECTORIES(${LEMON_INCLUDE_DIRS})
 
 
-## RapidJSON
-# Search for RapidJSON under rapidjson and deps/rapidjson.
+## rapidjson
+# Search for rapidjson under rapidjson and deps/rapidjson.
 # If it is not there, search for an installed version.
 # If found, add it as a header-only library.
 FIND_PATH(RAPIDJSON_SOURCE_ROOT_DIR CMakeLists.txt
   PATHS ${CMAKE_SOURCE_DIR}/rapidjson ${CMAKE_SOURCE_DIR}/deps/rapidjson
   NO_DEFAULT_PATH
-  DOC "Location of RapidJSON source as a CMAKE subproject")
+  DOC "Location of rapidjson source as a CMAKE subproject")
 
 IF(EXISTS ${RAPIDJSON_SOURCE_ROOT_DIR})
   SET(RAPIDJSON_INCLUDE_DIRS
     ${RAPIDJSON_SOURCE_ROOT_DIR}/include
     ${CMAKE_BINARY_DIR}/deps/rapidjson/include
   )
-  SET(RAPIDJSON_LIBRARIES RapidJSON)
+  SET(RAPIDJSON_LIBRARIES rapidjson)
 
   FILE(GLOB RAPIDJSON_HEADERS ${RAPIDJSON_INCLUDE_DIRS}/rapidjson/*.h)
   ADD_LIBRARY(${RAPIDJSON_LIBRARIES} "${RAPIDJSON_HEADERS}")
