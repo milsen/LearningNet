@@ -160,6 +160,14 @@ void instanceTests(std::ofstream &out, const LearningNet &net) {
 /** Specialized test functions **/
 void checkTest(std::ofstream &out, LearningNet &net, bool useCompression) {
 	NetworkChecker checker(net, useCompression);
+
+	auto oldTime = checker.m_startTime;
+	for (auto p : checker.m_timePoints) {
+		auto newTime = std::get<1>(p);
+		int time = getMilliSeconds(oldTime, newTime);
+		out << std::get<0>(p) << " (ms)," << time << "\n";
+		oldTime = newTime;
+	}
 	out << "result," << checker.succeeded() << "\n";
 	std::string error = checker.getError();
 	std::replace(error.begin(), error.end(), '\n', '_');

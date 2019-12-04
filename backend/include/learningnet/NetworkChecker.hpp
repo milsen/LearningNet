@@ -17,12 +17,14 @@ using namespace lemon;
  */
 class NetworkChecker : public Module
 {
+public:
+	std::chrono::time_point<std::chrono::system_clock> m_startTime;
+	std::vector<std::pair<std::string, std::chrono::time_point<std::chrono::system_clock>>> m_timePoints;
+
 private:
 
 	//! Whether the graph is compressed before searching learning paths.
 	bool m_useCompression;
-
-	std::chrono::time_point<std::chrono::system_clock> m_startTime;
 
 	/**
 	 * @tparam ArcItType InArcIt or OutArcIt
@@ -356,6 +358,7 @@ private:
 		if (!succeeded()) {
 			return;
 		}
+		m_timePoints.push_back({"basic checks time", std::chrono::system_clock::now()});
 
 		if (!dag(net)) {
 			// Fail if the network is not acylic.
@@ -365,6 +368,7 @@ private:
 			// If there are no conditions/tests, the net is valid if acyclic.
 			return;
 		}
+		m_timePoints.push_back({"acyclicity check time", std::chrono::system_clock::now()});
 
 		// For test grades, set highest test grades to MAX_GRADE, others to 0.
 		// This later simplifies checking whether a test grade is the highest.
@@ -391,9 +395,11 @@ private:
 			}
 		}
 
+
 		// If compression should be used, compress the network.
 		if (m_useCompression) {
 			Compressor comp{net};
+			m_timePoints.push_back({"compression time", std::chrono::system_clock::now()});
 			if (comp.getResult() == TargetReachability::Yes) {
 				return;
 			}
@@ -418,6 +424,7 @@ private:
 			}
 		}
 
+
 		if (!conditionsExist) {
 			if (testsExist) {
 				// If there are no conditions but tests, run learning path
@@ -436,6 +443,7 @@ private:
 		std::map<int, std::vector<std::string>> conditionBranches =
 			getConditionBranches(net);
 		pathsForAllConditions(net, conditionBranches);
+		m_timePoints.push_back({"path check time", std::chrono::system_clock::now()});
 	}
 
 public:
@@ -448,10 +456,11 @@ public:
 	 */
 	NetworkChecker(LearningNet &net, bool useCompression = true)
 		: Module()
-		, m_useCompression{useCompression}
 		, m_startTime{std::chrono::system_clock::now()}
+		, m_useCompression{useCompression}
 	{
 		call(net);
+		m_timePoints.push_back({"end time", std::chrono::system_clock::now()});
 	}
 };
 
