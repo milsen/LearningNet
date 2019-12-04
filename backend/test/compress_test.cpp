@@ -30,7 +30,7 @@ TEST_CASE("Compressor","[compressor]") {
 		});
 
 		for_file("valid", "no_condition", [](LearningNet &net) {
-			compressNet(net, 1, 0, TargetReachability::Yes);
+			compressNet(net, 6, 3, TargetReachability::Yes);
 		});
 
 		for_file("valid", "condition", [](LearningNet &net) {

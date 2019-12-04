@@ -230,12 +230,18 @@ private:
 
 					// Reduce necessary in-arcs for joins.
 					if (m_net.isJoin(w)) {
-						m_net.setNecessaryInArcs(w,
-							std::max(m_net.getNecessaryInArcs(w) - 1, 0)
-						);
-					}
+						int oldInArcs = m_net.getNecessaryInArcs(w);
+						if (oldInArcs > 0) {
+							m_net.setNecessaryInArcs(w, oldInArcs - 1);
+							if (oldInArcs == 1) {
+								initialSources.push_back(w);
+							}
+						}
 
-					if (m_indeg[w] == 0) {
+					} else {
+						xassert(m_indeg[w] == 0,
+							"preprocess(): m_indeg[w] > 0 for non-joins after "
+							"decreasing their indegree.");
 						initialSources.push_back(w);
 					}
 				}
