@@ -74,7 +74,7 @@ void prepareNet(LearningNet &net,
 			lemon::ListDigraph::OutArcIt a(net, v);
 			std::vector<std::string> branches = {net.getConditionBranch(a)};
 			unsigned int conditionId = net.getConditionId(v);
-			if (conditionId > conditionVals.size()) {
+			if (conditionId >= conditionVals.size()) {
 				conditionVals.resize(conditionId + 1);
 			}
 			conditionVals[conditionId] = branches;
