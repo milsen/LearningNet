@@ -294,18 +294,23 @@ void recTest(const std::string &costStr, Costs &costs)
 
 				std::string algName = "Recommender-" + costStr + "-" + recTypeStr;
 				for_each_file("instances", algName, [&](std::ofstream &out, LearningNet &net) {
-					ConditionMap conditionVals;
-					TestMap testGrades;
-					Costs costs;
-					prepareNet(net, conditionVals, testGrades, costs);
-
-					instanceTests(out, net);
-
-					NetworkChecker checker{net};
+					std::ostringstream oss;
+					net.write(oss);
+					LearningNet netCopy{oss.str()};
+					NetworkChecker checker{netCopy};
 					bool valid = checker.succeeded();
 					out << "valid," << valid << std::endl;
+
 					auto afterPrepare = std::chrono::system_clock::now();
 					if (valid) {
+						ConditionMap conditionVals;
+						TestMap testGrades;
+						Costs costs;
+						prepareNet(net, conditionVals, testGrades, costs);
+
+						instanceTests(out, net);
+
+						afterPrepare = std::chrono::system_clock::now();
 						recTest(out, net, conditionVals, testGrades, costs, recType);
 					}
 					return afterPrepare;
