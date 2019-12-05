@@ -264,11 +264,11 @@ private:
 			m_succs.push_back(m_net.target(out));
 		}
 
-		// The target property can be transfered from v to w if
-		// w is v's only successor, v is a split or v is a test with the highest
-		// grade leading to w.
+		// The target property can be transfered from v to w if v is a
+		// unit/split/join node or v is a condition node with only one successor
+		// or v is a test with the highest grade leading to w.
 		lemon::ListDigraph::InArcIt in(m_net, w);
-		bool targetTransferable = hasOnlyOneSucc(v, w)
+		bool targetTransferable = (hasOnlyOneSucc(v, w) && !m_net.isTest(v))
 			|| m_net.isSplit(v)
 			|| (m_net.isTest(v) && m_net.getConditionBranch(in) == MAX_GRADE);
 
