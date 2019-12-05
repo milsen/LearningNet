@@ -245,7 +245,36 @@ private:
 						initialSources.push_back(w);
 					}
 				}
-				m_net.erase(v);
+
+				// Erase v unless v is a join with a condition predecessor.
+				// In the latter case only erase its out-arc and in-arcs from
+				// non-condition predecessors. This way, the branches of the
+				// condition predecessor stay intact.
+				if (m_net.isJoin(v)) {
+					bool hasConditionPred{false};
+					lemon::ListDigraph::InArcIt next(m_net, v);
+					for (lemon::ListDigraph::InArcIt in(m_net, v);
+						in != lemon::INVALID; in = next) {
+						next = in;
+						++next;
+						if (!m_net.isCondition(m_net.source(in))) {
+							m_net.erase(in);
+						} else {
+							hasConditionPred = true;
+						}
+					}
+					if (hasConditionPred) {
+						// This is at most one out-arc.
+						for (auto out : m_net.outArcs(v)) {
+							m_net.erase(out);
+						}
+						m_net.setNecessaryInArcs(v, 1);
+					} else {
+						m_net.erase(v);
+					}
+				} else {
+					m_net.erase(v);
+				}
 			}
 		}
 
