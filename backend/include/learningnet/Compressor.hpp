@@ -78,6 +78,22 @@ private:
 	}
 
 	/**
+	 * @pre \p v must be a test node
+	 * @param v node whose out-arcs with MAX_GRADE should be counted
+	 * @return number of \p v's out-arcs with MAX_GRADE
+	 */
+	int numberOfOutArcsWithMaxGrade(const lemon::ListDigraph::Node &v) const
+	{
+		int count = 0;
+		for (auto out : m_net.outArcs(v)) {
+			if (m_net.getConditionBranch(out) == MAX_GRADE) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	/**
 	 * @param v node with predecessor \p pred
 	 * @param pred predecessor of \p v
 	 * @return whether the only predecessor of \p v is \p pred
@@ -138,6 +154,37 @@ private:
 		} else {
 			m[v]++;
 		}
+	}
+
+	/**
+	 * Returns whether \p v and \p w can be double-contracted.
+	 *
+	 * A double contraction is allowed if
+	 * - \p v is the only predecessor of \p w, and
+	 * - \p w is the only successor of \p v, and
+	 * - \p v is either a split, or
+	 *   * \p v is a condition and \p w has only one necessary in-arc, or
+	 *   * \p v is a test and \p w has a number of necessary in-arcs <= number
+	 *     of out-arcs of \p v with the highest grade.
+	 *
+	 * @param v node with successor \p w
+	 * @param w successor of \p v
+	 * @return whether a double contraction of \p v and \p w is allowed
+	 */
+	bool doubleContractPossible(const lemon::ListDigraph::Node &v,
+			const lemon::ListDigraph::Node &w) const
+	{
+		// Split-likes with join-successors whose in-arcs all come from the
+		// respective split-like can be deleted.
+		// If v is not a split, this can only be done if the join w is unlocked
+		// by one condition branch/all test branches with the highest grade.
+		return hasOnlyOneSucc(v, w)
+			&& hasOnlyOnePred(w, v)
+			&& (m_net.isSplit(v)
+			|| (m_net.isCondition(v) && 1 >= m_net.getNecessaryInArcs(w))
+			|| (m_net.isTest(v) &&
+			numberOfOutArcsWithMaxGrade(v) >= m_net.getNecessaryInArcs(w))
+		);
 	}
 
 	/**
@@ -405,12 +452,10 @@ private:
 					m_sources.push_back(w);
 				}
 			} else if (m_net.isSplitLike(v)) {
+				// Check contraction of v->w only if w has been visited via all
+				// its in-arcs to avoid unnecessary checks.
 				if (m_visitedFromHowManyPreds[w] == m_indeg[w]) {
-					if (hasOnlyOneSucc(v, w) && hasOnlyOnePred(w, v)) {
-						// Split-likes with join-successors whose in-arcs all
-						// come from the respective split-like can be deleted.
-						// Only check this after all in-arcs were visited in order to
-						// prevent unnecessary checks increasing the runtime.
+					if (doubleContractPossible(v,w)) {
 						return doubleContract(v, w);
 					} else {
 						m_sources.push_back(w);
