@@ -447,7 +447,7 @@ private:
 					contract(v, w);
 				} else if (necArcsV == m_indeg[v] && necArcsW == m_indeg[w]) {
 					contract(v, w);
-					m_net.setNecessaryInArcs(v, m_indeg[v] + m_indeg[w] - 1);
+					m_net.setNecessaryInArcs(v, necArcsV + necArcsW - 1);
 				} else {
 					m_sources.push_back(w);
 				}
