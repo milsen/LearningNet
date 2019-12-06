@@ -157,6 +157,49 @@ private:
 	}
 
 	/**
+	 * Sets #m_error, #m_failed and #m_targetReached to inform that the
+	 * contraction of \p w into \p v is not possible.
+	 *
+	 * @pre \p w is a target node who is supposed to be contracted into the
+	 * condition or test node \p v but the transfer of the target property is
+	 * not possible
+	 *
+	 * @param v node with successor \p w
+	 * @param w successor of \p v
+	 */
+	void failContraction(const lemon::ListDigraph::Node &v,
+			const lemon::ListDigraph::Node &w)
+	{
+		// v is a condition node with more than w as a successor or
+		// a test node with a not-highest grade leading to w.
+		if (m_net.isCondition(v)) {
+			// If a target node is contracted into a condition node
+			// while the condition node has other successors, then
+			// branches to those successors cannot reach the target.
+			lemon::ListDigraph::InArcIt in(m_net, w);
+			std::string thisBranch = m_net.getConditionBranch(in);
+			std::string condId = std::to_string(m_net.getConditionId(v));
+
+			failWithError("No path to target for condition branches:");
+			for (auto out : m_net.outArcs(v)) {
+				std::string thatBranch = m_net.getConditionBranch(out);
+				if (thatBranch != thisBranch) {
+					appendError(condId + ": " + thatBranch);
+				}
+			}
+		}
+		if (m_net.isTest(v)) {
+			// If a target node is contracted into a test node over the
+			// edge for a lower grade, the branches for the highest
+			// grade cannot reach the target.
+			failWithError("No path to target for the highest grade of "
+				"the test " + std::to_string(m_net.getTestId(v)));
+		}
+
+		m_targetReached = TargetReachability::No;
+	}
+
+	/**
 	 * Returns whether \p v and \p w can be double-contracted.
 	 *
 	 * A double contraction is allowed if
@@ -185,6 +228,22 @@ private:
 			|| (m_net.isTest(v) &&
 			numberOfOutArcsWithMaxGrade(v) >= m_net.getNecessaryInArcs(w))
 		);
+	}
+
+	/**
+	 * @param v node with successor \p w
+	 * @param w successor of \p v
+	 * @param in single arc from \p v to \p w
+	 * @return whether the target property can be transfered from \p w to \p v
+	 * if \p w is deleted
+	 */
+	bool targetIsTransferable(const lemon::ListDigraph::Node &v,
+			const lemon::ListDigraph::Node &w,
+			const lemon::ListDigraph::InArcIt &in) const
+	{
+		return (hasOnlyOneSucc(v, w) && !m_net.isTest(v))
+			|| m_net.isSplit(v)
+			|| (m_net.isTest(v) && m_net.getConditionBranch(in) == MAX_GRADE);
 	}
 
 	/**
@@ -303,42 +362,14 @@ private:
 		// unit/split/join node or v is a condition node with only one successor
 		// or v is a test with the highest grade leading to w.
 		lemon::ListDigraph::InArcIt in(m_net, w);
-		bool targetTransferable = (hasOnlyOneSucc(v, w) && !m_net.isTest(v))
-			|| m_net.isSplit(v)
-			|| (m_net.isTest(v) && m_net.getConditionBranch(in) == MAX_GRADE);
+		bool targetTransferable = targetIsTransferable(v, w, in);
 
 		// Transfer target property from w to v if w is the target.
 		if (m_net.isTarget(w)) {
 			if (targetTransferable) {
 				m_net.setTarget(v);
 			} else {
-				// v is a condition node with more than w as a successor or
-				// a test node with a not-highest grade leading to w.
-				if (m_net.isCondition(v)) {
-					// If a target node is contracted into a condition node
-					// while the condition node has other successors, then
-					// branches to those successors cannot reach the target.
-					lemon::ListDigraph::InArcIt in(m_net, w);
-					std::string thisBranch = m_net.getConditionBranch(in);
-					std::string condId = std::to_string(m_net.getConditionId(v));
-
-					failWithError("No path to target for condition branches:");
-					for (auto out : m_net.outArcs(v)) {
-						std::string thatBranch = m_net.getConditionBranch(out);
-						if (thatBranch != thisBranch) {
-							appendError(condId + ": " + thatBranch);
-						}
-					}
-				}
-				if (m_net.isTest(v)) {
-					// If a target node is contracted into a test node over the
-					// edge for a lower grade, the branches for the highest
-					// grade cannot reach the target.
-					failWithError("No path to target for the highest grade of "
-						"the test " + std::to_string(m_net.getTestId(v)));
-				}
-
-				m_targetReached = TargetReachability::No;
+				failContraction(v, w);
 			}
 		}
 
@@ -436,16 +467,33 @@ private:
 			lemon::ListDigraph::OutArcIt out(m_net, w);
 			lemon::ListDigraph::InArcIt in(m_net, v);
 			lemon::ListDigraph::Node pred = m_net.source(in);
+
+			// Move target property where possible.
 			if (m_net.isTarget(v) || m_net.isTarget(w)) {
-				m_net.setTarget(pred);
+				if (targetIsTransferable(pred, v, in)) {
+					m_net.setTarget(pred);
+				} else {
+					failContraction(pred, v);
+				}
 			}
+
+			// Change target of v's incoming edge to w's successor.
 			if (out != lemon::INVALID) {
 				lemon::ListDigraph::Node succ = m_net.target(out);
 				m_net.changeTarget(in, succ);
 				m_succs.push_back(succ);
 			}
-			m_net.erase(v);
-			m_net.erase(w);
+
+			// Erase v and w.
+			// If one of them was the target but the target property could not
+			// be transfered, the learning net is invalid anyway. In this case,
+			// do not delete the target to prevent later errors.
+			if (!m_net.isTarget(v)) {
+				m_net.erase(v);
+			}
+			if (!m_net.isTarget(w)) {
+				m_net.erase(w);
+			}
 
 			return pred;
 		}
