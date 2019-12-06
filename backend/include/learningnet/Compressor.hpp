@@ -231,6 +231,28 @@ private:
 	}
 
 	/**
+	 * Returns whether \p w can be contracted into its predecessor because it
+	 * has no other incoming edge and is generally not significant for the
+	 * learning path checks.
+	 *
+	 * This is the case if \p w has an indegree of 1, an outdegree of at most 1
+	 * and -- if \p w is a test node with an outgoing edge -- the outgoing edge
+	 * does not have max grade. The latter case might occur if #preprocess()
+	 * removed an edge with max grade from the learning net because it led to a
+	 * join node which was deleted.
+	 *
+	 * @param w node to potentially be contracted into its predecessor
+	 * @return whether \p w can be contracted into its predecessor
+	 */
+	bool contractSingleEdgePossible(const lemon::ListDigraph::Node &w) const
+	{
+		return m_indeg[w] == 1
+		    && hasAtMostNOutArcs(w, 1)
+		    && (!m_net.isTest(w) ||
+		        numberOfOutArcsWithMaxGrade(w) == countOutArcs(m_net, w));
+	}
+
+	/**
 	 * @param v node with successor \p w
 	 * @param w successor of \p v
 	 * @param in single arc from \p v to \p w
@@ -512,13 +534,12 @@ private:
 			const lemon::ListDigraph::Node &w)
 	{
 		// Contract nodes depending on their type.
-		if ((m_indeg[w] == 1 && hasAtMostNOutArcs(w, 1)) ||
+		if ((contractSingleEdgePossible(w)) ||
 		    (m_net.isSplit(w) && m_net.isSplit(v))) {
 			// If w is a unit node, a join with only one in-arc or a split-like
 			// with at most one out-arc, just contract it into its predecessor
 			// v. Also combine adjacent splits.
 			contract(v, w);
-			// TODO v conditions and tests, w splits
 		} else if (m_net.isJoin(w)) {
 			nodeMapIncrement(m_visitedFromHowManyPreds, w);
 
