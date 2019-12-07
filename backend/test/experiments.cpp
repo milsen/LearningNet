@@ -124,7 +124,7 @@ int getConditionBranches(const LearningNet &net)
 	return result;
 }
 
-void instanceTests(std::ofstream &out, const LearningNet &net) {
+void instanceTests(std::ofstream &out, const LearningNet &net, const std::string &prefix = "") {
 	int unitCount = 0;
 	int joinCount = 0;
 	int splitCount = 0;
@@ -145,14 +145,14 @@ void instanceTests(std::ofstream &out, const LearningNet &net) {
 		}
 	}
 
-	out << "n," << countNodes(net) << "\n";
-	out << "m," << countArcs(net) << "\n";
-	out << "n_unit," << unitCount << "\n";
-	out << "n_join," << joinCount << "\n";
-	out << "n_split," << splitCount << "\n";
-	out << "n_condition," << conditionCount << "\n";
-	out << "n_test," << testCount << "\n";
-	out << "condition combinations," << getConditionBranches(net) << std::endl;
+	out << prefix << "n," << countNodes(net) << "\n";
+	out << prefix << "m," << countArcs(net) << "\n";
+	out << prefix << "n_unit," << unitCount << "\n";
+	out << prefix << "n_join," << joinCount << "\n";
+	out << prefix << "n_split," << splitCount << "\n";
+	out << prefix << "n_condition," << conditionCount << "\n";
+	out << prefix << "n_test," << testCount << "\n";
+	out << prefix << "condition combinations," << getConditionBranches(net) << std::endl;
 }
 
 
@@ -246,6 +246,7 @@ void testFile(const std::experimental::filesystem::path &filePath,
 		out << "prepare time (ms)," << prepareMs << std::endl;
 		out << "do time (ms)," << doMs << std::endl;
 		out << "total time (ms)," << totalMs << std::endl;
+		instanceTests(out, net, "end ");
 	}
 }
 
