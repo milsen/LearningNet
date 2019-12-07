@@ -227,7 +227,7 @@ void forAllSplitTypeConfigs(std::function<void(SplitTypes splitTypes)> func) {
 
 TEST_CASE("Generate selfLN","[selfLN]") {
 	forAllSplitTypeConfigs([](SplitTypes splitTypes) {
-		for (int n = 5; n <= 200; n++) {
+		for (int n = 5; n <= 300; n++) {
 			for (double p = 0.20; p < 0.81; p+=0.2) {
 				std::ostringstream sstream;
 				sstream << instancePath << "selfLN" << "-"
