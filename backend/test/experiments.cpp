@@ -11,6 +11,7 @@
 using namespace learningnet;
 
 const std::string resourcePath = "../test/resources/";
+const std::string instancePath = "../test/resources/instances/";
 const std::string outputPath = "../test/output/";
 
 using DoFunc = std::function<
@@ -254,33 +255,14 @@ void for_each_file(const std::string &subdir,
 		const std::string &algName,
 		const DoFunc &func)
 {
-	for (const auto &entry : std::experimental::filesystem::directory_iterator(resourcePath + subdir)) {
+	for (const auto &entry : std::experimental::filesystem::directory_iterator(instancePath + subdir)) {
 		testFile(entry.path(), algName, func);
 	}
 }
 
-TEST_CASE("NetworkChecker","[check]") {
-	// Creates files of the form:
-	// NetworkChecker-comp_instance
-	// NetworkChecker-nocomp_instance
-
-	for (bool useCompression : {false, true}) {
-		std::string compressionStr = useCompression ? "comp" : "nocomp";
-		std::string algName = "NetworkChecker-" + compressionStr;
-
-		SECTION(compressionStr) {
-			for_each_file("instances", algName, [&](std::ofstream &out, LearningNet &net) {
-				instanceTests(out, net);
-				auto afterPrepare = std::chrono::system_clock::now();
-				checkTest(out, net, useCompression);
-				return afterPrepare;
-			});
-		}
-	}
-}
 
 template<typename Costs>
-void recTest(const std::string &costStr, Costs &costs)
+void recTest(const std::string &costStr, Costs &costs, const std::string &instanceType)
 {
 	const std::map<RecType, std::string> recToString = {
 		{RecType::active, "active"},
@@ -294,7 +276,7 @@ void recTest(const std::string &costStr, Costs &costs)
 			SECTION(recTypeStr) {
 
 				std::string algName = "Recommender-" + costStr + "-" + recTypeStr;
-				for_each_file("instances", algName, [&](std::ofstream &out, LearningNet &net) {
+				for_each_file(instanceType, algName, [&](std::ofstream &out, LearningNet &net) {
 					std::ostringstream oss;
 					net.write(oss);
 					LearningNet netCopy{oss.str()};
@@ -322,15 +304,68 @@ void recTest(const std::string &costStr, Costs &costs)
 	}
 }
 
-TEST_CASE("Recommender","[rec]") {
+void recTest(const std::string &instanceType) {
 	// dimension costFunction: node / nodepair
 	// dimension recType: active / next / path
 	// Creates files of the form:
 	// Recommender-costFunction-recType_instance-numberconditions-numbertests
 
 	NodeCosts ncosts;
-	recTest("node", ncosts);
+	recTest("node", ncosts, instanceType);
 
 	NodePairCosts npcosts;
-	recTest("nodepair", npcosts);
+	recTest("nodepair", npcosts, instanceType);
+}
+
+void checkTest(const std::string &instanceType) {
+	// Creates files of the form:
+	// NetworkChecker-comp_instance
+	// NetworkChecker-nocomp_instance
+
+	for (bool useCompression : {false, true}) {
+		std::string compressionStr = useCompression ? "comp" : "nocomp";
+		std::string algName = "NetworkChecker-" + compressionStr;
+
+		SECTION(compressionStr) {
+			for_each_file(instanceType, algName, [&](std::ofstream &out, LearningNet &net) {
+				instanceTests(out, net);
+				auto afterPrepare = std::chrono::system_clock::now();
+				checkTest(out, net, useCompression);
+				return afterPrepare;
+			});
+		}
+	}
+}
+
+
+TEST_CASE("check selfLN", "[selfLN][check]") {
+	checkTest("selfLN");
+}
+
+TEST_CASE("rec selfLN", "[selfLN][rec]") {
+	recTest("selfLN");
+}
+
+TEST_CASE("check randomDag", "[randomDag][check]") {
+	checkTest("randomDag");
+}
+
+TEST_CASE("rec randomDag", "[randomDag][rec]") {
+	recTest("randomDag");
+}
+
+TEST_CASE("check north", "[north][check]") {
+	checkTest("north");
+}
+
+TEST_CASE("rec north", "[north][rec]") {
+	recTest("north");
+}
+
+TEST_CASE("check DAGmar", "[DAGmar][check]") {
+	checkTest("DAGmar");
+}
+
+TEST_CASE("rec DAGmar", "[DAGmar][rec]") {
+	recTest("DAGmar");
 }
