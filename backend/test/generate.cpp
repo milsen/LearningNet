@@ -3,6 +3,7 @@
 #include <sstream>
 #include <random>
 #include <algorithm>
+#include <lemon/connectivity.h>
 #include <experimental/filesystem>
 #include <learningnet/LearningNet.hpp>
 
@@ -10,6 +11,7 @@ using namespace learningnet;
 
 const std::string resourcePath = "../test/resources/";
 const std::string instancePath = "../test/resources/instances/";
+const std::string dagPath = "../test/resources/dag/";
 
 // probabilities of node types
 static double pUnitNode = 0.7;
@@ -249,11 +251,11 @@ TEST_CASE("Generate selfLN","[selfLN]") {
 	});
 }
 
-TEST_CASE("Generate randomDag","[randomDag]") {
-	forAllSplitTypeConfigs([](SplitTypes splitTypes) {
-		for (const auto &entry : std::experimental::filesystem::directory_iterator(resourcePath + "random-dag-lgf")) {
+void fromLgf(const std::string &name, bool dagGuaranteed = true) {
+	forAllSplitTypeConfigs([&](SplitTypes splitTypes) {
+		for (const auto &entry : std::experimental::filesystem::directory_iterator(dagPath + name + "-lgf")) {
 			std::ostringstream sstream;
-			sstream << instancePath << "randomDag" << "-"
+			sstream << instancePath << name << "-"
 				<< entry.path().filename() << "-"
 				<< static_cast<int>(splitTypes) //split types
 				<< ".lgf";
@@ -264,21 +266,35 @@ TEST_CASE("Generate randomDag","[randomDag]") {
 				lemon::ListDigraph g;
 				lemon::DigraphReader<lemon::ListDigraph>(g, entry.path()).run();
 
-				// Create net
-				LearningNet net;
-				lemon::ListDigraph::NodeMap<lemon::ListDigraph::Node> nodeMap{g};
-				for (auto v : g.nodes()) {
-					nodeMap[v] = net.addNode();
-				}
-				for (auto a : g.arcs()) {
-					net.addArc(nodeMap[g.source(a)], nodeMap[g.target(a)]);
-				}
-				learningNetFromDAG(net, splitTypes);
+				if (dagGuaranteed || dag(g)) {
+					// Create net
+					LearningNet net;
+					lemon::ListDigraph::NodeMap<lemon::ListDigraph::Node> nodeMap{g};
+					for (auto v : g.nodes()) {
+						nodeMap[v] = net.addNode();
+					}
+					for (auto a : g.arcs()) {
+						net.addArc(nodeMap[g.source(a)], nodeMap[g.target(a)]);
+					}
+					learningNetFromDAG(net, splitTypes);
 
-				// Write to file.
-				std::ofstream ofs{instanceFile};
-				net.write(ofs);
+					// Write to file.
+					std::ofstream ofs{instanceFile};
+					net.write(ofs);
+				}
 			}
 		}
 	});
+}
+
+TEST_CASE("Generate randomDag","[randomDag]") {
+	fromLgf("randomDag");
+}
+
+TEST_CASE("Generate DAGmar","[DAGmar]") {
+	fromLgf("DAGmar");
+}
+
+TEST_CASE("Generate north","[north]") {
+	fromLgf("north", false);
 }
