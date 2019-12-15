@@ -147,26 +147,44 @@ private:
 							}
 						}
 					} else if (m_net.isTest(v)) {
-						// Get the branch with the highest grade that is still
-						// below the actual grade of the user.
-						// If the user has no grade, assume that he will reach
-						// the best grade for this test.
+						// Get the branches with the highest grade that is still
+						// below the actual grade of the user (fittingBranches).
+						// Also the branches with the highest grade overall
+						// (highBranches).
 						auto gradeIt = m_testGrades.find(m_net.getTestId(v));
 						bool hasGrade = gradeIt != m_testGrades.end();
 						int grade = hasGrade ? std::get<1>(*gradeIt) : 0;
 
-						int maxBranchGrade = -1;
-						lemon::ListDigraph::OutArcIt correctBranch;
+						int maxGradeFitting = -1;
+						int maxGradeOverall = -1;
+						std::vector<lemon::ListDigraph::OutArcIt> fittingBranches;
+						std::vector<lemon::ListDigraph::OutArcIt> highBranches;
 						for (auto a : m_net.outArcs(v)) {
 							int branchGrade = stoi(m_net.getConditionBranch(a));
-							if ((!hasGrade || branchGrade <= grade) && branchGrade > maxBranchGrade) {
-								maxBranchGrade = branchGrade;
-								correctBranch = a;
+							if (hasGrade && grade >= branchGrade) {
+								if (branchGrade > maxGradeFitting) {
+									maxGradeFitting = branchGrade;
+									fittingBranches.clear();
+								}
+								fittingBranches.push_back(a);
+							}
+							if (branchGrade >= maxGradeOverall) {
+								if (branchGrade > maxGradeOverall) {
+									maxGradeOverall = branchGrade;
+									highBranches.clear();
+								}
+								highBranches.push_back(a);
 							}
 						}
 
-						if (maxBranchGrade > -1) {
-							exploreArc(correctBranch);
+						// Explore all collected branches (only once!).
+						for (auto a : fittingBranches) {
+							exploreArc(a);
+						}
+						if (maxGradeFitting != maxGradeOverall) {
+							for (auto a : highBranches) {
+								exploreArc(a);
+							}
 						}
 					} else {
 						// Else explore all out-edges (for completed units: only one).
