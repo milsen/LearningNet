@@ -21,11 +21,6 @@ function _ln($message)
  */
 class LearningNet extends StudIPPlugin implements StandardPlugin
 {
-    /**
-     * @var Container
-     */
-    private $container;
-
     public function __construct()
     {
         parent::__construct();
