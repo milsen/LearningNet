@@ -1,6 +1,7 @@
 #include <catch.hpp>
 #include <learningnet/NetworkChecker.hpp>
 #include <learningnet/Recommender.hpp>
+#include <learningnet/Compressor.hpp>
 #include <learningnet/LearningNet.hpp>
 #include <experimental/filesystem>
 #include <iostream>
@@ -89,7 +90,7 @@ void prepareNet(LearningNet &net,
 	getCosts(net, costs);
 }
 
-int getConditionBranches(const LearningNet &net)
+long long getConditionBranches(const LearningNet &net)
 {
 	std::map<int, std::vector<std::string>> conditionIdToBranches;
 	for (auto v : net.nodes()) {
@@ -117,7 +118,7 @@ int getConditionBranches(const LearningNet &net)
 		conditionIdToBranches[std::get<0>(idToBranches)] = branches;
 	}
 
-	int result = 1;
+	long long result = 1;
 	for (auto idToBranches : conditionIdToBranches) {
 		result *= conditionIdToBranches[std::get<0>(idToBranches)].size();
 	}
@@ -126,33 +127,6 @@ int getConditionBranches(const LearningNet &net)
 }
 
 void instanceTests(std::ofstream &out, const LearningNet &net, const std::string &prefix = "") {
-	int unitCount = 0;
-	int joinCount = 0;
-	int splitCount = 0;
-	int conditionCount = 0;
-	int testCount = 0;
-
-	for (auto v : net.nodes()) {
-		if (net.isUnit(v)) {
-			unitCount++;
-		} else if (net.isJoin(v)) {
-			joinCount++;
-		} else if (net.isSplit(v)) {
-			splitCount++;
-		} else if (net.isCondition(v)) {
-			conditionCount++;
-		} else if (net.isTest(v)) {
-			testCount++;
-		}
-	}
-
-	out << prefix << "n," << countNodes(net) << "\n";
-	out << prefix << "m," << countArcs(net) << "\n";
-	out << prefix << "n_unit," << unitCount << "\n";
-	out << prefix << "n_join," << joinCount << "\n";
-	out << prefix << "n_split," << splitCount << "\n";
-	out << prefix << "n_condition," << conditionCount << "\n";
-	out << prefix << "n_test," << testCount << "\n";
 	out << prefix << "condition combinations," << getConditionBranches(net) << std::endl;
 }
 
@@ -214,40 +188,19 @@ void testFile(const std::experimental::filesystem::path &filePath,
 		std::string outputFilename = outputPath + algName + "_" + instanceName + ".csv";
 		std::ofstream out(outputFilename);
 
-		// Measure time.
-		std::chrono::time_point<std::chrono::system_clock>
-			start, afterFileRead, afterNetBuilt, afterPrepare, end;
-		start = std::chrono::system_clock::now();
-
 		// Read file.
 		std::ifstream f(filePath);
 		CHECK(f);
 		std::ostringstream netss;
 		netss << f.rdbuf();
-		afterFileRead = std::chrono::system_clock::now();
 
 		// Build learning net.
 		LearningNet net{netss.str()};
-		afterNetBuilt = std::chrono::system_clock::now();
 
 		// Execute function.
 		// Preparation of condition/test values and costs for learning net is
 		// done by this function until the returned time point.
-		afterPrepare = func(out, net);
-		end = std::chrono::system_clock::now();
-
-		// Write times.
-		int readMs = getMilliSeconds(start, afterFileRead);
-		int buildMs = getMilliSeconds(afterFileRead, afterNetBuilt);
-		int prepareMs = getMilliSeconds(afterNetBuilt, afterPrepare);
-		int doMs = getMilliSeconds(afterPrepare, end);
-		int totalMs = getMilliSeconds(start, end);
-		out << "read time (ms)," << readMs << std::endl;
-		out << "build time (ms)," << buildMs << std::endl;
-		out << "prepare time (ms)," << prepareMs << std::endl;
-		out << "do time (ms)," << doMs << std::endl;
-		out << "total time (ms)," << totalMs << std::endl;
-		instanceTests(out, net, "end ");
+		func(out, net);
 	}
 }
 
@@ -322,7 +275,7 @@ void checkTest(const std::string &instanceType) {
 	// NetworkChecker-comp_instance
 	// NetworkChecker-nocomp_instance
 
-	for (bool useCompression : {false, true}) {
+	for (bool useCompression : {false}) {
 		std::string compressionStr = useCompression ? "comp" : "nocomp";
 		std::string algName = "NetworkChecker-" + compressionStr;
 
@@ -330,7 +283,8 @@ void checkTest(const std::string &instanceType) {
 			for_each_file(instanceType, algName, [&](std::ofstream &out, LearningNet &net) {
 				instanceTests(out, net);
 				auto afterPrepare = std::chrono::system_clock::now();
-				checkTest(out, net, useCompression);
+				Compressor comp{net};
+				instanceTests(out, net, "end ");
 				return afterPrepare;
 			});
 		}
