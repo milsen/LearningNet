@@ -327,24 +327,25 @@ private:
 					}
 				}
 
-				// Erase v unless v is a join with a condition predecessor.
+				// Erase v unless v is a join with a condition predecessor/test
+				// predecessor with non-highest grade.
 				// In the latter case only erase its out-arc and in-arcs from
-				// non-condition predecessors. This way, the branches of the
-				// condition predecessor stay intact.
+				// non-problematic predecessors. This way, the branches of the
+				// problematic predecessor stay intact.
 				if (m_net.isJoin(v)) {
-					bool hasConditionPred{false};
+					bool hasPredNonTransferable{false};
 					lemon::ListDigraph::InArcIt next(m_net, v);
 					for (lemon::ListDigraph::InArcIt in(m_net, v);
 						in != lemon::INVALID; in = next) {
 						next = in;
 						++next;
-						if (!m_net.isCondition(m_net.source(in))) {
+						if (!targetIsTransferable(m_net.source(in), v, in)) {
 							m_net.erase(in);
 						} else {
-							hasConditionPred = true;
+							hasPredNonTransferable = true;
 						}
 					}
-					if (hasConditionPred) {
+					if (hasPredNonTransferable) {
 						// This is at most one out-arc.
 						for (auto out : m_net.outArcs(v)) {
 							m_net.erase(out);
