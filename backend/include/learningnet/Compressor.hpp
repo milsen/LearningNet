@@ -237,9 +237,9 @@ private:
 	 *
 	 * This is the case if \p w has an indegree of 1, an outdegree of at most 1
 	 * and -- if \p w is a test node with an outgoing edge -- the outgoing edge
-	 * does not have max grade. The latter case might occur if #preprocess()
-	 * removed an edge with max grade from the learning net because it led to a
-	 * join node which was deleted.
+	 * has max grade. It might not have max grade if #preprocess() removed an
+	 * edge with max grade from the learning net because it led to a join node
+	 * which was deleted.
 	 *
 	 * @param w node to potentially be contracted into its predecessor
 	 * @return whether \p w can be contracted into its predecessor
