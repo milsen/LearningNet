@@ -405,22 +405,21 @@ public:
 			bestActive = *bestIt;
 			actives.erase(bestIt);
 
-			// Update result and whether target was found.
+			// Update result.
 			result.push_back(bestActive);
-			if (!m_targetFound) {
-				// Search new actives on the basis of the new best active node.
-				m_net.setType(bestActive, NodeType::completed);
-				std::vector<lemon::ListDigraph::Node> newSources = {bestActive};
-				std::vector<lemon::ListDigraph::Node> newActives =
-					getNewActives(newSources);
 
-				// Concat newActives with actives.
-				actives.insert(
-					actives.end(),
-					std::make_move_iterator(newActives.begin()),
-					std::make_move_iterator(newActives.end())
-				);
-			}
+			// Search new actives on the basis of the new best active node.
+			m_net.setType(bestActive, NodeType::completed);
+			std::vector<lemon::ListDigraph::Node> newSources = {bestActive};
+			std::vector<lemon::ListDigraph::Node> newActives =
+				getNewActives(newSources);
+
+			// Concat newActives with actives.
+			actives.insert(
+				actives.end(),
+				std::make_move_iterator(newActives.begin()),
+				std::make_move_iterator(newActives.end())
+			);
 		}
 
 		reset();
