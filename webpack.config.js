@@ -6,7 +6,8 @@ const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = {
     mode: isProd ? 'production' : 'development',
-    watch: true,
+    // change for continous recompilation of changing files
+    watch: false,
     devtool: isProd ? 'source-map' : '#eval-source-map',
     entry: {
         index: path.join(dirAssets, 'js', 'index.js'),
