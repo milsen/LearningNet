@@ -109,7 +109,7 @@ class ConditionHandler
 
         $values = [];
         while ($row = $stmt->fetch(\PDO::FETCH_NUM, \PDO::FETCH_ORI_NEXT)) {
-            array_push($values, $row[0]);
+            array_push($values, strval($row[0]));
         }
         // There might be multiple values, e.g. one student may be part of
         // multiple institutes.
