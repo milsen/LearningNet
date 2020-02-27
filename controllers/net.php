@@ -240,7 +240,7 @@ class NetController extends PluginController {
         $version = $plugin_manager->getPluginManifest(
             $plugin_manager->getPlugin('Courseware')->getPluginPath()
         )['version'];
-        return version_compare('4.4.2', $version) >= 0;
+        return version_compare('4.4.2', $version) <= 0;
     }
 
     /**
